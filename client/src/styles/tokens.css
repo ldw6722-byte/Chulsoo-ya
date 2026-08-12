@@ -1,0 +1,67 @@
+/*
+ * 디자인 토큰. README.ko.md 3.1
+ * 차분한 뉴트럴 배경 + 절제된 파스텔 포인트. 상태는 색상만으로 전달하지 않는다.
+ */
+
+:root {
+  /* 뉴트럴 */
+  --c-bg: #faf9f7;
+  --c-surface: #ffffff;
+  --c-surface-muted: #f4f2ef;
+  --c-border: #e5e1dc;
+  --c-border-strong: #d3cdc5;
+  --c-text: #2b2825;
+  --c-text-muted: #6f6a64;
+  --c-text-subtle: #98918a;
+
+  /* 의미 색상 */
+  --c-primary: #3d6ff2;
+  --c-primary-weak: #eaf0ff;
+  --c-primary-strong: #2a55cc;
+  --c-success: #2e9e6b;
+  --c-success-weak: #e8f6ef;
+  --c-warning: #d98324;
+  --c-warning-weak: #fdf2e3;
+  --c-danger: #d64545;
+  --c-danger-weak: #fceceb;
+  --c-info: #6d5bd0;
+  --c-info-weak: #f0edfb;
+
+  /* 타이포 */
+  --font-sans: 'Pretendard', -apple-system, BlinkMacSystemFont, 'Apple SD Gothic Neo',
+    'Malgun Gothic', 'Segoe UI', Roboto, sans-serif;
+  --fs-xs: 0.75rem;
+  --fs-sm: 0.875rem;
+  --fs-base: 1rem;
+  --fs-lg: 1.125rem;
+  --fs-xl: 1.375rem;
+  --fs-2xl: 1.75rem;
+  --fs-3xl: 2.25rem;
+
+  /* 간격 */
+  --sp-1: 0.25rem;
+  --sp-2: 0.5rem;
+  --sp-3: 0.75rem;
+  --sp-4: 1rem;
+  --sp-5: 1.5rem;
+  --sp-6: 2rem;
+  --sp-7: 3rem;
+
+  /* 모양 */
+  --r-sm: 6px;
+  --r-md: 10px;
+  --r-lg: 16px;
+  --r-full: 999px;
+
+  --shadow-sm: 0 1px 2px rgba(43, 40, 37, 0.06);
+  --shadow-md: 0 4px 14px rgba(43, 40, 37, 0.08);
+  --shadow-lg: 0 12px 32px rgba(43, 40, 37, 0.12);
+
+  /* 레이아웃 */
+  --header-h: 56px;
+  --bottom-nav-h: 60px;
+  --content-max: 1160px;
+
+  /* 접근성: 모바일 최소 터치 영역 */
+  --touch-min: 44px;
+}

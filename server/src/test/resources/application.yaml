@@ -1,0 +1,23 @@
+spring:
+  datasource:
+    url: jdbc:h2:mem:chulsooya-test;MODE=PostgreSQL;DB_CLOSE_DELAY=-1
+    username: sa
+    password:
+    driver-class-name: org.h2.Driver
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    open-in-view: false
+
+app:
+  timezone: Asia/Seoul
+  matching:
+    match-window-seconds: 300
+    seller-confirm-window-seconds: 120
+    offer-ttl-seconds: 30
+  delivery:
+    fee: 3000
+  seed:
+    enabled: false
+
+spring.task.scheduling.enabled: false

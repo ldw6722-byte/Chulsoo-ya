@@ -1,3 +1,87 @@
 spring:
   application:
-    name: server
+    name: chulsooya-server
+  profiles:
+    default: local
+  config:
+    import: optional:file:.env[.properties]
+  jackson:
+    default-property-inclusion: non_null
+
+server:
+  port: 8080
+
+app:
+  timezone: Asia/Seoul
+  matching:
+    # README.ko.md: 매칭 대기 5분, 판매자 물품 확인 2분
+    match-window-seconds: 300
+    seller-confirm-window-seconds: 120
+    offer-ttl-seconds: 30
+  delivery:
+    fee: 3000
+
+---
+spring:
+  config:
+    activate:
+      on-profile: local
+  datasource:
+    url: jdbc:h2:mem:chulsooya;MODE=PostgreSQL;DB_CLOSE_DELAY=-1
+    username: sa
+    password:
+    driver-class-name: org.h2.Driver
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    open-in-view: false
+  flyway:
+    enabled: false
+  h2:
+    console:
+      enabled: true
+      path: /h2-console
+
+app:
+  seed:
+    enabled: true
+
+logging:
+  level:
+    com.chulsooya.server: DEBUG
+
+---
+# 사용법: SPRING_PROFILES_ACTIVE=supabase + 아래 환경변수 주입
+#   SUPABASE_DB_URL, SUPABASE_DB_USER, SUPABASE_DB_PASSWORD
+#   SUPABASE_URL, SUPABASE_ANON_KEY, SUPABASE_SERVICE_ROLE_KEY
+# JWT는 Supabase JWKS로 검증하므로 JWT secret을 서버에 복제하지 않는다.
+spring:
+  config:
+    activate:
+      on-profile: supabase
+  datasource:
+    url: ${SUPABASE_DB_URL}
+    username: ${SUPABASE_DB_USER}
+    password: ${SUPABASE_DB_PASSWORD}
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      # Supabase 무료 Session pooler의 연결 한도를 초과하지 않도록 보수적으로 유지한다.
+      maximum-pool-size: 3
+      minimum-idle: 0
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    open-in-view: false
+  flyway:
+    enabled: true
+    locations: classpath:db/supabase
+
+app:
+  seed:
+    enabled: false
+  supabase:
+    url: ${SUPABASE_URL:}
+    anon-key: ${SUPABASE_ANON_KEY:}
+    secret-key: ${SUPABASE_SECRET_KEY:}
+  cors:
+    allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:5173}

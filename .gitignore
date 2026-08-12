@@ -1,0 +1,33 @@
+# Java / Gradle
+server/.gradle/
+server/build/
+*.class
+
+# Node / Vite
+client/node_modules/
+client/dist/
+client/.vite/
+
+# Environment secrets
+.env
+.env.*
+!.env.example
+server/.env
+server/.env.*
+!server/.env.example
+client/.env
+client/.env.*
+!client/.env.example
+
+# Local run artifacts
+_boot.log
+_boot_err.log
+*.log
+scripts/verify-e2e-result.json
+
+# IDE / OS
+.idea/
+.vscode/
+*.iml
+.DS_Store
+Thumbs.db
