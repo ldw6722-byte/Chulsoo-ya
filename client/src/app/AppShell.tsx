@@ -5,8 +5,9 @@ import { ShopHeader } from '@/components/shop/ShopHeader'
 export function AppShell() {
   const location = useLocation()
   const isAuthRoute = location.pathname.startsWith('/auth/')
+  const isAdminRoute = location.pathname.startsWith('/admin')
 
-  if (isAuthRoute) return <Outlet />
+  if (isAuthRoute || isAdminRoute) return <Outlet />
 
   return (
     <div className="flex min-h-screen flex-col bg-slate-50 text-slate-800 dark:bg-slate-950 dark:text-slate-100">

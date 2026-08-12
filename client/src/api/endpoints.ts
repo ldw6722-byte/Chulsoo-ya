@@ -1,5 +1,8 @@
 import { http, unwrap } from './client'
 import type {
+  AdminOverview,
+  AdminStoreActivity,
+  AdminWorkflowOrder,
   AssignedOrder,
   AuthMeResponse,
   Cart,
@@ -17,6 +20,10 @@ import type {
   SellerOffer,
   SellerStore,
   SlotLog,
+  StoreCreateRequest,
+  StoreDirectoryItem,
+  StoreRegionOption,
+  StoreUpdateRequest,
 } from '@/types/api'
 
 /* 카탈로그 */
@@ -122,4 +129,30 @@ export const authApi = {
 
 export const userApi = {
   list: () => unwrap<DevUser[]>(http.get('/users')),
+}
+
+
+/* 관리자 운영 */
+export const adminApi = {
+  overview: () => unwrap<AdminOverview>(http.get('/admin/overview')),
+}
+
+/* 판매점 탐색 · 관리자 관리 */
+export const storeDirectoryApi = {
+  list: (params: { city?: string; district?: string } = {}) =>
+    unwrap<StoreDirectoryItem[]>(http.get('/stores', { params })),
+  regions: () => unwrap<StoreRegionOption[]>(http.get('/stores/regions')),
+}
+export const adminStoreApi = {
+  list: () => unwrap<StoreDirectoryItem[]>(http.get('/admin/stores')),
+  create: (payload: StoreCreateRequest) => unwrap<StoreDirectoryItem>(http.post('/admin/stores', payload)),
+  update: (storeId: number, payload: StoreUpdateRequest) => unwrap<StoreDirectoryItem>(http.patch('/admin/stores/' + storeId, payload)),
+  remove: (storeId: number) => unwrap<void>(http.delete('/admin/stores/' + storeId)),
+}
+
+/* 관리자 주문 생애주기 · 판매자 운영 제어 */
+export const adminWorkflowApi = {
+  orders: () => unwrap<AdminWorkflowOrder[]>(http.get('/admin/workflow/orders')),
+  storeActivity: (storeId: number) => unwrap<AdminStoreActivity>(http.get('/admin/stores/' + storeId + '/activity')),
+  forceSlots: (storeId: number, payload: { configuredSlots: number; reason: string }) => unwrap<AdminStoreActivity>(http.post('/admin/stores/' + storeId + '/force-slots', payload)),
 }

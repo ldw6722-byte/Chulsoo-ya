@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useNavigate, useParams } from 'react-router-dom'
+import { useLocation, useNavigate, useParams } from 'react-router-dom'
 import { cartApi, catalogApi } from '@/api/endpoints'
 import { ApiError } from '@/api/client'
 import { useAsync } from '@/hooks/useAsync'
@@ -13,7 +13,8 @@ function Stars({ rating }: { rating: number }) { return <span className="text-am
 export function ProductDetailPage() {
   const { productId } = useParams<{ productId: string }>()
   const navigate = useNavigate()
-  const { configured, user } = useAuth()
+  const location = useLocation()
+  const { user } = useAuth()
   const [quantity, setQuantity] = useState(1)
   const [activeImage, setActiveImage] = useState(0)
   const [tab, setTab] = useState<'detail' | 'spec' | 'guide'>('detail')
@@ -21,7 +22,7 @@ export function ProductDetailPage() {
   const [notice, setNotice] = useState<string | null>(null)
   const id = Number(productId)
   const product = useAsync<Product>(() => catalogApi.product(id), [id])
-  async function addToCart(goToCart: boolean) { if (configured && !user) { navigate('/auth/login'); return } setSubmitting(true); setNotice(null); try { await cartApi.addItem(id, quantity); if (goToCart) navigate('/cart'); else setNotice('장바구니에 담았습니다. 동네 판매자 매칭을 시작할 준비가 되었어요.') } catch (error) { setNotice(error instanceof ApiError ? error.message : '장바구니에 담지 못했습니다.') } finally { setSubmitting(false) } }
+  async function addToCart(goToCart: boolean) { if (!user) { navigate(`/auth/login?next=${encodeURIComponent(`${location.pathname}${location.search}`)}`); return } setSubmitting(true); setNotice(null); try { await cartApi.addItem(id, quantity); if (goToCart) navigate('/cart'); else setNotice('장바구니에 담았습니다. 동네 판매자 매칭을 시작할 준비가 되었어요.') } catch (error) { setNotice(error instanceof ApiError ? error.message : '장바구니에 담지 못했습니다.') } finally { setSubmitting(false) } }
   if (product.loading) return <div className="mx-auto max-w-7xl px-4 py-16"><LoadingView label="상품 정보를 불러오는 중입니다" /></div>
   if (product.error) return <div className="mx-auto max-w-7xl px-4 py-16"><ErrorView error={product.error} onRetry={product.reload} /></div>
   if (!product.data) return null

@@ -19,6 +19,7 @@ import { LoginPage } from '@/features/auth/LoginPage'
 import { SignupPage } from '@/features/auth/SignupPage'
 import { AuthCallbackPage } from '@/features/auth/AuthCallbackPage'
 import { MyPage } from '@/features/my/MyPage'
+import { StoreDirectoryPage } from '@/features/stores/StoreFinder'
 import { EmptyView } from '@/components/StateViews'
 
 const consumerOnly = (element: React.ReactNode) => (
@@ -39,6 +40,7 @@ export const router = createBrowserRouter([
       { path: 'auth/signup', element: <SignupPage /> },
       { path: 'auth/callback', element: <AuthCallbackPage /> },
       { path: 'my', element: <MyPage /> },
+      { path: 'stores', element: <StoreDirectoryPage /> },
       { path: 'catalog', element: <CatalogPage /> },
       { path: 'product/:productId', element: <ProductDetailPage /> },
       // 기존 공유 링크 호환용 alias. 신규 상품 링크는 Kordeal식 /product/:id를 사용한다.

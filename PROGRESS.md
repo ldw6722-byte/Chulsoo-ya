@@ -64,3 +64,76 @@
 ## 세션 핸드오프
 
 다음 세션은 `AGENTS.md` → `PROGRESS.md` → `PROJECT_MAP.md` 순서로 읽는다. 카테고리 분류 근거는 `docs/HARDWARE_CATEGORY_RESEARCH.md`, 스키마·REST 계약은 `docs/CATEGORY_CATALOG_SCHEMA.md`, 1,600개 시드는 `server/src/main/resources/seed/hardware-products-1600.json`, UI 기준은 `docs/KORDEAL_UI_REFERENCE.md`에 있다.
+
+## Recent UI adjustment (2026-08-12)
+- Home quick scroll now contains exactly three links: product newest, popular hardware, affordable tools.
+- Removed the fast-response and seller-operation quick links.
+- Home section titles now exactly match quick-link labels; English badges removed.
+- Frontend verification: npm run lint, npx tsc -b, and npm run build passed.
+
+
+## Header refinement (2026-08-12)
+- Home quick navigation and section titles are now: New Products, Popular Tools, Recommended Products.
+- Removed all three section descriptions.
+- Applied distinct blue, green, and red quick-link colors plus a compact Chulsoo-ya wordmark.
+- Frontend verification: npm run lint, npx tsc -b, and npm run build passed.
+
+
+## Signature wordmark refinement (2026-08-12)
+- Replaced the decorative logo with a compact horizontal wordmark: the Cheolsu pair is emphasized as one high-contrast unit and Ya remains a clean companion character.
+- Removed the sparkle, multi-color gradient, and single-character emphasis from the prior version.
+- Design basis: simple, scalable wordmark with one controlled accent for header readability.
+- Frontend verification: npm run lint, npx tsc -b, and npm run build passed.
+
+
+## Product showcase refinement (2026-08-12)
+- Quick navigation has persistent blue, green, and red underlines for New Products, Popular Tools, and Recommended Products.
+- Replaced the boxed wordmark with a minimalist Chulsoo-ya wordmark and a controlled underline accent under Cheolsu.
+- Rebuilt the three product showcase headers, grid spacing, cards, image placeholder, price hierarchy, and cart CTA for cleaner commerce presentation.
+- Fixed one HomePage link encoding regression using a UTF-8 Node script.
+- Frontend verification: npm run lint, npx tsc -b, and npm run build passed.
+
+
+## Cyberpunk signature and bathroom event copy (2026-08-12)
+- Replaced the previous plain wordmark with a Gaegu Korean handwritten-style signature using cyan, violet, and fuchsia neon treatment.
+- Removed the HARDWARE CATEGORY label above the category grid.
+- Updated bathroom event title and copy as requested.
+- Frontend verification: npm run lint, npx tsc -b, and npm run build passed.
+
+
+## Home reload and adult signature refinement (2026-08-12)
+- Removed query-driven quick navigation so a refreshed home page always begins at the top.
+- Quick links now navigate with transient route state and preserve smooth scrolling without a reload target in the URL.
+- Replaced the prior light handwritten font with a joined adult brush-signature wordmark and cyan-violet-fuchsia treatment.
+- Frontend verification: npm run lint (0 warnings, 0 errors), npx tsc -b, and npm run build passed.
+
+
+## Supplied brand logo integration (2026-08-12)
+- Added the user-supplied Cheolsuya logo to client/public/brand/chulsooya-logo.webp.
+- Replaced the generated text signature in ShopHeader with the supplied logo while preserving the home navigation and accessible label.
+- Frontend verification: npm run lint (0 warnings, 0 errors), npx tsc -b, and npm run build passed.
+
+
+## Header icon tooltips (2026-08-12)
+- Removed persistent text labels from dark mode, account, and cart controls in the header.
+- Added labels that appear only on hover or keyboard focus, while retaining aria labels and the cart count badge.
+- Frontend verification: npm run lint (0 warnings, 0 errors), npx tsc -b, and npm run build passed.
+
+
+## Bathroom banner copy-only update (2026-08-12)
+- Changed only the bathroom event title to 욕실 꾸미기 행사전 and the description to 욕실 분위기 전환.
+- Preserved the existing banner layout, badge, CTA, icon, gradient, and carousel behavior.
+- Frontend verification: npm run lint (0 warnings, 0 errors), npx tsc -b, and npm run build passed.
+
+
+## Admin shortcut flow (2026-08-13)
+- In the local Vite development environment, the header Admin link selects seeded admin user ID 2 only when no authenticated or development identity exists, then opens /admin.
+- Existing authenticated users remain subject to the normal ADMIN role guard.
+- Frontend lint/typecheck/build passed.
+
+
+## Store directory and admin CRUD (2026-08-13)
+- Added city/district store finder on home and /stores. City returns all city stores; district narrows to the selected district.
+- Added /api/stores public directory search, /api/admin/stores ADMIN CRUD, directory profile fields, and Supabase V4 migration.
+- Local seed creates 100 mock stores across 10 Seoul districts (10 per district). Verified city=100, district=10, admin=100 responses and CRUD cycle.
+

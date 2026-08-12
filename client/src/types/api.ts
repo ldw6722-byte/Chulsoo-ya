@@ -258,3 +258,138 @@ export interface AuthenticatedUser {
 export interface AuthMeResponse {
   user: AuthenticatedUser
 }
+
+
+export interface AdminOverview {
+  summary: {
+    todayOrderCount: number
+    matchingOrderCount: number
+    totalProductCount: number
+    totalUserCount: number
+    sellerCount: number
+    verifiedStoreCount: number
+    todayRevenue: number
+    attentionStoreCount: number
+  }
+  orderStatusCounts: Record<string, number>
+  recentOrders: Array<{
+    id: number
+    status: OrderStatus
+    representativeProductName: string
+    totalAmount: number
+    itemCount: number
+    winningStoreName: string | null
+    createdAt: string
+  }>
+  storeAttention: Array<{
+    id: number
+    name: string
+    guCode: string
+    state: string
+    availableSlots: number
+    trustScore: number
+    restrictedUntil: string | null
+  }>
+  serverTime: string
+}
+
+export interface StoreDirectoryItem {
+  id: number
+  name: string
+  cityName: string
+  districtName: string
+  address: string
+  phone: string
+  imageUrl: string | null
+  handledItems: string[]
+  rating: number
+  verified: boolean
+  receivingOrders: boolean
+  restricted: boolean
+  availableSlots: number
+  tier: 'FREE' | 'STANDARD' | 'PREMIUM'
+  ownerEmail: string
+}
+
+export interface StoreRegionOption {
+  cityName: string
+  districtName: string
+}
+
+export interface StoreCreateRequest {
+  name: string
+  ownerEmail: string
+  ownerName: string
+  phone: string
+  cityName: string
+  districtName: string
+  address: string
+  imageUrl: string
+  handledItems: string
+  rating: number
+  verified: boolean
+  receivingOrders: boolean
+}
+
+export interface StoreUpdateRequest {
+  name: string
+  phone: string
+  cityName: string
+  districtName: string
+  address: string
+  imageUrl: string
+  handledItems: string
+  rating: number
+  verified: boolean
+  receivingOrders: boolean
+}
+
+export interface WorkflowTimelineEvent {
+  type: string
+  label: string
+  occurredAt: string
+  detail: string
+}
+
+export interface AdminWorkflowOrder {
+  orderId: number
+  status: string
+  consumerName: string
+  storeName: string | null
+  districtCode: string
+  totalAmount: number
+  itemCount: number
+  offerCount: number
+  bidCount: number
+  createdAt: string
+  matchDeadlineAt: string | null
+  sellerConfirmationDeadlineAt: string | null
+  matchedAt: string | null
+  sellerConfirmedAt: string | null
+  paidAt: string | null
+  completedAt: string | null
+  timeline: WorkflowTimelineEvent[]
+}
+
+export interface AdminSlotLog {
+  createdAt: string
+  oldSlots: number
+  newSlots: number
+  changedBy: string
+  reason: string | null
+}
+
+export interface AdminStoreActivity {
+  storeId: number
+  storeName: string
+  districtCode: string
+  configuredSlots: number
+  reservedSlots: number
+  activeSlots: number
+  availableSlots: number
+  receivingOrders: boolean
+  verified: boolean
+  trustScore: number
+  slotLogs: AdminSlotLog[]
+  assignedOrders: AdminWorkflowOrder[]
+}

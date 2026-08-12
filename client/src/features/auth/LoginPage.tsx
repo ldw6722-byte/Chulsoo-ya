@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { AuthConfigurationError, isSupabaseConfigured, supabaseAuth } from '@/lib/supabase'
 import { useAuth } from '@/app/useAuth'
 import { AuthLayout } from './AuthLayout'
@@ -7,6 +7,9 @@ import { SocialAuthButtons } from './SocialAuthButtons'
 
 export function LoginPage() {
   const navigate = useNavigate()
+  const location = useLocation()
+  const next = new URLSearchParams(location.search).get('next')
+  const redirectPath = next?.startsWith('/') && !next.startsWith('//') ? next : '/'
   const { refresh } = useAuth()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -36,7 +39,7 @@ export function LoginPage() {
         return
       }
       await refresh()
-      navigate('/', { replace: true })
+      navigate(redirectPath, { replace: true })
     } catch (cause) {
       setError(cause instanceof AuthConfigurationError ? cause.message : '로그인에 실패했습니다.')
     } finally {
@@ -144,7 +147,7 @@ export function LoginPage() {
       ) : null}
 
       <p className="auth-footer-copy">
-        계정이 없으신가요? <Link to="/auth/signup" className="auth-inline-link">회원가입</Link>
+        계정이 없으신가요? <Link to={`/auth/signup${location.search}`} className="auth-inline-link">회원가입</Link>
       </p>
     </AuthLayout>
   )

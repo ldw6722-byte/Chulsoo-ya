@@ -91,3 +91,14 @@
 | 마감 스케줄러 | `server/.../scheduler/` |
 
 > 파일을 생성·이동할 때마다 이 표를 즉시 갱신한다.
+
+## 6. Store directory additions (2026-08-13)
+| Path | Role |
+| :--- | :--- |
+| client/src/features/stores/StoreFinder.tsx | Home preview and full city/district store directory |
+| client/src/features/admin/StoreManagementPanel.tsx | Admin store CRUD for image, handled items, rating, and status |
+| server/.../domain/store/StoreDirectoryService.java | Public regional discovery and ADMIN store CRUD |
+| server/.../domain/store/StoreDirectoryController.java | GET /api/stores and /api/stores/regions |
+| server/.../domain/store/AdminStoreController.java | ADMIN CRUD /api/admin/stores |
+| server/src/main/resources/db/supabase/V4__store_directory_profiles.sql | Store directory profile migration and index |
+

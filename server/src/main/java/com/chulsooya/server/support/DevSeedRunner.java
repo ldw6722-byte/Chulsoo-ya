@@ -7,6 +7,7 @@ import org.springframework.boot.ApplicationRunner;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.annotation.Order;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.chulsooya.server.domain.catalog.Category;
@@ -30,6 +31,7 @@ public class DevSeedRunner {
     }
 
     @Bean
+    @Order(0)
     public ApplicationRunner seedRunner(UserRepository users, StoreRepository stores,
             CategoryRepository categories, ProductRepository products,
             @Value("${app.seed.users:true}") boolean seedUsers) {
@@ -164,10 +166,34 @@ public class DevSeedRunner {
 
         users.save(new User("consumer@chulsooya.dev", "김소비", "010-1000-0001", UserRole.CONSUMER));
         users.save(new User("admin@chulsooya.dev", "운영자", "010-9000-0001", UserRole.ADMIN));
-        String gu = guCode("강남구");
-        seedSeller(users, stores, "seller1@chulsooya.dev", "철수네 철물점", gu, "서울특별시 강남구 테헤란로 10", SubscriptionTier.PREMIUM, 92.0, 5);
-        seedSeller(users, stores, "seller2@chulsooya.dev", "강남 종합공구", gu, "서울특별시 강남구 역삼로 55", SubscriptionTier.STANDARD, 74.0, 4);
-        seedSeller(users, stores, "seller3@chulsooya.dev", "만능철물", gu, "서울특별시 강남구 삼성로 220", SubscriptionTier.FREE, 55.0, 3);
+        seedSeoulMockStores(users, stores);
+    }
+
+    /** 개발·검증용 목데이터: 서울 10개 구에 구별 10개 판매점. */
+    private void seedSeoulMockStores(UserRepository users, StoreRepository stores) {
+        String[] districts = {"강남구", "강동구", "강서구", "관악구", "광진구", "마포구", "송파구", "영등포구", "용산구", "성동구"};
+        String[] storeTypes = {"종합철물", "공구마켓", "배관설비", "전기자재", "건축자재", "안전용품", "생활철물", "프로공구", "설비상사", "철물센터"};
+        String[] itemSets = {"전동공구,수공구,안전용품", "배관자재,수전,욕실용품", "전선,조명,전기자재", "시멘트,몰탈,단열재", "나사,볼트,접착제", "작업장갑,안전화,보호구", "페인트,실리콘,방수용품", "공구함,사다리,측정공구", "문고리,도어락,보수자재", "생활철물,청소용품,수납용품"};
+        for (int districtIndex = 0; districtIndex < districts.length; districtIndex++) {
+            String district = districts[districtIndex];
+            for (int number = 1; number <= 10; number++) {
+                String email = "store-" + (districtIndex + 1) + "-" + number + "@chulsooya.dev";
+                String storeName = district + " " + storeTypes[number - 1];
+                if (district.equals("강남구") && number == 1) { email = "seller1@chulsooya.dev"; storeName = "철수네 철물점"; }
+                if (district.equals("강남구") && number == 2) { email = "seller2@chulsooya.dev"; storeName = "강남 종합공구"; }
+                if (district.equals("강남구") && number == 3) { email = "seller3@chulsooya.dev"; storeName = "만능철물"; }
+                String phone = "02-" + String.format("%04d", districtIndex * 10 + number) + "-" + String.format("%04d", 1000 + number);
+                User owner = users.save(new User(email, storeName + " 사장", phone, UserRole.SELLER));
+                SubscriptionTier tier = number <= 2 ? SubscriptionTier.PREMIUM : number <= 6 ? SubscriptionTier.STANDARD : SubscriptionTier.FREE;
+                Store store = new Store(owner, storeName, guCode(district), "서울특별시 " + district + " 철수로 " + number, phone, tier);
+                store.changeDirectoryProfile(storeName, "서울특별시", district, guCode(district), "서울특별시 " + district + " 철수로 " + number, phone, "https://placehold.co/640x420/e2e8f0/0f172a?text=Store-" + (districtIndex + 1) + "-" + number, itemSets[number - 1]);
+                store.changeRating(3.8 + (number % 7) * 0.15);
+                store.changeOperatingStatus(true, number != 10);
+                store.changeConfiguredSlots(Math.min(number <= 3 ? 5 : 3, tier.getSlotCap()));
+                store.adjustTrustScore((68 + number * 2) - store.getTrustScore());
+                stores.save(store);
+            }
+        }
     }
 
     private Category category(CategoryRepository repository, String code, String name, String icon, int sort, Category parent, int level) {

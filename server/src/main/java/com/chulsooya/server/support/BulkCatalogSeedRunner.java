@@ -11,6 +11,7 @@ import org.springframework.boot.ApplicationRunner;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.annotation.Order;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -35,6 +36,7 @@ public class BulkCatalogSeedRunner {
     private static final int TOTAL_PRODUCTS = LEAF_CATEGORY_COUNT * PRODUCTS_PER_LEAF;
 
     @Bean
+    @Order(1)
     public ApplicationRunner bulkHardwareCatalogSeeder(
             ObjectMapper objectMapper,
             CategoryRepository categories,
