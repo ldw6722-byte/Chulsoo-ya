@@ -38,21 +38,22 @@ export function saveIdentity(identity: Identity | null): void {
   localStorage.setItem(IDENTITY_STORAGE_KEY, JSON.stringify(identity))
 }
 
-// ponytail: 개발 단계 신원은 헤더로 전달한다.
-// upgrade path: Supabase Auth 세션 토큰을 Authorization: Bearer 로 교체.
+// ponytail: 개발 단계에는 사용자 ID와 역할 힌트를 전달한다. 최신 서버는 DB의 실제 역할을 우선하며, 이전 로컬 실행본과의 호환을 유지한다.
+// upgrade path: 운영 전환 뒤에는 import.meta.env.DEV 분기와 개발 헤더를 제거한다.
 http.interceptors.request.use((config) => {
+  // ponytail: 개발 관리자 화면은 저장된 시드 신원을 먼저 사용한다.
+  // upgrade path: 운영 전환 뒤에는 import.meta.env.DEV 분기와 개발 헤더를 제거한다.
   const accessToken = getAccessToken()
+  // 실제 Supabase 세션이 있으면 개발 시드 신원보다 JWT를 우선한다.
   if (accessToken) {
     config.headers.set('Authorization', `Bearer ${accessToken}`)
     return config
   }
 
-  // ponytail: local 프로파일 E2E와 시드 계정 검증을 위한 개발 전용 fallback.
-  // upgrade path: Supabase 운영 전환 뒤에는 서버가 이 헤더를 인증 근거로 허용하지 않는다.
-  const identity = loadIdentity()
-  if (identity) {
-    config.headers.set('X-User-Id', String(identity.userId))
-    config.headers.set('X-User-Role', identity.role)
+  const developmentIdentity = import.meta.env.DEV ? loadIdentity() : null
+  if (developmentIdentity) {
+    config.headers.set('X-User-Id', String(developmentIdentity.userId))
+    config.headers.set('X-User-Role', developmentIdentity.role)
   }
   return config
 })

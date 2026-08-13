@@ -19,6 +19,8 @@ import com.chulsooya.server.domain.matching.MatchOffer;
 import com.chulsooya.server.domain.matching.MatchOfferRepository;
 import com.chulsooya.server.domain.order.Order;
 import com.chulsooya.server.domain.order.OrderRepository;
+import com.chulsooya.server.domain.penalty.PenaltyRepository;
+
 import com.chulsooya.server.domain.store.SlotSettingsLogRepository;
 import com.chulsooya.server.domain.store.Store;
 import com.chulsooya.server.domain.store.StoreRepository;
@@ -36,15 +38,20 @@ public class AdminWorkflowService {
     private final BidRepository bids;
     private final MatchOfferRepository offers;
     private final SlotSettingsLogRepository slotLogs;
+    private final PenaltyRepository penalties;
 
-    public AdminWorkflowService(OrderRepository orders, StoreRepository stores, UserRepository users,
-            BidRepository bids, MatchOfferRepository offers, SlotSettingsLogRepository slotLogs) {
+        public AdminWorkflowService(OrderRepository orders, StoreRepository stores, UserRepository users,
+            BidRepository bids, MatchOfferRepository offers, SlotSettingsLogRepository slotLogs,
+            PenaltyRepository penalties) {
+
         this.orders = orders;
         this.stores = stores;
         this.users = users;
         this.bids = bids;
         this.offers = offers;
-        this.slotLogs = slotLogs;
+                this.slotLogs = slotLogs;
+        this.penalties = penalties;
+
     }
 
     public List<WorkflowOrder> workflowOrders(CurrentUser actor) {
@@ -66,11 +73,17 @@ public class AdminWorkflowService {
         List<SlotLog> history = slotLogs.findTop50ByStoreIdOrderByCreatedAtDesc(storeId).stream()
                 .map(log -> new SlotLog(log.getCreatedAt(), log.getOldConfiguredSlots(), log.getNewConfiguredSlots(), log.getChangedBy(), log.getReason()))
                 .toList();
+                List<PenaltyLog> penaltyHistory = penalties.findTop50ByStoreIdOrderByAppliedAtDesc(storeId).stream()
+                .map(penalty -> new PenaltyLog(penalty.getOrderId(), penalty.getViolationType().name(),
+                        penalty.getLevel(), penalty.getTrustScoreDelta(), penalty.getRestrictionUntil(),
+                        penalty.getReason(), penalty.getAppliedAt()))
+                .toList();
         List<WorkflowOrder> assigned = orders.findByWinningStoreIdOrderByIdDesc(storeId).stream()
                 .map(order -> toWorkflowOrder(order, consumers, storeNames)).toList();
         return new StoreActivity(store.getId(), store.getName(), store.getGuCode(), store.getConfiguredSlots(),
                 store.getReservedSlots(), store.getActiveSlots(), store.getAvailableSlots(), store.isReceivingOrders(),
-                store.isVerified(), store.getTrustScore(), history, assigned);
+                store.isVerified(), store.getTrustScore(), history, penaltyHistory, assigned);
+
     }
 
     @Transactional

@@ -17,7 +17,8 @@ public final class OrderDtos {
 			String addressDetail,
 			@NotBlank String guCode,
 			String requestMemo,
-			Integer discountAmount) {
+			Integer discountAmount,
+			Long couponIssueId) {
 	}
 
 	public record OrderItemResponse(
@@ -51,6 +52,7 @@ public final class OrderDtos {
 			int itemsAmount,
 			int deliveryFee,
 			int discountAmount,
+			Long couponIssueId,
 			int totalAmount,
 			Long winningStoreId,
 			String winningStoreName,

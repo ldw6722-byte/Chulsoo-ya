@@ -36,7 +36,8 @@ export function MatchingWaitPage() {
     setCancelling(true)
     setActionError(null)
     try {
-      await orderApi.cancel(id)
+      const key = typeof crypto !== 'undefined' && 'randomUUID' in crypto ? crypto.randomUUID() : `cancel-${id}-${Date.now()}`
+      await orderApi.cancel(id, key)
       order.reload()
     } catch (e) {
       setActionError(e instanceof ApiError ? e.message : '주문을 취소할 수 없습니다.')

@@ -30,6 +30,7 @@ public class AuthController {
 
     @GetMapping("/me")
     public ApiResponse<AuthUserResponse> me(@AuthenticationPrincipal Jwt jwt) {
+        if (jwt == null) throw new DomainException(ErrorCode.FORBIDDEN, "로그인 세션이 필요합니다.");
         User user = authUserService.synchronize(subject(jwt), jwt.getClaimAsString("email"), displayName(jwt));
         return ApiResponse.of(AuthUserResponse.from(user));
     }

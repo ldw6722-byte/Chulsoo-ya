@@ -125,8 +125,10 @@ export interface Order {
   requestMemo: string | null
   itemsAmount: number
   deliveryFee: number
-  discountAmount: number
+    discountAmount: number
+  couponIssueId: number | null
   totalAmount: number
+
   winningStoreId: number | null
   winningStoreName: string | null
   matchDeadlineAt: string | null
@@ -158,6 +160,7 @@ export interface CreateOrderRequest {
   guCode: string
   requestMemo?: string
   discountAmount?: number
+  couponIssueId?: number
 }
 
 export interface RegionResolveResult {
@@ -391,5 +394,239 @@ export interface AdminStoreActivity {
   verified: boolean
   trustScore: number
   slotLogs: AdminSlotLog[]
+  penalties: Array<{
+    orderId: number
+    violationType: string
+    level: number
+    trustScoreDelta: number
+    restrictionUntil: string | null
+    reason: string
+    appliedAt: string
+  }>
   assignedOrders: AdminWorkflowOrder[]
+}
+
+export type SupportInquiryStatus = 'OPEN' | 'IN_PROGRESS' | 'ANSWERED' | 'CLOSED'
+
+export interface SupportFaqItem {
+  category: string
+  question: string
+  answer: string
+}
+
+export interface SupportInquiry {
+  id: number
+  category: string
+  title: string
+  content: string
+  status: SupportInquiryStatus
+  adminReply: string | null
+  answeredAt: string | null
+  createdAt: string
+  updatedAt: string
+}
+
+export interface CustomerNotification {
+  id: number
+  type: string
+  title: string
+  content: string
+  targetPath: string | null
+  readAt: string | null
+  createdAt: string
+}
+
+export interface CustomerCenterData {
+  faqs: SupportFaqItem[]
+  inquiries: SupportInquiry[]
+  notifications: CustomerNotification[]
+}
+
+export interface AdminSupportInquiry extends SupportInquiry {
+  consumerId: number
+  consumerName: string
+}
+
+export type StoreReviewVisibility = 'PUBLISHED' | 'HIDDEN'
+
+export interface StoreReview {
+  id: number
+  storeId: number
+  orderId: number
+  consumerName: string
+  rating: number
+  comment: string
+  trustDelta: number
+  visibility: StoreReviewVisibility
+  moderationReason: string | null
+  createdAt: string
+  moderatedAt: string | null
+}
+
+export interface StoreReviewEligibility {
+  eligible: boolean
+  reason: string
+  orderId: number | null
+  expiresAt: string | null
+}
+
+export interface StoreDetail {
+  store: StoreDirectoryItem
+  reviews: StoreReview[]
+  reviewCount: number
+  averageRating: number
+  eligibility: StoreReviewEligibility
+}
+
+export interface AdminUser {
+  id: number
+  email: string
+  name: string
+  role: UserRole
+}
+
+export type SellerApplicationStatus = 'PENDING' | 'MANUAL_REVIEW' | 'APPROVED' | 'REJECTED'
+export type NtsVerificationStatus = 'NOT_REQUESTED' | 'VERIFIED' | 'MISMATCH' | 'UNAVAILABLE'
+
+export interface SubmitSellerApplicationRequest {
+  storeName: string
+  representativeName: string
+  businessRegistrationNumber: string
+  businessOpenedOn?: string
+  cityName: string
+  districtName: string
+  address: string
+  phone: string
+  handledItems?: string
+}
+
+export interface SellerApplication {
+  id: number
+  storeName: string
+  cityName: string
+  districtName: string
+  address: string
+  phone: string
+  handledItems: string[]
+  status: SellerApplicationStatus
+  ntsStatus: NtsVerificationStatus
+  certificateSubmitted: boolean
+  submittedAt: string
+  reviewedAt: string | null
+  rejectionReason: string | null
+}
+
+export interface AdminSellerApplication extends SellerApplication {
+  applicantUserId: number
+  applicantName: string
+  applicantEmail: string
+  representativeName: string
+  businessRegistrationNumberMasked: string
+  ntsMessage: string | null
+  reviewedByUserId: number | null
+}
+
+export interface SellerPenalty {
+  id: number
+  orderId: number
+  violationType: 'SELLER_CONFIRMATION_TIMEOUT'
+  level: number
+  trustScoreDelta: number
+  restrictionUntil: string | null
+  reason: string
+  appliedAt: string
+}
+
+export type PaymentStatus = 'READY' | 'PAID' | 'CANCEL_PENDING' | 'CANCELLED' | 'REFUNDING' | 'PARTIAL_REFUNDED' | 'REFUNDED'
+
+export interface PaymentRefundEntry {
+  id: number
+  refundType: 'CANCEL' | 'REFUND'
+  amount: number
+  reason: string
+  status: 'REQUESTED' | 'SUCCEEDED' | 'FAILED'
+  createdAt: string
+  completedAt: string | null
+}
+
+export interface PaymentRefundView {
+  paymentId: number
+  paymentStatus: PaymentStatus
+  amount: number
+  remainingAmount: number
+  method: string | null
+  paidAt: string | null
+  refunds: PaymentRefundEntry[]
+}
+
+export type ClaimType = 'RETURN' | 'EXCHANGE' | 'PARTIAL_REPLACEMENT'
+export type ClaimStatus = 'REQUESTED' | 'SELLER_REVIEWING' | 'PICKUP_SCHEDULED' | 'REPLACEMENT_SHIPPING' | 'ESCALATED' | 'RESOLVED' | 'REJECTED'
+export type SellerClaimAction = 'ACKNOWLEDGE' | 'SCHEDULE_PICKUP' | 'SHIP_REPLACEMENT' | 'ESCALATE'
+export type AdminClaimDecision = 'RESOLVE_NO_REFUND' | 'FULL_REFUND' | 'REJECT'
+
+export interface ClaimSummary {
+  id: number
+  orderId: number
+  claimType: ClaimType
+  reasonCode: string
+  description: string
+  status: ClaimStatus
+  createdAt: string
+  updatedAt: string
+  resolvedAt: string | null
+}
+
+export interface ClaimEvidence {
+  id: number
+  contentType: string
+  byteSize: number
+  createdAt: string
+}
+
+export interface ClaimEvent {
+  id: number
+  eventType: string
+  actorRole: string
+  detail: string
+  createdAt: string
+}
+
+export interface ClaimDetail {
+  claim: ClaimSummary
+  settlementStatus: 'PENDING' | 'HOLD' | 'RELEASABLE' | 'SETTLED' | 'CANCELLED'
+  holdReason: string | null
+  evidences: ClaimEvidence[]
+  events: ClaimEvent[]
+}
+
+export type CouponIssueStatus = 'AVAILABLE' | 'APPLIED' | 'EXPIRED' | 'CANCELLED'
+
+export interface CouponIssue {
+  issueId: number
+  couponId: number
+  code: string
+  title: string
+  discountAmount: number
+  minimumOrderAmount: number
+  status: CouponIssueStatus
+  issuedAt: string
+  expiresAt: string
+  appliedOrderId: number | null
+}
+
+export interface CouponPolicy {
+  id: number
+  code: string
+  title: string
+  discountAmount: number
+  minimumOrderAmount: number
+  startsAt: string
+  expiresAt: string
+  active: boolean
+  createdAt: string
+}
+
+export interface ClaimDecisionDocument {
+  documentNumber: string
+  content: string
 }

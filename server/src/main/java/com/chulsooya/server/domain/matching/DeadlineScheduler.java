@@ -1,7 +1,6 @@
 package com.chulsooya.server.domain.matching;
 
 import java.time.Clock;
-import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
 
@@ -13,6 +12,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.chulsooya.server.config.AppProperties;
 import com.chulsooya.server.domain.order.Order;
+import com.chulsooya.server.domain.penalty.PenaltyService;
 import com.chulsooya.server.domain.order.OrderRepository;
 import com.chulsooya.server.domain.store.Store;
 import com.chulsooya.server.domain.store.StoreRepository;
@@ -31,6 +31,7 @@ public class DeadlineScheduler {
 	private final StoreRepository storeRepository;
 	private final OfferDispatchService offerDispatchService;
 	private final AppProperties properties;
+	private final PenaltyService penaltyService;
 	private final Clock clock;
 
 	public DeadlineScheduler(OrderRepository orderRepository,
@@ -38,12 +39,14 @@ public class DeadlineScheduler {
 			StoreRepository storeRepository,
 			OfferDispatchService offerDispatchService,
 			AppProperties properties,
+			PenaltyService penaltyService,
 			Clock clock) {
 		this.orderRepository = orderRepository;
 		this.offerRepository = offerRepository;
 		this.storeRepository = storeRepository;
 		this.offerDispatchService = offerDispatchService;
 		this.properties = properties;
+		this.penaltyService = penaltyService;
 		this.clock = clock;
 	}
 
@@ -87,9 +90,7 @@ public class DeadlineScheduler {
 			if (storeId != null) {
 				storeRepository.findByIdForUpdate(storeId).ifPresent(store -> {
 					store.releaseActiveSlot();
-					// 낙찰 후 2분 경과 미확인: 24시간 응찰 차단 + 신뢰 점수 차감
-					store.restrictUntil(now.plus(Duration.ofHours(24)));
-					store.adjustTrustScore(-10);
+					penaltyService.applySellerConfirmationTimeout(order.getId(), storeId, store, now);
 				});
 			}
 			order.restartMatching(now, properties.matching().matchWindowSeconds());

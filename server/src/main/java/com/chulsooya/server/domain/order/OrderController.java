@@ -7,6 +7,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.chulsooya.server.common.ApiResponse;
@@ -22,9 +23,11 @@ import jakarta.validation.Valid;
 public class OrderController {
 
 	private final OrderService orderService;
+	private final PaymentRefundService paymentRefundService;
 
-	public OrderController(OrderService orderService) {
+	public OrderController(OrderService orderService, PaymentRefundService paymentRefundService) {
 		this.orderService = orderService;
+		this.paymentRefundService = paymentRefundService;
 	}
 
 	/** 장바구니 -> 매칭 요청 (WAITING_MATCH 생성 + 제안 발송) */
@@ -44,8 +47,14 @@ public class OrderController {
 		return ApiResponse.of(orderService.get(orderId, user.userId(), user.isAdmin()));
 	}
 
+	@GetMapping("/{orderId}/payment")
+	public ApiResponse<PaymentRefundView> payment(CurrentUser user, @PathVariable Long orderId) {
+		return ApiResponse.of(paymentRefundService.paymentView(orderId, user.userId(), user.isAdmin()));
+	}
+
 	@PostMapping("/{orderId}/cancel")
-	public ApiResponse<OrderResponse> cancel(CurrentUser user, @PathVariable Long orderId) {
-		return ApiResponse.of(orderService.cancel(orderId, user.userId()));
+	public ApiResponse<OrderResponse> cancel(CurrentUser user, @PathVariable Long orderId,
+			@RequestHeader(value = "Idempotency-Key", required = false) String idempotencyKey) {
+		return ApiResponse.of(orderService.cancel(orderId, user.userId(), idempotencyKey));
 	}
 }

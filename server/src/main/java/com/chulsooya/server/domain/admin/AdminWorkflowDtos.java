@@ -42,9 +42,13 @@ public final class AdminWorkflowDtos {
             boolean verified,
             double trustScore,
             List<SlotLog> slotLogs,
+            List<PenaltyLog> penalties,
             List<WorkflowOrder> assignedOrders) {}
 
     public record SlotLog(Instant createdAt, int oldSlots, int newSlots, String changedBy, String reason) {}
+
+    public record PenaltyLog(Long orderId, String violationType, int level, double trustScoreDelta,
+            Instant restrictionUntil, String reason, Instant appliedAt) {}
 
     public record ForceSlotsRequest(
             @Min(0) @Max(15) int configuredSlots,

@@ -10,16 +10,24 @@ import { PaymentPage } from '@/features/checkout/PaymentPage'
 import { MatchingWaitPage } from '@/features/matching/MatchingWaitPage'
 import { OrderListPage } from '@/features/orders/OrderListPage'
 import { OrderDetailPage } from '@/features/orders/OrderDetailPage'
+import { ClaimRequestPage } from '@/features/orders/ClaimRequestPage'
+
 import { SellerDashboardPage } from '@/features/seller/SellerDashboardPage'
 import { SellerOfferQueuePage } from '@/features/seller/SellerOfferQueuePage'
 import { SellerOrderWorkspacePage } from '@/features/seller/SellerOrderWorkspacePage'
 import { SellerSettingsPage } from '@/features/seller/SellerSettingsPage'
+import { SellerClaimsPage } from '@/features/seller/SellerClaimsPage'
+import { SellerApplicationPage } from '@/features/seller/SellerApplicationPage'
+
 import { AdminOverviewPage } from '@/features/admin/AdminOverviewPage'
 import { LoginPage } from '@/features/auth/LoginPage'
 import { SignupPage } from '@/features/auth/SignupPage'
 import { AuthCallbackPage } from '@/features/auth/AuthCallbackPage'
 import { MyPage } from '@/features/my/MyPage'
 import { StoreDirectoryPage } from '@/features/stores/StoreFinder'
+import { StoreDetailPage } from '@/features/stores/StoreDetailPage'
+import { CustomerSupportPage } from '@/features/support/CustomerSupportPage'
+
 import { EmptyView } from '@/components/StateViews'
 
 const consumerOnly = (element: React.ReactNode) => (
@@ -40,7 +48,9 @@ export const router = createBrowserRouter([
       { path: 'auth/signup', element: <SignupPage /> },
       { path: 'auth/callback', element: <AuthCallbackPage /> },
       { path: 'my', element: <MyPage /> },
+      { path: 'support', element: <CustomerSupportPage /> },
       { path: 'stores', element: <StoreDirectoryPage /> },
+      { path: 'stores/:storeId', element: <StoreDetailPage /> },
       { path: 'catalog', element: <CatalogPage /> },
       { path: 'product/:productId', element: <ProductDetailPage /> },
       // 기존 공유 링크 호환용 alias. 신규 상품 링크는 Kordeal식 /product/:id를 사용한다.
@@ -50,11 +60,17 @@ export const router = createBrowserRouter([
       { path: 'orders', element: consumerOnly(<OrderListPage />) },
       { path: 'orders/:orderId', element: consumerOnly(<OrderDetailPage />) },
       { path: 'orders/:orderId/matching', element: consumerOnly(<MatchingWaitPage />) },
-      { path: 'orders/:orderId/payment', element: consumerOnly(<PaymentPage />) },
+            { path: 'orders/:orderId/payment', element: consumerOnly(<PaymentPage />) },
+      { path: 'orders/:orderId/claim', element: consumerOnly(<ClaimRequestPage />) },
+
+            { path: 'seller/application', element: consumerOnly(<SellerApplicationPage />) },
       { path: 'seller', element: sellerOnly(<SellerDashboardPage />) },
+
       { path: 'seller/offers', element: sellerOnly(<SellerOfferQueuePage />) },
       { path: 'seller/orders', element: sellerOnly(<SellerOrderWorkspacePage />) },
-      { path: 'seller/settings', element: sellerOnly(<SellerSettingsPage />) },
+            { path: 'seller/settings', element: sellerOnly(<SellerSettingsPage />) },
+      { path: 'seller/claims', element: sellerOnly(<SellerClaimsPage />) },
+
       {
         path: 'admin',
         element: (

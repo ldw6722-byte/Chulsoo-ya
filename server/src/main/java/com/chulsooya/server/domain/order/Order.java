@@ -70,6 +70,10 @@ public class Order {
 	@Column(nullable = false)
 	private int discountAmount;
 
+	/** 서버가 확정한 사용자 쿠폰 발행본. 주문당 하나만 연결한다. */
+	@Column(unique = true)
+	private Long couponIssueId;
+
 	/** 낙찰 판매자. 낙찰 전에는 null. */
 	private Long winningStoreId;
 
@@ -119,6 +123,14 @@ public class Order {
 
 	public void applyDiscount(int amount) {
 		this.discountAmount = Math.max(0, Math.min(amount, itemsAmount));
+	}
+
+	public void applyCoupon(Long issueId, int amount) {
+		if (issueId == null || couponIssueId != null) {
+			throw new DomainException(ErrorCode.INVALID_ORDER_STATUS, "쿠폰은 주문당 한 번만 적용할 수 있습니다.");
+		}
+		applyDiscount(amount);
+		this.couponIssueId = issueId;
 	}
 
 	/** DRAFT -> WAITING_MATCH. 5분 매칭 마감 시각을 서버 시각으로 확정한다. */

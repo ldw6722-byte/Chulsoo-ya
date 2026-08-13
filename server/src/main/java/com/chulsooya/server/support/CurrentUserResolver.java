@@ -17,18 +17,19 @@ import com.chulsooya.server.common.DomainException;
 import com.chulsooya.server.common.ErrorCode;
 import com.chulsooya.server.domain.auth.AuthUserService;
 import com.chulsooya.server.domain.user.User;
-import com.chulsooya.server.domain.user.UserRole;
+import com.chulsooya.server.domain.user.UserRepository;
 
 @Component
 public class CurrentUserResolver implements HandlerMethodArgumentResolver {
 
     private static final String HEADER_USER_ID = "X-User-Id";
-    private static final String HEADER_USER_ROLE = "X-User-Role";
 
     private final AuthUserService authUserService;
+    private final UserRepository users;
 
-    public CurrentUserResolver(AuthUserService authUserService) {
+    public CurrentUserResolver(AuthUserService authUserService, UserRepository users) {
         this.authUserService = authUserService;
+        this.users = users;
     }
 
     @Override
@@ -61,17 +62,16 @@ public class CurrentUserResolver implements HandlerMethodArgumentResolver {
     }
 
     private CurrentUser fromDevelopmentHeaders(NativeWebRequest webRequest) {
-        // ponytail: local 프로파일 E2E·시드 계정을 위한 fallback. supabase 프로파일에서는 Security가 Bearer JWT를 강제한다.
+        // ponytail: local 프로파일 E2E·시드 계정을 위한 fallback. 역할은 헤더를 신뢰하지 않고 DB 사용자 레코드에서만 읽는다.
         String rawId = webRequest.getHeader(HEADER_USER_ID);
-        String rawRole = webRequest.getHeader(HEADER_USER_ROLE);
         if (rawId == null || rawId.isBlank()) {
             throw new DomainException(ErrorCode.FORBIDDEN, "인증 정보가 없습니다.");
         }
         try {
-            UserRole role = rawRole == null || rawRole.isBlank()
-                    ? UserRole.CONSUMER
-                    : UserRole.valueOf(rawRole.trim().toUpperCase());
-            return new CurrentUser(Long.valueOf(rawId.trim()), role);
+            Long userId = Long.valueOf(rawId.trim());
+            User user = users.findById(userId)
+                    .orElseThrow(() -> new DomainException(ErrorCode.FORBIDDEN, "개발 사용자 정보를 찾을 수 없습니다."));
+            return new CurrentUser(user.getId(), user.getRole());
         } catch (IllegalArgumentException exception) {
             throw new DomainException(ErrorCode.FORBIDDEN, "인증 정보 형식이 올바르지 않습니다.");
         }

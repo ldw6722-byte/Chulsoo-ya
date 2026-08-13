@@ -11,6 +11,12 @@
 | `PROJECT_MAP.md` | 이 파일. 파일 위치 지도 |
 | `README.ko.md` / `README.md` | 제품 사양 원본 (제품 규칙, 상태 머신, 스키마) |
 | `architecture.png` | 시스템 아키텍처 도식 |
+| `docs/FEATURE_GAP_AUDIT.md` | 기획 문서와 현재 구현의 역할·API·DB 기능 갭 감사 및 구현 순서 |
+| `docs/SELLER_ONBOARDING_CONTRACT.md` | 판매자 사업자 검증·증빙·관리자 심사의 V7 DB·REST·TDD 계약 |
+| `docs/PAYMENT_REFUND_CONTRACT.md` | 결제 취소·전액/부분 환불·멱등성·권한·감사 이력 계약 |
+| `docs/CLAIM_CONTRACT.md` | 클레임·증빙·정산 HOLD·교환·부분 교체·문서 생성 계약 |
+| `docs/COUPON_CONTRACT.md` | 무상 쿠폰 발행·사용·취소 복구·만료·감사 이력 계약 |
+
 | `client/` | 프론트엔드 (Vite + React 19 + TS) |
 | `server/` | 백엔드 (Spring Boot 4.x + Java 25, Gradle) |
 
@@ -38,11 +44,16 @@
 | `src/components/shop/ShopHeader.tsx` | 3열 hover 메가 메뉴 및 자동완성 검색 |
 | `src/components/shop/ToolProductCard.tsx` | 할인·브랜드·평점·빠른 매칭 배지 판매 카드 |
 | `src/features/cart/` | 장바구니 |
-| `src/features/checkout/` | 주소·구매자 정보·매칭 요청·결제 |
+| `src/features/checkout/` | 주소·구매자 정보·무상 쿠폰 선택·매칭 요청·결제 |
+
 | `src/features/matching/` | 매칭 대기, 판매자 확인 대기 |
-| `src/features/orders/` | 주문 추적, 클레임 |
-| `src/features/seller/` | 가용 슬롯, 제안 큐, 물품 확인, 이행 |
-| `src/features/admin/` | 카탈로그·판매자·매칭·클레임 관리 |
+| `src/features/orders/` | 주문 추적, 취소·환불, 반품·교환·부분 교체 접수 |
+
+| `src/features/seller/` | 가용 슬롯, 제안 큐, 물품 확인, 이행, 클레임 처리, 지표 |
+| `src/features/seller/SellerApplicationPage.tsx` | 일반 회원의 판매자 신청·사업자등록증 제출·심사 상태 화면 |
+
+| `src/features/admin/` | 카탈로그·판매자·매칭·쿠폰 발행·클레임 중재·결제 환불 운영 |
+
 | `src/hooks/useServerCountdown.ts` | 서버 마감 시각 기준 카운트다운 |
 
 ## 3. 백엔드 지도 (`server/`)
@@ -56,16 +67,30 @@
 | `src/main/java/com/chulsooya/server/support/DevSeedRunner.java` | 로컬·Supabase 안전 카테고리/상품 시드 (`app.seed.users=false` 지원) |
 | `src/main/java/com/chulsooya/server/support/BulkCatalogSeedRunner.java` | 주문 이력 보호 조건의 1,600개 초기 상품 시드 |
 | `src/main/resources/seed/hardware-products-1600.json` | 32개 소분류당 50개 상품의 이미지 미포함 초기 카탈로그 |
+| `src/main/resources/db/supabase/V7__seller_applications.sql` | 판매자 신청·사업자등록증 메타데이터·관리자 심사 비파괴 마이그레이션 |
+| `src/main/resources/db/supabase/V8__penalties.sql` | 확인 만료 패널티·신뢰점수·응찰 제한 감사 이력 |
+| `src/main/resources/db/supabase/V9__dispatch_cursors.sql` | 지역·등급별 판매자 라운드 로빈 배분 커서 |
+| `src/main/resources/db/supabase/V10__refunds.sql` | 결제 취소·전액/부분 환불 감사 이력과 멱등성 |
+| `src/main/resources/db/supabase/V11__claims_and_settlements.sql` | 클레임·증빙·정산 HOLD·불변 이벤트 |
+| `src/main/resources/db/supabase/V12__coupons.sql` | 무상 쿠폰 정책·사용자 발행본·감사 이력·주문 연결 |
+
 | `src/main/java/com/Chulsoo_ya/server/ServerApplication.java` | 부트 엔트리 |
 | `.../common/` | 공통 응답 래퍼, 예외, 시간 제공자 |
 | `.../domain/auth/` | Supabase JWT 사용자 동기화 및 `/api/auth/me` |
 | `.../domain/catalog/` | 카테고리·상품 |
 | `.../domain/cart/` | 장바구니 |
-| `.../domain/order/` | 주문, 주문 품목, 상태 머신 |
-| `.../domain/matching/` | 제안(Match_Offer), 응찰(Bid), 낙찰 트랜잭션 |
+| `.../domain/order/` | 주문, 결제, 취소·전액/부분 환불, 환불 감사 이력, 상태 머신 |
+
+| `.../domain/matching/` | 제안(Match_Offer), 응찰(Bid), 낙찰 트랜잭션, 라운드 로빈 커서 |
+| `.../domain/penalty/` | 판매자 확인 만료 패널티·신뢰점수·제한 감사 이력 |
+
 | `.../domain/store/` | 판매자 매장, 슬롯 회계, 슬롯 변경 로그 |
+| `.../domain/sellerapplication/` | 판매자 신청, 증빙 검증·비공개 Storage, 관리자 승인·반려 |
+
 | `.../domain/payment/` | 결제·환불 |
-| `.../domain/claim/` | 클레임·정산 HOLD |
+| `.../domain/claim/` | 클레임·증빙·정산 HOLD·역할별 알림·결정적 처리 확인서 |
+| `.../domain/coupon/` | 무상 쿠폰 정책·회원 발행·서버 할인·취소 복구·감사 이력 |
+
 | `.../infra/` | Kakao / Toss / NTS / Storage 어댑터 |
 | `.../scheduler/` | 마감 집행 및 정합성 배치 |
 | `src/test/java/...` | 단위·통합 테스트 |

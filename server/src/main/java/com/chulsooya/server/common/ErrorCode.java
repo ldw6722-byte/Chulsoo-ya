@@ -21,6 +21,7 @@ public enum ErrorCode {
 	ORDER_NOT_WAITING_MATCH(HttpStatus.CONFLICT, "이미 마감된 주문입니다."),
 	OFFER_EXPIRED(HttpStatus.CONFLICT, "주문 제안이 만료되었습니다."),
 	OFFER_ALREADY_CLOSED(HttpStatus.CONFLICT, "이미 처리된 주문 제안입니다."),
+	OFFER_NOT_AVAILABLE_YET(HttpStatus.CONFLICT, "아직 도달하지 않은 주문 제안입니다."),
 	ALREADY_HAS_WINNER(HttpStatus.CONFLICT, "이미 다른 판매자에게 낙찰된 주문입니다."),
 	INVALID_ORDER_STATUS(HttpStatus.CONFLICT, "현재 주문 상태에서는 수행할 수 없습니다."),
 	CONFIRMATION_DEADLINE_PASSED(HttpStatus.CONFLICT, "물품 확인 시간이 만료되었습니다."),
@@ -33,7 +34,11 @@ public enum ErrorCode {
 
 	// 결제
 	PAYMENT_NOT_ALLOWED_YET(HttpStatus.CONFLICT, "판매자 물품 확인 완료 후 결제할 수 있습니다."),
-	DUPLICATE_IDEMPOTENCY_KEY(HttpStatus.CONFLICT, "이미 처리된 요청입니다.");
+	DUPLICATE_IDEMPOTENCY_KEY(HttpStatus.CONFLICT, "이미 처리된 요청입니다."),
+	REFUND_NOT_ALLOWED(HttpStatus.CONFLICT, "현재 주문·결제 상태에서는 취소 또는 환불할 수 없습니다."),
+	REFUND_AMOUNT_EXCEEDED(HttpStatus.BAD_REQUEST, "환불 금액이 남은 결제 금액을 초과했습니다."),
+	IDEMPOTENCY_KEY_REQUIRED(HttpStatus.BAD_REQUEST, "멱등성 키가 필요합니다."),
+	INVALID_EVIDENCE_FILE(HttpStatus.BAD_REQUEST, "증빙 파일 형식 또는 내용이 올바르지 않습니다.");
 
 	private final HttpStatus status;
 	private final String message;

@@ -49,7 +49,7 @@ public class SupabaseSecurityConfig {
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/categories/**", "/api/products/**", "/api/regions/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/categories/**", "/api/products/**", "/api/regions/**", "/api/support/faqs").permitAll()
                         .anyRequest().authenticated())
                 .oauth2ResourceServer(resourceServer -> resourceServer.jwt(Customizer.withDefaults()));
         return http.build();

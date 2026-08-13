@@ -20,10 +20,12 @@ import com.chulsooya.server.support.CurrentUser;
 public class StoreDirectoryService {
     private final StoreRepository stores;
     private final UserRepository users;
+    private final StoreReviewRepository reviews;
 
-    public StoreDirectoryService(StoreRepository stores, UserRepository users) {
+    public StoreDirectoryService(StoreRepository stores, UserRepository users, StoreReviewRepository reviews) {
         this.stores = stores;
         this.users = users;
+        this.reviews = reviews;
     }
 
     public List<StoreResponse> find(String cityName, String districtName) {
@@ -32,7 +34,7 @@ public class StoreDirectoryService {
         List<Store> result = districtName == null || districtName.isBlank()
                 ? stores.findByCityNameAndVerifiedTrueOrderByRatingDescNameAsc(city)
                 : stores.findByCityNameAndDistrictNameAndVerifiedTrueOrderByRatingDescNameAsc(city, districtName.trim());
-        return result.stream().map(store -> StoreResponse.from(store, now)).toList();
+        return result.stream().map(store -> response(store, now)).toList();
     }
 
     public List<RegionOption> regions() {
@@ -48,7 +50,7 @@ public class StoreDirectoryService {
         Instant now = Instant.now();
         return stores.findAll().stream().sorted(Comparator.comparing(Store::getCityName)
                 .thenComparing(Store::getDistrictName).thenComparing(Store::getName))
-                .map(store -> StoreResponse.from(store, now)).toList();
+                .map(store -> response(store, now)).toList();
     }
 
     @Transactional
@@ -62,9 +64,9 @@ public class StoreDirectoryService {
         }
         Store store = new Store(owner, request.name().trim(), guCode(request.districtName()), request.address().trim(), request.phone().trim(), SubscriptionTier.FREE);
         store.changeDirectoryProfile(request.name(), request.cityName(), request.districtName(), guCode(request.districtName()), request.address(), request.phone(), request.imageUrl(), request.handledItems());
-        store.changeRating(request.rating());
+        // 후기 기반 별점은 StoreReviewService가 공개 후기 평균으로만 갱신한다.
         store.changeOperatingStatus(request.verified(), request.receivingOrders());
-        return StoreResponse.from(stores.save(store), Instant.now());
+        return response(stores.save(store), Instant.now());
     }
 
     @Transactional
@@ -72,15 +74,22 @@ public class StoreDirectoryService {
         requireAdmin(actor);
         Store store = requireStore(storeId);
         store.changeDirectoryProfile(request.name(), request.cityName(), request.districtName(), guCode(request.districtName()), request.address(), request.phone(), request.imageUrl(), request.handledItems());
-        store.changeRating(request.rating());
+        // 후기 기반 별점은 StoreReviewService가 공개 후기 평균으로만 갱신한다.
         store.changeOperatingStatus(request.verified(), request.receivingOrders());
-        return StoreResponse.from(store, Instant.now());
+        return response(store, Instant.now());
     }
 
     @Transactional
     public void delete(CurrentUser actor, Long storeId) {
         requireAdmin(actor);
         stores.delete(requireStore(storeId));
+    }
+
+    private StoreResponse response(Store store, Instant now) {
+        List<StoreReview> published = reviews.findByStoreIdAndVisibilityOrderByCreatedAtDesc(store.getId(), StoreReview.ReviewVisibility.PUBLISHED);
+        double rating = published.isEmpty() ? 0 : Math.round(published.stream().mapToInt(StoreReview::getRating).average().orElse(0) * 10.0) / 10.0;
+        StoreResponse base = StoreResponse.from(store, now);
+        return new StoreResponse(base.id(), base.name(), base.cityName(), base.districtName(), base.address(), base.phone(), base.imageUrl(), base.handledItems(), rating, base.verified(), base.receivingOrders(), base.restricted(), base.availableSlots(), base.tier(), base.ownerEmail());
     }
 
     private Store requireStore(Long id) {

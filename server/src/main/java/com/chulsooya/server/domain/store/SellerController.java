@@ -20,6 +20,7 @@ import com.chulsooya.server.domain.order.OrderStatus;
 import com.chulsooya.server.domain.store.SellerDtos.AssignedOrderResponse;
 import com.chulsooya.server.domain.store.SellerDtos.MetricsResponse;
 import com.chulsooya.server.domain.store.SellerDtos.OfferResponse;
+import com.chulsooya.server.domain.store.SellerDtos.PenaltyHistoryResponse;
 import com.chulsooya.server.domain.store.SellerDtos.SlotLogResponse;
 import com.chulsooya.server.domain.store.SellerDtos.StoreResponse;
 import com.chulsooya.server.domain.store.SellerDtos.UpdateSlotsRequest;
@@ -111,6 +112,12 @@ public class SellerController {
 	public ApiResponse<MetricsResponse> metrics(CurrentUser user) {
 		requireSeller(user);
 		return ApiResponse.of(sellerService.metrics(user.userId()));
+	}
+
+	@GetMapping("/penalties")
+	public ApiResponse<List<PenaltyHistoryResponse>> penalties(CurrentUser user) {
+		requireSeller(user);
+		return ApiResponse.of(sellerService.penaltyHistory(user.userId()));
 	}
 
 	@GetMapping("/slot-logs")

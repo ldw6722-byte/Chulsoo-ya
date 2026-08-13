@@ -1,6 +1,5 @@
 package com.chulsooya.server.domain.matching;
 
-import java.time.Clock;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -12,81 +11,119 @@ import org.springframework.transaction.annotation.Transactional;
 import com.chulsooya.server.config.AppProperties;
 import com.chulsooya.server.domain.order.Order;
 import com.chulsooya.server.domain.store.MissedOrderLog;
-import com.chulsooya.server.domain.store.Store;
 import com.chulsooya.server.domain.store.MissedOrderLogRepository;
+import com.chulsooya.server.domain.store.Store;
 import com.chulsooya.server.domain.store.StoreRepository;
+import com.chulsooya.server.domain.store.SubscriptionTier;
 
 /**
- * 계층형 슬롯 기반 분산 매칭.
- * 동일 gu_code 자격 판매자를 tier 지연(0/3/6초) 그룹으로 나누고, 그룹 내에서는 신뢰 점수 순으로
- * 가용 슬롯이 있는 매장에만 제안을 발송한다. 슬롯 포화 매장은 MissedOrderLog 로 기록한다.
+ * 가용 슬롯 기반 계층형 분산 매칭.
+ *
+ * 한 번의 분배에서는 한 건의 새 제안만 생성한다. 동일 지역·등급에서는 영속 커서로 시작점을 회전하고,
+ * 상위 등급이 모두 가용하지 않을 때만 다음 등급으로 즉시 넘긴다. 시차가 지난 등급은 기존 상위 제안이
+ * 열려 있어도 순차 확산할 수 있으므로 특정 판매점의 알림 독점을 막는다.
  */
 @Service
 public class OfferDispatchService {
 
-	private final StoreRepository storeRepository;
-	private final MatchOfferRepository offerRepository;
-	private final MissedOrderLogRepository missedOrderLogRepository;
-	private final AppProperties properties;
-	private final Clock clock;
+    private static final List<SubscriptionTier> PRIORITY_TIERS = List.of(
+            SubscriptionTier.PREMIUM, SubscriptionTier.STANDARD, SubscriptionTier.FREE);
 
-	public OfferDispatchService(StoreRepository storeRepository,
-			MatchOfferRepository offerRepository,
-			MissedOrderLogRepository missedOrderLogRepository,
-			AppProperties properties,
-			Clock clock) {
-		this.storeRepository = storeRepository;
-		this.offerRepository = offerRepository;
-		this.missedOrderLogRepository = missedOrderLogRepository;
-		this.properties = properties;
-		this.clock = clock;
-	}
+    private final StoreRepository storeRepository;
+    private final MatchOfferRepository offerRepository;
+    private final MissedOrderLogRepository missedOrderLogRepository;
+    private final DispatchCursorRepository cursorRepository;
+    private final AppProperties properties;
+    private final java.time.Clock clock;
 
-	/**
-	 * 주문에 대한 제안을 발송한다.
-	 * 재입찰(attempt > 0)에서는 시차 노출 없이 전 계층에 즉시 발송한다.
-	 */
-	@Transactional
-	public int dispatch(Order order) {
-		Instant now = clock.instant();
-		boolean accelerated = order.getRetryCount() > 0;
-		int ttl = properties.matching().offerTtlSeconds();
+    public OfferDispatchService(StoreRepository storeRepository,
+            MatchOfferRepository offerRepository,
+            MissedOrderLogRepository missedOrderLogRepository,
+            DispatchCursorRepository cursorRepository,
+            AppProperties properties,
+            java.time.Clock clock) {
+        this.storeRepository = storeRepository;
+        this.offerRepository = offerRepository;
+        this.missedOrderLogRepository = missedOrderLogRepository;
+        this.cursorRepository = cursorRepository;
+        this.properties = properties;
+        this.clock = clock;
+    }
 
-		List<Store> eligible = new ArrayList<>(storeRepository.findEligible(order.getGuCode()));
-		eligible.sort(Comparator
-				.comparingInt((Store s) -> s.getTier().getDispatchDelaySeconds())
-				.thenComparing(Comparator.comparingDouble(Store::getTrustScore).reversed()));
+    /**
+     * 새 제안 한 건을 생성한다. 호출은 주문 생성 직후와 스케줄러 확산 시 모두 가능하며, 같은 주문·회차·매장
+     * 유니크 제약으로 중복 제안을 만들지 않는다.
+     */
+    @Transactional
+    public int dispatch(Order order) {
+        Instant now = clock.instant();
+        List<MatchOffer> currentOffers = offerRepository.findByOrderIdAndAttempt(order.getId(), order.getRetryCount());
+        List<Store> eligible = new ArrayList<>(storeRepository.findEligible(order.getGuCode()));
+        eligible.sort(Comparator.comparingDouble(Store::getTrustScore).reversed().thenComparing(Store::getId));
 
-		int dispatched = 0;
-		for (Store store : eligible) {
-			if (offerRepository
-					.findByOrderIdAndStoreIdAndAttempt(order.getId(), store.getId(), order.getRetryCount())
-					.isPresent()) {
-				continue;
-			}
-			if (!store.canReceiveOffer(now)) {
-				missedOrderLogRepository.save(new MissedOrderLog(store.getId(), order.getId(), missReason(store, now)));
-				continue;
-			}
-			Instant offeredAt = accelerated
-					? now
-					: now.plusSeconds(store.getTier().getDispatchDelaySeconds());
+        boolean higherTierHasNoCandidate = false;
+        for (SubscriptionTier tier : PRIORITY_TIERS) {
+            List<Store> tierStores = eligible.stream().filter(store -> store.getTier() == tier).toList();
+            if (tierStores.isEmpty()) {
+                higherTierHasNoCandidate = true;
+                continue;
+            }
 
-			store.reserveSlot();
-			offerRepository.save(new MatchOffer(order.getId(), store.getId(), order.getRetryCount(),
-					store.getTier(), offeredAt, ttl));
-			dispatched++;
-		}
-		return dispatched;
-	}
+            boolean hasOpenOffer = currentOffers.stream()
+                    .filter(offer -> offer.getTier() == tier)
+                    .anyMatch(offer -> offer.isOpen(now));
+            if (hasOpenOffer) {
+                // 상위 제안은 유지하되, 하위 등급이 도달 시각을 지났다면 다음 반복에서 순차 확산한다.
+                higherTierHasNoCandidate = false;
+                continue;
+            }
 
-	private String missReason(Store store, Instant now) {
-		if (store.isRestricted(now)) {
-			return "RESTRICTED";
-		}
-		if (!store.isReceivingOrders()) {
-			return "NOT_RECEIVING";
-		}
-		return "SLOT_FULL";
-	}
+            List<Store> candidates = availableWithoutOffer(order, currentOffers, tierStores, now);
+            if (candidates.isEmpty()) {
+                higherTierHasNoCandidate = true;
+                continue;
+            }
+
+            Instant matchingStartedAt = order.getMatchDeadlineAt().minusSeconds(properties.matching().matchWindowSeconds());
+            boolean tierDelayPassed = !now.isBefore(matchingStartedAt.plusSeconds(tier.getDispatchDelaySeconds()));
+            if (!tierDelayPassed && !higherTierHasNoCandidate) {
+                // 상위 판매자가 수신 가능한 경우에는 계약된 0/3/6초 우선 시간을 존중한다.
+                return 0;
+            }
+
+            Store selected = selectRoundRobin(order.getGuCode(), tier, candidates);
+            selected.reserveSlot();
+            offerRepository.save(new MatchOffer(order.getId(), selected.getId(), order.getRetryCount(), tier, now,
+                    properties.matching().offerTtlSeconds()));
+            return 1;
+        }
+        return 0;
+    }
+
+    private List<Store> availableWithoutOffer(Order order, List<MatchOffer> currentOffers,
+            List<Store> tierStores, Instant now) {
+        List<Store> candidates = new ArrayList<>();
+        for (Store store : tierStores) {
+            boolean alreadyOffered = currentOffers.stream().anyMatch(offer -> offer.getStoreId().equals(store.getId()));
+            if (alreadyOffered) continue;
+            if (store.canReceiveOffer(now)) {
+                candidates.add(store);
+            } else {
+                missedOrderLogRepository.save(new MissedOrderLog(store.getId(), order.getId(), missReason(store, now)));
+            }
+        }
+        return candidates;
+    }
+
+    private Store selectRoundRobin(String guCode, SubscriptionTier tier, List<Store> candidates) {
+        DispatchCursor cursor = cursorRepository.findByGuCodeAndTierForUpdate(guCode, tier)
+                .orElseGet(() -> cursorRepository.save(new DispatchCursor(guCode, tier)));
+        return candidates.get(cursor.nextIndex(candidates.size()));
+    }
+
+    private String missReason(Store store, Instant now) {
+        if (store.isRestricted(now)) return "RESTRICTED";
+        if (!store.isReceivingOrders()) return "NOT_RECEIVING";
+        return "SLOT_FULL";
+    }
 }

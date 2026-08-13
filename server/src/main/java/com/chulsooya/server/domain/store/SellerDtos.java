@@ -87,4 +87,16 @@ public final class SellerDtos {
 			String reason,
 			Instant createdAt) {
 	}
+
+	/** 판매자 본인에게만 공개하는 제한·신뢰점수 패널티 감사 이력. */
+	public record PenaltyHistoryResponse(
+			Long id,
+			Long orderId,
+			String violationType,
+			int level,
+			double trustScoreDelta,
+			Instant restrictionUntil,
+			String reason,
+			Instant appliedAt) {
+	}
 }

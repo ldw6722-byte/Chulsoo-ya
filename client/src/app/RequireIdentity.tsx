@@ -1,6 +1,7 @@
+import { useEffect } from 'react'
 import type { ReactNode } from 'react'
 import { useIdentity } from './useIdentity'
-import { EmptyView } from '@/components/StateViews'
+import { EmptyView, LoadingView } from '@/components/StateViews'
 import type { UserRole } from '@/types/api'
 
 const ROLE_LABEL: Record<UserRole, string> = {
@@ -9,7 +10,13 @@ const ROLE_LABEL: Record<UserRole, string> = {
   ADMIN: '관리자',
 }
 
-/** 지정 역할이 아니면 화면을 렌더링하지 않는다. */
+const DEVELOPMENT_ADMIN = { userId: 2, role: 'ADMIN' as const, name: '운영자' }
+
+/**
+ * 지정 역할이 아니면 화면을 렌더링하지 않는다.
+ * ponytail: 개발 모드의 직접 /admin 진입은 시드 관리자 신원을 먼저 저장한다.
+ * upgrade path: 운영 전환 시 Supabase 관리자 로그인·서버 권한 검증만 사용한다.
+ */
 export function RequireIdentity({
   roles,
   children,
@@ -17,7 +24,20 @@ export function RequireIdentity({
   roles: UserRole[]
   children: ReactNode
 }) {
-  const { identity } = useIdentity()
+  const { identity, setIdentity } = useIdentity()
+  const useDevelopmentAdmin = import.meta.env.DEV && roles.length === 1 && roles[0] === 'ADMIN'
+
+  useEffect(() => {
+    if (useDevelopmentAdmin && !identity) setIdentity(DEVELOPMENT_ADMIN)
+  }, [identity, setIdentity, useDevelopmentAdmin])
+
+  if (!identity && useDevelopmentAdmin) {
+    return (
+      <div className="min-h-screen bg-slate-50 px-4 py-16">
+        <LoadingView label="개발 관리자 화면을 준비하는 중입니다" />
+      </div>
+    )
+  }
 
   if (!identity) {
     return (
@@ -35,7 +55,7 @@ export function RequireIdentity({
       <div className="page">
         <EmptyView
           title="접근 권한이 없습니다"
-          description={`이 화면은 ${roles.map((r) => ROLE_LABEL[r]).join(' 또는 ')} 계정으로만 이용할 수 있습니다.`}
+          description={`이 화면은 ${roles.map((role) => ROLE_LABEL[role]).join(' 또는 ')} 계정으로만 이용할 수 있습니다.`}
         />
       </div>
     )

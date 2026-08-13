@@ -3,7 +3,7 @@ import { useAsync } from '@/hooks/useAsync'
 import { EmptyView, ErrorView, LoadingView } from '@/components/StateViews'
 import { formatDateTime, tierLabel } from '@/components/format'
 import { SlotControlBar } from './SlotControlBar'
-import type { SellerStore, SlotLog } from '@/types/api'
+import type { SellerPenalty, SellerStore, SlotLog } from '@/types/api'
 
 const CHANGED_BY_LABEL: Record<string, string> = {
   SELLER: '판매자',
@@ -21,6 +21,7 @@ const REASON_LABEL: Record<string, string> = {
 export function SellerSettingsPage() {
   const store = useAsync<SellerStore>(() => sellerApi.store(), [])
   const logs = useAsync<SlotLog[]>(() => sellerApi.slotLogs(), [])
+  const penalties = useAsync<SellerPenalty[]>(() => sellerApi.penalties(), [])
 
   if (store.loading && !store.data) {
     return (
@@ -37,6 +38,8 @@ export function SellerSettingsPage() {
     )
   }
   if (!store.data) return null
+  const sellerStore = store.data
+  const activePenalty = (penalties.data ?? []).find((penalty) => penalty.restrictionUntil && new Date(penalty.restrictionUntil).getTime() > new Date(sellerStore.serverTime).getTime())
 
   return (
     <div className="page stack">
@@ -83,6 +86,8 @@ export function SellerSettingsPage() {
         </p>
       </section>
 
+      {activePenalty ? <section className="card stack" style={{ padding: 'var(--sp-4)', borderColor: 'var(--c-danger)' }}><h2 className="section-title" style={{ fontSize: 'var(--fs-base)' }}>주문 응찰 제한</h2><p className="subtle">{activePenalty.reason}</p><p className="tabular">제한 해제 예정: {activePenalty.restrictionUntil ? formatDateTime(activePenalty.restrictionUntil) : '-'}</p><p className="subtle">신뢰 점수 {activePenalty.trustScoreDelta}점이 반영되었습니다. 제한 중에는 새 주문 제안을 받을 수 없습니다.</p></section> : null}
+
       <section className="card stack" style={{ padding: 'var(--sp-4)' }}>
         <h2 className="section-title" style={{ fontSize: 'var(--fs-base)' }}>
           가용량 변경 이력
@@ -117,6 +122,11 @@ export function SellerSettingsPage() {
             </tbody>
           </table>
         )}
+      </section>
+
+      <section className="card stack" style={{ padding: 'var(--sp-4)' }}>
+        <h2 className="section-title" style={{ fontSize: 'var(--fs-base)' }}>패널티 · 제한 이력</h2>
+        {penalties.loading && !penalties.data ? <p className="muted">이력을 불러오는 중입니다…</p> : penalties.error ? <ErrorView error={penalties.error} onRetry={penalties.reload} /> : (penalties.data?.length ?? 0) === 0 ? <EmptyView title="패널티 이력이 없습니다" description="물품 확인 기한을 지키면 신뢰 점수와 응찰 권한이 유지됩니다." /> : <table className="table"><thead><tr><th scope="col">적용 시각</th><th scope="col">주문</th><th scope="col">사유</th><th scope="col">점수</th><th scope="col">제한 해제</th></tr></thead><tbody>{(penalties.data ?? []).map((penalty) => <tr key={penalty.id}><td className="tabular">{formatDateTime(penalty.appliedAt)}</td><td>#{penalty.orderId}</td><td>{penalty.reason}</td><td className="tabular">{penalty.trustScoreDelta}</td><td className="tabular">{penalty.restrictionUntil ? formatDateTime(penalty.restrictionUntil) : '-'}</td></tr>)}</tbody></table>}
       </section>
     </div>
   )

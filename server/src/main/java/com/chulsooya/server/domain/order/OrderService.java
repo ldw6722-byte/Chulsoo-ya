@@ -14,6 +14,7 @@ import com.chulsooya.server.common.DomainException;
 import com.chulsooya.server.common.ErrorCode;
 import com.chulsooya.server.config.AppProperties;
 import com.chulsooya.server.domain.cart.Cart;
+import com.chulsooya.server.domain.coupon.CouponService;
 import com.chulsooya.server.domain.cart.CartItem;
 import com.chulsooya.server.domain.cart.CartRepository;
 import com.chulsooya.server.domain.catalog.Product;
@@ -34,6 +35,8 @@ public class OrderService {
 	private final ProductRepository productRepository;
 	private final StoreRepository storeRepository;
 	private final OfferDispatchService offerDispatchService;
+	private final PaymentRefundService paymentRefundService;
+	private final CouponService couponService;
 	private final AppProperties properties;
 	private final Clock clock;
 
@@ -42,6 +45,8 @@ public class OrderService {
 			ProductRepository productRepository,
 			StoreRepository storeRepository,
 			OfferDispatchService offerDispatchService,
+			PaymentRefundService paymentRefundService,
+			CouponService couponService,
 			AppProperties properties,
 			Clock clock) {
 		this.orderRepository = orderRepository;
@@ -49,6 +54,8 @@ public class OrderService {
 		this.productRepository = productRepository;
 		this.storeRepository = storeRepository;
 		this.offerDispatchService = offerDispatchService;
+		this.paymentRefundService = paymentRefundService;
+		this.couponService = couponService;
 		this.properties = properties;
 		this.clock = clock;
 	}
@@ -91,12 +98,12 @@ public class OrderService {
 			order.addItem(new OrderItem(product.getId(), product.getName(), product.getSpecSummary(),
 					product.getUnit(), item.getQuantity(), product.getPrice()));
 		}
-		if (request.discountAmount() != null) {
-			order.applyDiscount(request.discountAmount());
-		}
-
-		order.submitForMatching(now, properties.matching().matchWindowSeconds());
-		Order saved = orderRepository.save(order);
+			// 클라이언트 discountAmount는 신뢰하지 않는다. 할인은 서버가 소유권·만료를 검증한 쿠폰으로만 확정한다.
+			order.submitForMatching(now, properties.matching().matchWindowSeconds());
+			Order saved = orderRepository.save(order);
+			if (request.couponIssueId() != null) {
+				couponService.applyToOrder(consumerId, request.couponIssueId(), saved);
+			}
 
 		cart.clear();
 		cart.deactivate();
@@ -125,18 +132,8 @@ public class OrderService {
 	}
 
 	@Transactional
-	public OrderResponse cancel(Long orderId, Long consumerId) {
-		Instant now = clock.instant();
-		Order order = orderRepository.findByIdForUpdate(orderId)
-				.orElseThrow(() -> new DomainException(ErrorCode.NOT_FOUND, "주문을 찾을 수 없습니다."));
-		if (!order.getConsumerId().equals(consumerId)) {
-			throw new DomainException(ErrorCode.FORBIDDEN);
-		}
-		order.cancel(now);
-		if (order.getWinningStoreId() != null) {
-			storeRepository.findByIdForUpdate(order.getWinningStoreId()).ifPresent(Store::releaseActiveSlot);
-		}
-		return toResponse(order);
+	public OrderResponse cancel(Long orderId, Long consumerId, String idempotencyKey) {
+		return toResponse(paymentRefundService.cancelByConsumer(orderId, consumerId, idempotencyKey));
 	}
 
 	/** 낙찰 판매자의 이행 상태 전이 (준비/배달/픽업/완료). */
@@ -170,8 +167,10 @@ public class OrderService {
 				order.getRequestMemo(),
 				order.getItemsAmount(),
 				order.getDeliveryFee(),
-				order.getDiscountAmount(),
-				order.getTotalAmount(),
+									order.getDiscountAmount(),
+					order.getCouponIssueId(),
+					order.getTotalAmount(),
+
 				order.getWinningStoreId(),
 				storeName,
 				order.getMatchDeadlineAt(),

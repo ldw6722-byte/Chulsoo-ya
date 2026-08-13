@@ -72,6 +72,11 @@ public class MatchOffer {
 		return status == OfferStatus.SENT && now.isBefore(expiresAt);
 	}
 
+	/** 시차 발송 정책은 UI가 아닌 서버가 강제한다. */
+	public boolean isReadyForBid(Instant now) {
+		return isOpen(now) && !now.isBefore(offeredAt);
+	}
+
 	public boolean isExpired(Instant now) {
 		return status == OfferStatus.SENT && !now.isBefore(expiresAt);
 	}

@@ -44,6 +44,6 @@ export function ToolProductCard({ product, adding = false, onAdd }: ToolProductC
         </div>
       </div>
     </Link>
-    {onAdd ? <div className="border-t border-slate-100 p-3 dark:border-slate-800"><button type="button" disabled={adding} onClick={() => onAdd(product)} className="w-full rounded-lg bg-slate-950 py-2.5 text-sm font-bold text-white transition hover:bg-brand-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-300 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-white dark:text-slate-950 dark:hover:bg-brand-300">{adding ? '\uB2F4\uB294 \uC911\u2026' : '\uC7A5\uBC14\uAD6C\uB2C8 \uB2F4\uAE30'}</button></div> : null}
+    {onAdd ? <div className="border-t border-slate-100 p-3 dark:border-slate-800"><button type="button" disabled={adding} onClick={() => onAdd(product)} className="w-full rounded-lg bg-brand-600 py-2.5 text-sm font-bold text-white shadow-sm transition hover:bg-brand-700 hover:shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-300 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-brand-500 dark:hover:bg-brand-400">{adding ? '\uB2F4\uB294 \uC911\u2026' : '\uC7A5\uBC14\uAD6C\uB2C8 \uB2F4\uAE30'}</button></div> : null}
   </article>
 }

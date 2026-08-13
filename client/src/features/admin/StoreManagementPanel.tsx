@@ -72,7 +72,7 @@ export function StoreManagementPanel() {
           <div>
             <p className="text-xs font-black tracking-wider text-brand-600">STORE CRUD</p>
             <h2 className="mt-1 text-lg font-black text-slate-900">판매점 등록 · 상태 관리</h2>
-            <p className="mt-1 text-sm text-slate-500">이미지 주소, 취급 품목, 별점, 주문 수신 상태를 관리합니다.</p>
+            <p className="mt-1 text-sm text-slate-500">이미지 주소, 취급 품목, 승인·주문 수신 상태를 관리합니다. 별점은 실거래 후기만 반영됩니다.</p>
           </div>
           <button type="button" onClick={reset} className="rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm font-bold text-slate-900 hover:bg-slate-50">판매점 등록</button>
         </div>
@@ -89,7 +89,8 @@ export function StoreManagementPanel() {
           <input required value={form.address} onChange={event => change('address', event.target.value)} placeholder="상세 주소" className="h-11 rounded-xl border border-slate-300 px-3 text-sm md:col-span-2 xl:col-span-3" />
           <input value={form.imageUrl} onChange={event => change('imageUrl', event.target.value)} placeholder="이미지 URL (https://...)" className="h-11 rounded-xl border border-slate-300 px-3 text-sm md:col-span-2" />
           <input value={form.handledItems} onChange={event => change('handledItems', event.target.value)} placeholder="취급 품목 (쉼표로 구분)" className="h-11 rounded-xl border border-slate-300 px-3 text-sm" />
-          <label className="flex h-11 items-center gap-2 rounded-xl border border-slate-300 px-3 text-sm"><span>별점</span><input min="0" max="5" step="0.1" type="number" value={form.rating} onChange={event => change('rating', Number(event.target.value))} className="min-w-0 flex-1 outline-none" /></label>
+                    <div className="flex h-11 items-center rounded-xl border border-brand-100 bg-brand-50 px-3 text-sm font-bold text-brand-700">별점은 거래 후기·신뢰점수 메뉴에서 자동 집계됩니다.</div>
+
           <label className="flex h-11 items-center gap-2 rounded-xl border border-slate-300 px-3 text-sm"><input type="checkbox" checked={form.verified} onChange={event => change('verified', event.target.checked)} /> 승인 상태</label>
           <label className="flex h-11 items-center gap-2 rounded-xl border border-slate-300 px-3 text-sm"><input type="checkbox" checked={form.receivingOrders} onChange={event => change('receivingOrders', event.target.checked)} /> 주문 수신</label>
           <div className="flex gap-2"><button disabled={saving} className="rounded-xl border border-slate-900 bg-slate-900 px-4 py-2.5 text-sm font-bold text-white disabled:opacity-50">{saving ? '저장 중' : editing ? '수정 저장' : '판매점 등록'}</button>{editing ? <button type="button" onClick={reset} className="rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm font-bold text-slate-900">취소</button> : null}</div>

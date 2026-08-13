@@ -16,7 +16,9 @@ export function AuthCallbackPage() {
       return
     }
 
+    const hashParams = new URLSearchParams(window.location.hash.replace(/^#/, ''))
     const redirectError = searchParams.get('error_description') ?? searchParams.get('error')
+      ?? hashParams.get('error_description') ?? hashParams.get('error')
     if (redirectError) {
       setError(redirectError)
       return

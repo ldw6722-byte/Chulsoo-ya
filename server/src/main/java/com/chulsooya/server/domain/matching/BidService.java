@@ -76,6 +76,9 @@ public class BidService {
 		if (!offer.isOpen(now)) {
 			throw new DomainException(ErrorCode.OFFER_ALREADY_CLOSED);
 		}
+		if (!offer.isReadyForBid(now)) {
+			throw new DomainException(ErrorCode.OFFER_NOT_AVAILABLE_YET);
+		}
 
 		// 낙찰 확정: 주문 상태 전이 + 슬롯 예약->진행 전환
 		order.assignWinner(storeId, now, properties.matching().sellerConfirmWindowSeconds());

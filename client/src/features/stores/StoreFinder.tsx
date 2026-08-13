@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { useNavigate, useSearchParams } from 'react-router-dom'
+import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { storeDirectoryApi } from '@/api/endpoints'
 import { ErrorView, LoadingView } from '@/components/StateViews'
 import { useAsync } from '@/hooks/useAsync'
@@ -11,7 +11,7 @@ function Stars({ rating }: { rating: number }) {
 
 function StoreCard({ store }: { store: StoreDirectoryItem }) {
   return (
-    <article className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition hover:-translate-y-0.5 hover:shadow-md">
+    <Link to={`/stores/${store.id}`} className="block overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition hover:-translate-y-0.5 hover:border-brand-300 hover:shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500">
       <div className="aspect-[16/9] bg-slate-100">
         {store.imageUrl ? <img src={store.imageUrl} alt="" className="h-full w-full object-cover" /> : <div className="grid h-full place-items-center text-4xl text-slate-400">⚒</div>}
       </div>
@@ -29,7 +29,7 @@ function StoreCard({ store }: { store: StoreDirectoryItem }) {
           <span className="rounded-full bg-slate-100 px-2 py-1 text-[11px] font-bold text-slate-600">가용 슬롯 {store.availableSlots}</span>
         </div>
       </div>
-    </article>
+    </Link>
   )
 }
 

@@ -19,10 +19,12 @@ import com.chulsooya.server.domain.order.Order;
 import com.chulsooya.server.domain.order.OrderItem;
 import com.chulsooya.server.domain.order.OrderRepository;
 import com.chulsooya.server.domain.order.OrderStatus;
+import com.chulsooya.server.domain.penalty.PenaltyRepository;
 import com.chulsooya.server.domain.store.SellerDtos.AssignedOrderResponse;
 import com.chulsooya.server.domain.store.SellerDtos.MetricsResponse;
 import com.chulsooya.server.domain.store.SellerDtos.OfferItemLine;
 import com.chulsooya.server.domain.store.SellerDtos.OfferResponse;
+import com.chulsooya.server.domain.store.SellerDtos.PenaltyHistoryResponse;
 import com.chulsooya.server.domain.store.SellerDtos.SlotLogResponse;
 import com.chulsooya.server.domain.store.SellerDtos.StoreResponse;
 
@@ -35,6 +37,7 @@ public class SellerService {
 	private final BidRepository bidRepository;
 	private final SlotSettingsLogRepository slotLogRepository;
 	private final MissedOrderLogRepository missedOrderLogRepository;
+	private final PenaltyRepository penaltyRepository;
 	private final Clock clock;
 
 	public SellerService(StoreRepository storeRepository,
@@ -43,6 +46,7 @@ public class SellerService {
 			BidRepository bidRepository,
 			SlotSettingsLogRepository slotLogRepository,
 			MissedOrderLogRepository missedOrderLogRepository,
+			PenaltyRepository penaltyRepository,
 			Clock clock) {
 		this.storeRepository = storeRepository;
 		this.offerRepository = offerRepository;
@@ -50,6 +54,7 @@ public class SellerService {
 		this.bidRepository = bidRepository;
 		this.slotLogRepository = slotLogRepository;
 		this.missedOrderLogRepository = missedOrderLogRepository;
+		this.penaltyRepository = penaltyRepository;
 		this.clock = clock;
 	}
 
@@ -159,6 +164,16 @@ public class SellerService {
 		long missed = missedOrderLogRepository.countByStoreId(store.getId());
 		double rate = received == 0 ? 0.0 : (double) won / received * 100.0;
 		return new MetricsResponse(received, won, missed, Math.round(rate * 10) / 10.0, store.getTrustScore());
+	}
+
+	@Transactional(readOnly = true)
+	public List<PenaltyHistoryResponse> penaltyHistory(Long ownerId) {
+		Store store = requireStoreByOwner(ownerId);
+		return penaltyRepository.findTop50ByStoreIdOrderByAppliedAtDesc(store.getId()).stream()
+				.map(penalty -> new PenaltyHistoryResponse(penalty.getId(), penalty.getOrderId(),
+						penalty.getViolationType().name(), penalty.getLevel(), penalty.getTrustScoreDelta(),
+						penalty.getRestrictionUntil(), penalty.getReason(), penalty.getAppliedAt()))
+				.toList();
 	}
 
 	@Transactional(readOnly = true)

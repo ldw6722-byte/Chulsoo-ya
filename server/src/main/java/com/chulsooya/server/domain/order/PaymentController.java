@@ -59,13 +59,16 @@ public class PaymentController {
 		if (!order.getConsumerId().equals(user.userId())) {
 			throw new DomainException(ErrorCode.FORBIDDEN);
 		}
+		// 멱등성: 동일 주문의 재요청만 기존 결과를 반환한다. 다른 주문의 키 재사용은 거부한다.
+		Payment existing = paymentRepository.findByIdempotencyKey(request.idempotencyKey()).orElse(null);
+		if (existing != null) {
+			if (!existing.getOrderId().equals(order.getId())) {
+				throw new DomainException(ErrorCode.DUPLICATE_IDEMPOTENCY_KEY);
+			}
+			return ApiResponse.of(orderService.toResponse(order));
+		}
 		if (order.getStatus() != OrderStatus.PAYMENT_PENDING) {
 			throw new DomainException(ErrorCode.PAYMENT_NOT_ALLOWED_YET);
-		}
-
-		// 멱등성: 동일 키 재요청은 기존 결과를 반환한다.
-		if (paymentRepository.findByIdempotencyKey(request.idempotencyKey()).isPresent()) {
-			return ApiResponse.of(orderService.toResponse(order));
 		}
 
 		Payment payment = paymentRepository.save(new Payment(

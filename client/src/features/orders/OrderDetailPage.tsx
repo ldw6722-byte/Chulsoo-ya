@@ -1,9 +1,10 @@
+import { useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { orderApi } from '@/api/endpoints'
 import { useAsync } from '@/hooks/useAsync'
 import { ErrorView, LoadingView } from '@/components/StateViews'
 import { ORDER_STATUS_META, formatDateTime, formatWon } from '@/components/format'
-import type { Order, OrderStatus } from '@/types/api'
+import type { Order, OrderStatus, PaymentRefundView } from '@/types/api'
 
 const TIMELINE: { status: OrderStatus; label: string; at: (order: Order) => string | null }[] = [
   { status: 'WAITING_MATCH', label: '주문 요청', at: (o) => o.createdAt },
@@ -17,6 +18,10 @@ export function OrderDetailPage() {
   const { orderId } = useParams<{ orderId: string }>()
   const id = Number(orderId)
   const order = useAsync<Order>(() => orderApi.get(id), [id], { pollMs: 5000 })
+  const paymentVisible = ['PAID', 'PREPARING', 'CANCELLED'].includes(order.data?.status ?? '')
+  const payment = useAsync<PaymentRefundView>(() => orderApi.payment(id), [id, paymentVisible], { enabled: paymentVisible })
+  const [canceling, setCanceling] = useState(false)
+  const [notice, setNotice] = useState('')
 
   if (order.loading && !order.data) {
     return (
@@ -36,6 +41,18 @@ export function OrderDetailPage() {
 
   const data = order.data
   const meta = ORDER_STATUS_META[data.status]
+  const canCancel = ['WAITING_MATCH', 'MATCHED', 'SELLER_CONFIRMING', 'RE_MATCHING', 'PAYMENT_PENDING', 'PAID'].includes(data.status)
+  const canRequestClaim = ['PREPARING', 'DELIVERY_IN_PROGRESS', 'PICKUP_READY', 'COMPLETED'].includes(data.status)
+  const cancel = async () => {
+    setCanceling(true); setNotice('')
+    try {
+      const key = typeof crypto !== 'undefined' && 'randomUUID' in crypto ? crypto.randomUUID() : `cancel-${data.id}-${Date.now()}`
+      await orderApi.cancel(data.id, key)
+      setNotice('주문 취소 요청이 처리되었습니다.')
+      await order.reload()
+      await payment.reload()
+    } catch (error) { setNotice(error instanceof Error ? error.message : '주문 취소에 실패했습니다.') } finally { setCanceling(false) }
+  }
 
   return (
     <div className="page stack">
@@ -62,7 +79,12 @@ export function OrderDetailPage() {
             결제 진행
           </Link>
         ) : null}
+        {canCancel ? <button type="button" className="btn btn-secondary" disabled={canceling} onClick={() => void cancel()}>{canceling ? '취소 처리 중' : data.status === 'PAID' ? '결제 취소' : '주문 취소'}</button> : null}
+        {canRequestClaim ? <Link to={`/orders/${data.id}/claim`} className="btn btn-secondary">반품 · 교환 · 부분 교체 요청</Link> : null}
+        {notice ? <p role="status" className="subtle">{notice}</p> : null}
       </section>
+
+      {paymentVisible ? <section className="card stack" style={{ padding: 'var(--sp-4)' }}><h2 className="section-title" style={{ fontSize: 'var(--fs-base)' }}>결제 · 환불</h2>{payment.loading && !payment.data ? <p className="muted">결제 정보를 불러오는 중입니다…</p> : payment.error ? <ErrorView error={payment.error} onRetry={payment.reload} /> : payment.data ? <><div className="spread"><span className="muted">결제 상태</span><span>{payment.data.paymentStatus === 'CANCELLED' ? '결제 취소' : payment.data.paymentStatus === 'REFUNDED' ? '전액 환불' : payment.data.paymentStatus === 'PARTIAL_REFUNDED' ? '부분 환불' : '결제 완료'}</span></div><div className="spread"><span className="muted">환불 가능 잔액</span><strong className="tabular">{formatWon(payment.data.remainingAmount)}</strong></div>{payment.data.refunds.length ? <table className="table"><thead><tr><th scope="col">처리</th><th scope="col">금액</th><th scope="col">사유</th><th scope="col">시각</th></tr></thead><tbody>{payment.data.refunds.map(refund => <tr key={refund.id}><td>{refund.refundType === 'CANCEL' ? '결제 취소' : '환불'}</td><td className="tabular">{formatWon(refund.amount)}</td><td>{refund.reason}</td><td className="tabular">{refund.completedAt ? formatDateTime(refund.completedAt) : '처리 중'}</td></tr>)}</tbody></table> : <p className="muted">처리된 취소·환불 이력이 없습니다.</p>}</> : null}</section> : null}
 
       <section className="card stack" style={{ padding: 'var(--sp-4)' }}>
         <h2 className="section-title" style={{ fontSize: 'var(--fs-base)' }}>
