@@ -43,6 +43,10 @@ public class StoreReview {
     private Instant createdAt = Instant.now();
     private Instant moderatedAt;
     private Long moderatedBy;
+    @Column(length = 1000)
+    private String sellerReply;
+    private Instant sellerRepliedAt;
+    private Long sellerRepliedBy;
 
     public StoreReview(Long storeId, Long orderId, Long consumerId, int rating, String comment, double trustDelta) {
         this.storeId = storeId;
@@ -60,5 +64,15 @@ public class StoreReview {
         this.moderatedAt = now;
     }
 
+    public void reply(String reply, Long actorId, Instant now) {
+        this.sellerReply = reply == null ? null : reply.trim();
+        this.sellerRepliedBy = actorId;
+        this.sellerRepliedAt = now;
+    }
+    public void clearReply() {
+        this.sellerReply = null;
+        this.sellerRepliedBy = null;
+        this.sellerRepliedAt = null;
+    }
     public enum ReviewVisibility { PUBLISHED, HIDDEN }
 }

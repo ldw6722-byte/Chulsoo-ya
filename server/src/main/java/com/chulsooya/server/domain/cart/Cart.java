@@ -18,7 +18,7 @@ import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
-/** 소비자는 활성 장바구니를 하나만 보유한다(README.ko.md 6.2 유니크 인덱스). */
+/** ???돩?癒?뮉 ??뽮쉐 ?貫而?뤃??꿰몴???롪돌筌?癰귣똻???뺣뼄(README.ko.md 6.2 ?醫딅빍???紐껊쑔??. */
 @Entity
 @Getter
 @Table(name = "carts")
@@ -37,9 +37,10 @@ public class Cart {
 
 	@Column(nullable = false)
 	private Instant createdAt = Instant.now();
+        @Column(nullable = false) private boolean priceTierAgreed = false;
+        private Instant priceTierAgreedAt;
 
-	@OneToMany(cascade = CascadeType.ALL, orphanRemoval = true)
-	@JoinColumn(name = "cart_id")
+	@OneToMany(mappedBy = "cart", cascade = CascadeType.ALL, orphanRemoval = true)
 	private List<CartItem> items = new ArrayList<>();
 
 	public Cart(Long consumerId) {
@@ -52,13 +53,13 @@ public class Cart {
 				.findFirst();
 	}
 
-	/** 같은 상품/옵션 조합은 한 번만 존재한다. 이미 있으면 수량을 더한다. */
-	public void addOrIncrease(Long productId, String optionHash, int quantity) {
-		findItem(productId, optionHash).ifPresentOrElse(
-				item -> item.increase(quantity),
-				() -> items.add(new CartItem(productId, optionHash, quantity)));
-	}
-
+	/** 揶쏆늿? ?怨밸?/????鈺곌퀬鍮?? ??甕곕뜄彛?鈺곕똻???뺣뼄. ??? ??됱몵筌???롮쎗???酉釉?? */
+        public void addOrIncrease(Long productId, String optionHash, Long priceTierId, String priceTierLabel, int priceTierPrice, String priceTierBrands, int quantity) {
+                String normalized = optionHash == null || optionHash.isBlank() ? "-" : optionHash;
+                findItem(productId, normalized).filter(i -> i.getPriceTierId().equals(priceTierId)).ifPresentOrElse(i -> i.increase(quantity), () -> items.add(new CartItem(this, productId, normalized, priceTierId, priceTierLabel, priceTierPrice, priceTierBrands, quantity)));
+                priceTierAgreed = false; priceTierAgreedAt = null;
+        }
+        public void agreeToPriceTierSupply(Instant now) { priceTierAgreed = true; priceTierAgreedAt = now; }
 	public void removeItem(Long cartItemId) {
 		items.removeIf(i -> i.getId() != null && i.getId().equals(cartItemId));
 	}

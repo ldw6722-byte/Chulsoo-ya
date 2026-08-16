@@ -1,179 +1,57 @@
-import { useState } from 'react'
-import { Link } from 'react-router-dom'
-import { AuthConfigurationError, isSupabaseConfigured, supabaseAuth } from '@/lib/supabase'
+﻿import { useState, type FormEvent } from 'react'
+import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { AuthLayout } from './AuthLayout'
 import { SocialAuthButtons } from './SocialAuthButtons'
+import { AuthConfigurationError, isSupabaseConfigured, supabaseAuth } from '@/lib/supabase'
+import { useAuth } from '@/app/useAuth'
+
+function EyeIcon({ closed }: { closed: boolean }) { return <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true"><path d="M2 12s3.6-6 10-6 10 6 10 6-3.6 6-10 6S2 12 2 12Z"/><circle cx="12" cy="12" r="2.5"/>{closed ? <path d="m4 4 16 16"/> : null}</svg> }
 
 export function SignupPage() {
+  const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
+  const { refresh } = useAuth()
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
-  const [showPassword, setShowPassword] = useState(false)
-  const [showConfirm, setShowConfirm] = useState(false)
-  const [termsAccepted, setTermsAccepted] = useState(false)
-  const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [confirmationSent, setConfirmationSent] = useState(false)
-
-  async function submit(event: React.FormEvent<HTMLFormElement>) {
-    event.preventDefault()
-    setError(null)
-
-    if (!name.trim()) return setError('이름을 입력해 주세요.')
-    if (!email.trim()) return setError('이메일을 입력해 주세요.')
-    if (password.length < 8) return setError('비밀번호는 8자 이상으로 입력해 주세요.')
-    if (password !== confirmPassword) return setError('비밀번호가 일치하지 않습니다.')
-    if (!termsAccepted) return setError('이용약관과 개인정보처리방침에 동의해 주세요.')
-
-    setIsLoading(true)
+  const [message, setMessage] = useState<string | null>(null)
+  const [loading, setLoading] = useState(false)
+  const [showPassword, setShowPassword] = useState(false)
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false)
+  const [agreed, setAgreed] = useState(false)
+  const requested = searchParams.get('next')
+  const redirectPath = requested?.startsWith('/') && !requested.startsWith('//') ? requested : '/' 
+  const submit = async (event: FormEvent) => {
+    event.preventDefault(); setError(null); setMessage(null)
+    if (!agreed) { setError("Please agree to the terms before continuing."); return }
+    if (password !== confirmPassword) { setError("Passwords do not match."); return }
+    setLoading(true)
     try {
-      const { error: signUpError } = await supabaseAuth.signUpWithEmail(email.trim(), password, name.trim())
-      if (signUpError) {
-        setError(signUpError.message)
-        return
-      }
-      setConfirmationSent(true)
-    } catch (cause) {
-      setError(cause instanceof AuthConfigurationError ? cause.message : '회원가입에 실패했습니다.')
-    } finally {
-      setIsLoading(false)
-    }
+      const { data, error: signUpError } = await supabaseAuth.signUpWithEmail(email.trim(), password, name.trim(), redirectPath)
+      if (signUpError) { setError(signUpError.message); return }
+      if (data.session) { await refresh(); navigate(redirectPath, { replace: true }); return }
+      setMessage("Check your email to confirm the account, then return to sign in.")
+    } catch (error) { setError(error instanceof AuthConfigurationError ? error.message : "Sign up failed. Please try again.") }
+    finally { setLoading(false) }
   }
-
-  if (confirmationSent) {
-    return (
-      <AuthLayout>
-        <div className="auth-success" role="status">
-          <h1 className="auth-heading">이메일을 확인해 주세요</h1>
-          <p className="auth-subtitle" style={{ marginTop: 'var(--sp-3)' }}>
-            <strong>{email}</strong>으로 인증 메일을 보냈습니다. 메일의 링크를 열면 가입이 완료됩니다.
-          </p>
-          <Link to="/auth/login" className="btn btn-primary" style={{ marginTop: 'var(--sp-5)' }}>
-            로그인으로 이동
-          </Link>
-        </div>
-      </AuthLayout>
-    )
-  }
-
-  return (
-    <AuthLayout>
-      <header>
-        <h1 className="auth-heading">회원가입</h1>
-        <p className="auth-subtitle">철수야 계정을 만들고 동네 철물점 매칭을 시작해 보세요.</p>
-      </header>
-
-      {error ? <p className="field-error" role="alert">{error}</p> : null}
-
-      <section style={{ marginTop: 'var(--sp-5)' }}>
-        <SocialAuthButtons action="가입" disabled={isLoading || !isSupabaseConfigured} onError={setError} />
-      </section>
-
-      <div className="auth-divider">또는 이메일로 가입</div>
-
-      <form className="stack" onSubmit={(event) => void submit(event)} noValidate>
-        <div className="field">
-          <label htmlFor="signup-name">이름</label>
-          <input
-            id="signup-name"
-            className="input"
-            type="text"
-            autoComplete="name"
-            placeholder="홍길동"
-            value={name}
-            disabled={isLoading || !isSupabaseConfigured}
-            onChange={(event) => setName(event.target.value)}
-          />
-        </div>
-
-        <div className="field">
-          <label htmlFor="signup-email">이메일</label>
-          <input
-            id="signup-email"
-            className="input"
-            type="email"
-            autoComplete="email"
-            placeholder="example@email.com"
-            value={email}
-            disabled={isLoading || !isSupabaseConfigured}
-            onChange={(event) => setEmail(event.target.value)}
-          />
-        </div>
-
-        <div className="field">
-          <label htmlFor="signup-password">비밀번호</label>
-          <div className="auth-password-row">
-            <input
-              id="signup-password"
-              className="input"
-              type={showPassword ? 'text' : 'password'}
-              autoComplete="new-password"
-              placeholder="8자 이상 입력해 주세요"
-              value={password}
-              disabled={isLoading || !isSupabaseConfigured}
-              onChange={(event) => setPassword(event.target.value)}
-            />
-            <button
-              type="button"
-              className="btn btn-sm"
-              onClick={() => setShowPassword((visible) => !visible)}
-              aria-label={showPassword ? '비밀번호 숨기기' : '비밀번호 표시'}
-            >
-              {showPassword ? '숨김' : '표시'}
-            </button>
-          </div>
-        </div>
-
-        <div className="field">
-          <label htmlFor="signup-confirm-password">비밀번호 확인</label>
-          <div className="auth-password-row">
-            <input
-              id="signup-confirm-password"
-              className="input"
-              type={showConfirm ? 'text' : 'password'}
-              autoComplete="new-password"
-              placeholder="비밀번호를 다시 입력해 주세요"
-              value={confirmPassword}
-              disabled={isLoading || !isSupabaseConfigured}
-              onChange={(event) => setConfirmPassword(event.target.value)}
-            />
-            <button
-              type="button"
-              className="btn btn-sm"
-              onClick={() => setShowConfirm((visible) => !visible)}
-              aria-label={showConfirm ? '비밀번호 확인값 숨기기' : '비밀번호 확인값 표시'}
-            >
-              {showConfirm ? '숨김' : '표시'}
-            </button>
-          </div>
-        </div>
-
-        <label className="row" style={{ alignItems: 'flex-start' }}>
-          <input
-            type="checkbox"
-            checked={termsAccepted}
-            disabled={isLoading || !isSupabaseConfigured}
-            onChange={(event) => setTermsAccepted(event.target.checked)}
-            style={{ minWidth: 18, minHeight: 18, marginTop: 3 }}
-          />
-          <span className="muted" style={{ color: 'var(--c-text)' }}>
-            이용약관 및 개인정보처리방침에 동의합니다.
-          </span>
-        </label>
-
-        <button type="submit" className="btn btn-primary btn-block" disabled={isLoading || !isSupabaseConfigured}>
-          {isLoading ? '가입 처리 중…' : '이메일 회원가입'}
-        </button>
-      </form>
-
-      {!isSupabaseConfigured ? (
-        <p className="auth-notice">Supabase 연결 정보를 제공받은 뒤 Email·Google·Kakao 가입이 활성화됩니다.</p>
-      ) : null}
-
-      <p className="auth-footer-copy">
-        이미 계정이 있으신가요? <Link to="/auth/login" className="auth-inline-link">로그인</Link>
-      </p>
-    </AuthLayout>
-  )
+  return <AuthLayout>
+    <h1 className="auth-heading">{"\uD68C\uC6D0\uAC00\uC785"}</h1>
+    <p className="auth-subtitle">{"\uCCA0\uC218\uC57C\uC758 \uAC00\uACA9 \uBE44\uAD50\uC640 \uC8FC\uBB38 \uB9E4\uCE6D\uC744 \uC2DC\uC791\uD558\uC138\uC694."}</p>
+    <SocialAuthButtons action="signup" disabled={loading || !isSupabaseConfigured} onError={setError} nextPath={redirectPath} />
+    <div className="auth-divider"><span>{"\uB610\uB294 \uC774\uBA54\uC77C\uB85C \uD68C\uC6D0\uAC00\uC785"}</span></div>
+    {error ? <p className="field-error" role="alert">{error}</p> : null}
+    {message ? <p className="auth-notice">{message}</p> : null}
+    <form className="auth-form" onSubmit={submit}>
+      <div className="field"><label htmlFor="signup-name">{"\uC774\uB984"}</label><input id="signup-name" className="input" value={name} onChange={(event) => setName(event.target.value)} autoComplete="name" placeholder={"\uC774\uB984\uC744 \uC785\uB825\uD558\uC138\uC694"} required /></div>
+      <div className="field"><label htmlFor="signup-email">{"\uC774\uBA54\uC77C"}</label><input id="signup-email" className="input" type="email" value={email} onChange={(event) => setEmail(event.target.value)} autoComplete="email" placeholder="example@email.com" required /></div>
+      <div className="field"><label htmlFor="signup-password">{"\uBE44\uBC00\uBC88\uD638"}</label><div className="auth-password-field"><input id="signup-password" className="input" type={showPassword ? "text" : "password"} value={password} onChange={(event) => setPassword(event.target.value)} autoComplete="new-password" minLength={8} placeholder={"8\uC790 \uC774\uC0C1 \uC785\uB825"} required /><button className="auth-password-toggle" type="button" onClick={() => setShowPassword((visible) => !visible)}><EyeIcon closed={!showPassword} /></button></div></div>
+      <div className="field"><label htmlFor="signup-password-confirm">{"\uBE44\uBC00\uBC88\uD638 \uD655\uC778"}</label><div className="auth-password-field"><input id="signup-password-confirm" className="input" type={showConfirmPassword ? "text" : "password"} value={confirmPassword} onChange={(event) => setConfirmPassword(event.target.value)} autoComplete="new-password" minLength={8} placeholder={"\uBE44\uBC00\uBC88\uD638\uB97C \uD55C \uBC88 \uB354 \uC785\uB825\uD558\uC138\uC694"} required /><button className="auth-password-toggle" type="button" onClick={() => setShowConfirmPassword((visible) => !visible)}><EyeIcon closed={!showConfirmPassword} /></button></div></div>
+      <label className="auth-agreement"><input type="checkbox" checked={agreed} onChange={(event) => setAgreed(event.target.checked)} /><span>{"\uC774\uC6A9\uC57D\uAD00 \uBC0F \uAC1C\uC778\uC815\uBCF4\uCC98\uB9AC\uBC29\uCE68\uC5D0 \uB3D9\uC758\uD569\uB2C8\uB2E4."}</span></label>
+      <button className="btn btn-primary btn-block" type="submit" disabled={loading || !isSupabaseConfigured}>{loading ? "Creating..." : "\uD68C\uC6D0\uAC00\uC785"}</button>
+    </form>
+    <p className="auth-footer-copy">{"\uC774\uBBF8 \uACC4\uC815\uC774 \uC788\uC73C\uC2E0\uAC00\uC694? "}<Link to={"/auth/login?next=" + encodeURIComponent(redirectPath)} className="auth-inline-link">{"\uB85C\uADF8\uC778"}</Link></p>
+  </AuthLayout>
 }
+

@@ -1,3 +1,6 @@
+import { notify } from "@/lib/notify"
+import { useAuth } from "@/app/useAuth"
+import { useIdentity } from '@/app/useIdentity'
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { cartApi, couponApi, orderApi, regionApi } from '@/api/endpoints'
@@ -11,8 +14,11 @@ const DELIVERY_FEE = 3000
 
 export function CheckoutPage() {
   const navigate = useNavigate()
-  const cart = useAsync<Cart>(() => cartApi.view(), [])
-  const coupons = useAsync<{ issues: CouponIssue[] }>(() => couponApi.mine(), [])
+  const { user, isLoading } = useAuth()
+  const { identity } = useIdentity()
+  const isAuthenticated = Boolean(user ?? identity)
+  const cart = useAsync<Cart>(() => cartApi.view(), [user?.id, identity?.userId], { enabled: isAuthenticated && !isLoading })
+  const coupons = useAsync<{ issues: CouponIssue[] }>(() => couponApi.mine(), [user?.id, identity?.userId], { enabled: isAuthenticated && !isLoading })
   const samples = useAsync<string[]>(() => regionApi.samples(), [])
   const [method, setMethod] = useState<FulfillmentMethod>('DELIVERY')
   const [address, setAddress] = useState('')
@@ -35,12 +41,14 @@ export function CheckoutPage() {
     setSubmitting(true); setError(null)
     try {
       const order = await orderApi.create({ fulfillmentMethod: method, address: region.normalizedAddress, addressDetail: addressDetail.trim() || undefined, guCode: region.guCode, requestMemo: memo.trim() || undefined, couponIssueId: couponIssueId ?? undefined })
+      notify("\uC8FC\uBB38 \uC694\uCCAD\uC744 \uC644\uB8CC\uD588\uC2B5\uB2C8\uB2E4. \uD310\uB9E4\uC790 \uB9E4\uCE6D\uC744 \uC2DC\uC791\uD569\uB2C8\uB2E4.")
       navigate(`/orders/${order.id}/matching`, { replace: true })
-    } catch (caught) { setError(caught instanceof ApiError ? caught.message : '주문 요청에 실패했습니다.') } finally { setSubmitting(false) }
+    } catch (caught) { const message = caught instanceof ApiError ? caught.message : "\\uC8FC\\uBB38 \\uC694\\uCCAD\\uC5D0 \\uC2E4\\uD328\\uD588\\uC2B5\\uB2C8\\uB2E4."; setError(message); notify(message, "error") } finally { setSubmitting(false) }
   }
 
-  if (cart.loading) return <div className="mx-auto max-w-7xl px-4 py-16"><LoadingView label="주문 정보를 불러오는 중입니다" /></div>
+  if (isLoading || cart.loading) return <div className="mx-auto max-w-7xl px-4 py-16"><LoadingView label="주문 정보를 불러오는 중입니다" /></div>
   if (cart.error) return <div className="mx-auto max-w-7xl px-4 py-16"><ErrorView error={cart.error} onRetry={cart.reload} /></div>
+  if (!cart.data) return <div className="mx-auto max-w-7xl px-4 py-16"><LoadingView label="주문 상품을 불러오는 중입니다" /></div>
   if ((cart.data?.items.length ?? 0) === 0) return <div className="mx-auto max-w-7xl px-4 py-16"><EmptyView title="주문할 상품이 없습니다" description="장바구니에 상품을 담은 뒤 다시 시도해 주세요." /></div>
 
   const items = cart.data?.items ?? []

@@ -17,14 +17,15 @@ public final class StoreReviewDtos {
             @NotBlank @Size(max = 1000) String comment) {}
 
     public record ModerationRequest(boolean visible, @Size(max = 300) String reason) {}
+    public record ReplyRequest(@NotBlank @Size(max = 1000) String reply) {}
 
     public record ReviewResponse(Long id, Long storeId, Long orderId, String consumerName, int rating,
             String comment, double trustDelta, String visibility, String moderationReason,
-            Instant createdAt, Instant moderatedAt) {
+            String sellerReply, Instant sellerRepliedAt, Instant createdAt, Instant moderatedAt) {
         static ReviewResponse from(StoreReview review, String consumerName) {
             return new ReviewResponse(review.getId(), review.getStoreId(), review.getOrderId(), consumerName,
                     review.getRating(), review.getComment(), review.getTrustDelta(), review.getVisibility().name(),
-                    review.getModerationReason(), review.getCreatedAt(), review.getModeratedAt());
+                    review.getModerationReason(), review.getSellerReply(), review.getSellerRepliedAt(), review.getCreatedAt(), review.getModeratedAt());
         }
     }
 

@@ -20,7 +20,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 /**
- * 운영자 소유 통합 카탈로그. 실매장 재고는 매칭 후 판매자 확인 단계에서 확정한다.
+ * ?댁쁺???뚯쑀 ?듯빀 移댄깉濡쒓렇. ?ㅻℓ???ш퀬??留ㅼ묶 ???먮ℓ???뺤씤 ?④퀎?먯꽌 ?뺤젙?쒕떎.
  */
 @Entity
 @Getter
@@ -56,6 +56,12 @@ public class Product {
 
     @Column(name = "discount_rate")
     private Integer discountRate;
+    @Column(name = "supply_cost")
+    private Integer supplyCost;
+    @Column(name = "select_promotion", nullable = false)
+    private boolean selectPromotion = false;
+    @Column(name = "event_campaign_id")
+    private Long eventCampaignId;
 
     @Column(length = 20)
     private String unit;
@@ -63,7 +69,7 @@ public class Product {
     @Column(length = 500)
     private String imageUrl;
 
-    /** '|' 구분 URL 목록. ponytail: 별도 이미지 테이블은 운영자 업로드 요구가 생길 때 도입한다. */
+    /** '|' 援щ텇 URL 紐⑸줉. ponytail: 蹂꾨룄 ?대?吏 ?뚯씠釉붿? ?댁쁺???낅줈???붽뎄媛 ?앷만 ???꾩엯?쒕떎. */
     @Column(length = 2000)
     private String imageUrls;
 
@@ -137,4 +143,13 @@ public class Product {
                 .filter(value -> !value.isBlank())
                 .toList();
     }
+    public void updateCatalog(Category category, String name, String specSummary, String description, String specification, int price, int originalPrice, String unit, String imageUrl, String brand, boolean featured, boolean quickFulfillment, Integer supplyCost, boolean selectPromotion, Long eventCampaignId) {
+        this.category = category; this.name = name; this.specSummary = specSummary; this.description = description; this.specification = specification; this.price = price; this.originalPrice = originalPrice; this.unit = unit; this.imageUrl = imageUrl; this.brand = brand; this.featured = featured; this.quickFulfillment = quickFulfillment; this.supplyCost = supplyCost; this.selectPromotion = selectPromotion; this.eventCampaignId = eventCampaignId; this.discountRate = originalPrice > price ? (int) Math.round((originalPrice - price) * 100.0 / originalPrice) : 0;
+        this.imageUrls = imageUrl == null || imageUrl.isBlank() ? this.imageUrls : imageUrl;
+    }
+    public void updateCatalog(Category category, String name, String specSummary, String description, String specification, int price, int originalPrice, String unit, String imageUrl, String brand, boolean featured, boolean quickFulfillment) {
+        updateCatalog(category, name, specSummary, description, specification, price, originalPrice, unit, imageUrl, brand, featured, quickFulfillment, null, false, null);
+    }
+    public void deactivate() { this.active = false; }
+    public void activate() { this.active = true; }
 }

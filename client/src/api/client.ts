@@ -3,8 +3,8 @@ import type { ApiEnvelope, ApiErrorBody, UserRole } from '@/types/api'
 import { getAccessToken } from '@/lib/auth-session'
 
 /**
- * 애플리케이션 전체의 유일한 HTTP 진입점.
- * AGENTS.md 2: fetch 직접 호출 금지, 컴포넌트에서 axios 직접 import 금지.
+ * ?좏뵆由ъ??댁뀡 ?꾩껜???좎씪??HTTP 吏꾩엯??
+ * AGENTS.md 2: fetch 吏곸젒 ?몄텧 湲덉?, 而댄룷?뚰듃?먯꽌 axios 吏곸젒 import 湲덉?.
  */
 export const http = axios.create({
   baseURL: '/api',
@@ -38,13 +38,13 @@ export function saveIdentity(identity: Identity | null): void {
   localStorage.setItem(IDENTITY_STORAGE_KEY, JSON.stringify(identity))
 }
 
-// ponytail: 개발 단계에는 사용자 ID와 역할 힌트를 전달한다. 최신 서버는 DB의 실제 역할을 우선하며, 이전 로컬 실행본과의 호환을 유지한다.
-// upgrade path: 운영 전환 뒤에는 import.meta.env.DEV 분기와 개발 헤더를 제거한다.
+// ponytail: 媛쒕컻 ?④퀎?먮뒗 ?ъ슜??ID? ??븷 ?뚰듃瑜??꾨떖?쒕떎. 理쒖떊 ?쒕쾭??DB???ㅼ젣 ??븷???곗꽑?섎ŉ, ?댁쟾 濡쒖뺄 ?ㅽ뻾蹂멸낵???명솚???좎??쒕떎.
+// upgrade path: ?댁쁺 ?꾪솚 ?ㅼ뿉??import.meta.env.DEV 遺꾧린? 媛쒕컻 ?ㅻ뜑瑜??쒓굅?쒕떎.
 http.interceptors.request.use((config) => {
-  // ponytail: 개발 관리자 화면은 저장된 시드 신원을 먼저 사용한다.
-  // upgrade path: 운영 전환 뒤에는 import.meta.env.DEV 분기와 개발 헤더를 제거한다.
+  // ponytail: 媛쒕컻 愿由ъ옄 ?붾㈃? ??λ맂 ?쒕뱶 ?좎썝??癒쇱? ?ъ슜?쒕떎.
+  // upgrade path: ?댁쁺 ?꾪솚 ?ㅼ뿉??import.meta.env.DEV 遺꾧린? 媛쒕컻 ?ㅻ뜑瑜??쒓굅?쒕떎.
   const accessToken = getAccessToken()
-  // 실제 Supabase 세션이 있으면 개발 시드 신원보다 JWT를 우선한다.
+  // ?ㅼ젣 Supabase ?몄뀡???덉쑝硫?媛쒕컻 ?쒕뱶 ?좎썝蹂대떎 JWT瑜??곗꽑?쒕떎.
   if (accessToken) {
     config.headers.set('Authorization', `Bearer ${accessToken}`)
     return config
@@ -58,7 +58,7 @@ http.interceptors.request.use((config) => {
   return config
 })
 
-/** 서버 오류 규약 { error: { code, message } } 을 그대로 노출한다. */
+/** ?쒕쾭 ?ㅻ쪟 洹쒖빟 { error: { code, message } } ??洹몃?濡??몄텧?쒕떎. */
 export class ApiError extends Error {
   readonly code: string
   readonly status: number
@@ -78,20 +78,23 @@ function toApiError(error: unknown): ApiError {
     return new ApiError(body.error.code, body.error.message, axiosError.response?.status ?? 500)
   }
   if (axiosError.code === 'ECONNABORTED') {
-    return new ApiError('TIMEOUT', '서버 응답이 지연되고 있습니다. 다시 시도해 주세요.', 408)
+    return new ApiError('TIMEOUT', '?쒕쾭 ?묐떟??吏?곕릺怨??덉뒿?덈떎. ?ㅼ떆 ?쒕룄??二쇱꽭??', 408)
   }
   if (!axiosError.response) {
-    return new ApiError('NETWORK_ERROR', '네트워크에 연결할 수 없습니다.', 0)
+    return new ApiError('NETWORK_ERROR', '?ㅽ듃?뚰겕???곌껐?????놁뒿?덈떎.', 0)
   }
-  return new ApiError('UNKNOWN', '알 수 없는 오류가 발생했습니다.', axiosError.response.status)
+  return new ApiError('UNKNOWN', '?????녿뒗 ?ㅻ쪟媛 諛쒖깮?덉뒿?덈떎.', axiosError.response.status)
 }
 
 http.interceptors.response.use(
   (response) => response,
-  (error) => Promise.reject(toApiError(error)),
+  (error) => {
+    const apiError = toApiError(error)
+    return Promise.reject(apiError)
+  },
 )
 
-/** 성공 응답 래퍼를 벗겨 data 만 반환한다. */
+/** ?깃났 ?묐떟 ?섑띁瑜?踰쀪꺼 data 留?諛섑솚?쒕떎. */
 export async function unwrap<T>(promise: Promise<{ data: ApiEnvelope<T> }>): Promise<T> {
   const response = await promise
   return response.data.data

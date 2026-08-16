@@ -96,7 +96,7 @@ public class OrderService {
 						"판매 중지된 상품이 장바구니에 있습니다. 장바구니를 확인해 주세요.");
 			}
 			order.addItem(new OrderItem(product.getId(), product.getName(), product.getSpecSummary(),
-					product.getUnit(), item.getQuantity(), product.getPrice()));
+					product.getUnit(), item.getQuantity(), item.getPriceTierPrice(), item.getPriceTierId(), item.getPriceTierLabel(), item.getPriceTierBrands(), true));
 		}
 			// 클라이언트 discountAmount는 신뢰하지 않는다. 할인은 서버가 소유권·만료를 검증한 쿠폰으로만 확정한다.
 			order.submitForMatching(now, properties.matching().matchWindowSeconds());
@@ -104,10 +104,6 @@ public class OrderService {
 			if (request.couponIssueId() != null) {
 				couponService.applyToOrder(consumerId, request.couponIssueId(), saved);
 			}
-
-		cart.clear();
-		cart.deactivate();
-		cartRepository.save(cart);
 
 		offerDispatchService.dispatch(saved);
 		return toResponse(saved);

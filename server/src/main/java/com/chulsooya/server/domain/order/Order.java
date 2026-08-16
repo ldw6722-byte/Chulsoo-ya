@@ -94,8 +94,7 @@ public class Order {
 	@Column(nullable = false)
 	private Instant updatedAt = Instant.now();
 
-	@OneToMany(cascade = CascadeType.ALL, orphanRemoval = true)
-	@JoinColumn(name = "order_id")
+	@OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true)
 	private List<OrderItem> items = new ArrayList<>();
 
 	@Version
@@ -113,6 +112,7 @@ public class Order {
 	}
 
 	public void addItem(OrderItem item) {
+                item.attachTo(this);
 		this.items.add(item);
 		this.itemsAmount += item.getLineAmount();
 	}

@@ -14,6 +14,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -26,6 +27,7 @@ import com.chulsooya.server.common.ErrorCode;
 
 @RestController
 @RequestMapping("/api")
+@Transactional(readOnly = true)
 public class CatalogController {
 
     private final CategoryRepository categoryRepository;
@@ -69,6 +71,7 @@ public class CatalogController {
     public ApiResponse<PageResponse<ProductResponse>> products(
             @RequestParam(required = false) String categoryCode,
             @RequestParam(required = false) String keyword,
+            @RequestParam(required = false) Long eventCampaignId,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size,
             @RequestParam(defaultValue = "popular") String sort) {
@@ -76,7 +79,7 @@ public class CatalogController {
         String normalizedCategory = isBlank(categoryCode) ? null : categoryCode.trim();
         String normalizedKeyword = isBlank(keyword) ? null : keyword.trim();
         Pageable pageable = PageRequest.of(Math.max(page, 0), Math.min(Math.max(size, 1), 100), sortSpec(sort));
-        Page<Product> result = search(normalizedCategory, normalizedKeyword, pageable);
+        Page<Product> result = search(normalizedCategory, normalizedKeyword, eventCampaignId, pageable);
         return ApiResponse.of(toPage(result));
     }
 
@@ -114,7 +117,8 @@ public class CatalogController {
         return ApiResponse.of(ProductResponse.from(product));
     }
 
-    private Page<Product> search(String categoryCode, String keyword, Pageable pageable) {
+    private Page<Product> search(String categoryCode, String keyword, Long eventCampaignId, Pageable pageable) {
+        if (eventCampaignId != null) return keyword == null ? productRepository.findByActiveTrueAndEventCampaignId(eventCampaignId, pageable) : productRepository.findByActiveTrueAndEventCampaignIdAndNameContainingIgnoreCase(eventCampaignId, keyword, pageable);
         if (categoryCode == null) {
             return keyword == null
                     ? productRepository.findByActiveTrue(pageable)

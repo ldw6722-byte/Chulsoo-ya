@@ -24,7 +24,7 @@ export function SupportManagementPanel() {
   const [notice, setNotice] = useState('')
   const [saving, setSaving] = useState(false)
 
-  const all = inquiries.data ?? []
+  const all = useMemo(() => inquiries.data ?? [], [inquiries.data])
   const counts = useMemo(() => ({ ALL: all.length, OPEN: all.filter((item) => item.status === 'OPEN').length, IN_PROGRESS: all.filter((item) => item.status === 'IN_PROGRESS').length, ANSWERED: all.filter((item) => item.status === 'ANSWERED').length, CLOSED: all.filter((item) => item.status === 'CLOSED').length }), [all])
   const visible = useMemo(() => filter === 'ALL' ? all : all.filter((item) => item.status === filter), [all, filter])
   const selected = useMemo(() => all.find((item) => item.id === selectedId) ?? null, [all, selectedId])

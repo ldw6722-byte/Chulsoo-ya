@@ -1,3 +1,4 @@
+import { notify } from "@/lib/notify"
 import { useRef, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { orderApi } from '@/api/endpoints'
@@ -25,7 +26,7 @@ export function PaymentPage() {
 
   async function pay() {
     setSubmitting(true); setError(null)
-    try { await orderApi.confirmPayment(id, idempotencyKeyRef.current, method); navigate(`/orders/${id}`, { replace: true }) } catch (caught) { setError(caught instanceof ApiError ? caught.message : '결제를 완료할 수 없습니다.') } finally { setSubmitting(false) }
+    try { await orderApi.confirmPayment(id, idempotencyKeyRef.current, method); notify("\uACB0\uC81C\uAC00 \uC644\uB8CC\uB418\uC5C8\uC2B5\uB2C8\uB2E4."); navigate(`/orders/${id}`, { replace: true }) } catch (caught) { const message = caught instanceof ApiError ? caught.message : "\\uACB0\\uC81C\uB97C \\uC644\\uB8CC\\uD560 \\uC218 \\uC5C6\\uC2B5\\uB2C8\\uB2E4."; setError(message); notify(message, "error") } finally { setSubmitting(false) }
   }
 
   if (order.loading && !order.data) return <div className="mx-auto max-w-5xl px-4 py-16"><LoadingView label="결제 정보를 불러오는 중입니다" /></div>

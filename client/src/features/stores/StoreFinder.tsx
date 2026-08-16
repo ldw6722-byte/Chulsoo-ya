@@ -23,10 +23,10 @@ function StoreCard({ store }: { store: StoreDirectoryItem }) {
           </div>
           <Stars rating={store.rating} />
         </div>
-        <p className="mt-3 line-clamp-1 text-sm text-slate-600">{store.handledItems.join(' · ')}</p>
+        <p className="mt-3 line-clamp-1 text-sm text-slate-600">{store.handledItems.join(', ')}</p>
         <div className="mt-4 flex flex-wrap gap-1.5">
-          {store.receivingOrders ? <span className="rounded-full bg-emerald-50 px-2 py-1 text-[11px] font-bold text-emerald-700">주문 수신</span> : <span className="rounded-full bg-slate-100 px-2 py-1 text-[11px] font-bold text-slate-600">주문 미수신</span>}
-          <span className="rounded-full bg-slate-100 px-2 py-1 text-[11px] font-bold text-slate-600">가용 슬롯 {store.availableSlots}</span>
+          {store.receivingOrders ? <span className="rounded-full bg-emerald-50 px-2 py-1 text-[11px] font-bold text-emerald-700">{"\uC8FC\uBB38 \uC811\uC218 \uC911"}</span> : <span className="rounded-full bg-slate-100 px-2 py-1 text-[11px] font-bold text-slate-600">{"\uC8FC\uBB38 \uC900\uBE44 \uC911"}</span>}
+          <span className="rounded-full bg-slate-100 px-2 py-1 text-[11px] font-bold text-slate-600">{"\uAC00\uC6A9 \uC2AC\uB86F"} {store.availableSlots}</span>
         </div>
       </div>
     </Link>
@@ -36,7 +36,7 @@ function StoreCard({ store }: { store: StoreDirectoryItem }) {
 export function StoreFinder({ compact = false }: { compact?: boolean }) {
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
-  const [city, setCity] = useState(() => searchParams.get('city') ?? '서울특별시')
+  const [city, setCity] = useState(() => searchParams.get("city") ?? "\uC11C\uC6B8\uD2B9\uBCC4\uC2DC")
   const [district, setDistrict] = useState(() => searchParams.get('district') ?? '')
   const regions = useAsync(() => storeDirectoryApi.regions(), [])
   const stores = useAsync(() => storeDirectoryApi.list({ city, district: district || undefined }), [city, district])
@@ -50,25 +50,25 @@ export function StoreFinder({ compact = false }: { compact?: boolean }) {
       <div className={compact ? 'flex flex-wrap items-end justify-between gap-5' : 'mb-7 flex flex-wrap items-end justify-between gap-5'}>
         <div>
           <p className={compact ? 'text-xs font-black tracking-wider text-brand-600' : 'text-xs font-black tracking-wider text-brand-600'}>STORE FINDER</p>
-          <h2 className={compact ? 'mt-1 text-2xl font-black tracking-tight text-slate-950' : 'mt-1 text-3xl font-black tracking-tight text-slate-950'}>{compact ? '가까운 판매점 찾기' : '지역 판매점 찾기'}</h2>
-          <p className={compact ? 'mt-2 text-sm text-slate-500' : 'mt-2 text-sm text-slate-500'}>시를 선택하면 전체 지점, 구를 선택하면 해당 구의 판매점을 확인합니다.</p>
+          <h2 className={compact ? "mt-1 text-2xl font-black tracking-tight text-slate-950" : "mt-1 text-3xl font-black tracking-tight text-slate-950"}>{compact ? "\uAC00\uAE4C\uC6B4 \uD310\uB9E4\uC810 \uCC3E\uAE30" : "\uC9C0\uC5ED \uD310\uB9E4\uC810 \uCC3E\uAE30"}</h2>
+          <p className={compact ? "mt-2 text-sm text-slate-500" : "mt-2 text-sm text-slate-500"}>{"\uC2DC\uB97C \uC120\uD0DD\uD558\uBA74 \uC804\uCCB4 \uC9C0\uC810, \uAD6C\uB97C \uC120\uD0DD\uD558\uBA74 \uD574\uB2F9 \uAD6C\uC758 \uD310\uB9E4\uC810\uC744 \uD655\uC778\uD569\uB2C8\uB2E4."}</p>
         </div>
         <div className="-translate-y-1 flex flex-wrap gap-2">
           <select value={city} onChange={event => { setCity(event.target.value); setDistrict('') }} className="h-11 rounded-xl border border-slate-300 bg-white px-3 text-sm font-bold text-slate-900">
-            <option value="">시 선택</option>{cities.map(value => <option key={value} value={value}>{value}</option>)}
+            <option value="">{"\uC2DC \uC120\uD0DD"}</option>{cities.map(value => <option key={value} value={value}>{value}</option>)}
           </select>
           <select value={district} onChange={event => setDistrict(event.target.value)} className="h-11 rounded-xl border border-slate-300 bg-white px-3 text-sm font-bold text-slate-900">
-            <option value="">전체 구</option>{districts.map(value => <option key={value} value={value}>{value}</option>)}
+            <option value="">{"\uC804\uCCB4 \uAD6C"}</option>{districts.map(value => <option key={value} value={value}>{value}</option>)}
           </select>
-          <button type="button" onClick={moveToDirectory} className="h-11 rounded-xl border border-slate-300 bg-white px-4 text-sm font-black text-slate-900 transition hover:bg-slate-100">전체 보기</button>
+          <button type="button" onClick={moveToDirectory} className="h-11 rounded-xl border border-slate-300 bg-white px-4 text-sm font-black text-slate-900 transition hover:bg-slate-100">{"\uC804\uCCB4 \uBCF4\uAE30"}</button>
         </div>
       </div>
-      {stores.loading ? <LoadingView label="판매점을 불러오는 중입니다" /> : stores.error ? <ErrorView error={stores.error} onRetry={stores.reload} /> : list.length ? (
+      {stores.loading ? <LoadingView label="\uD310\uB9E4\uC810\uC744 \uBD88\uB7EC\uC624\uB294 \uC911\uC785\uB2C8\uB2E4." /> : stores.error ? <ErrorView error={stores.error} onRetry={stores.reload} /> : list.length ? (
         <>
           <div className={compact ? 'grid gap-4 md:grid-cols-3' : 'grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4'}>{list.map(store => <StoreCard key={store.id} store={store} />)}</div>
           {compact && (stores.data ?? []).length > list.length ? <button type="button" onClick={moveToDirectory} className="mt-5 text-sm font-bold text-slate-900 underline underline-offset-4">{city} {district || '전체'} 판매점 더 보기 →</button> : null}
         </>
-      ) : <div className={compact ? 'rounded-2xl border border-slate-200 bg-slate-50 px-5 py-10 text-center text-sm text-slate-500' : 'rounded-2xl border border-dashed border-slate-300 bg-white px-5 py-12 text-center text-sm text-slate-500'}>선택한 지역에 표시할 판매점이 없습니다.</div>}
+      ) : <div className={compact ? "rounded-2xl border border-slate-200 bg-slate-50 px-5 py-10 text-center text-sm text-slate-500" : "rounded-2xl border border-dashed border-slate-300 bg-white px-5 py-12 text-center text-sm text-slate-500"}>{"\uC120\uD0DD\uD55C \uC9C0\uC5ED\uC5D0 \uD45C\uC2DC\uD560 \uD310\uB9E4\uC810\uC774 \uC5C6\uC2B5\uB2C8\uB2E4."}</div>}
     </section>
   )
 }

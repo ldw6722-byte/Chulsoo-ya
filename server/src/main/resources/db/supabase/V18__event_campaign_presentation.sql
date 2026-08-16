@@ -1,0 +1,3 @@
+ALTER TABLE event_campaigns ADD COLUMN IF NOT EXISTS badge_text VARCHAR(60) NOT NULL DEFAULT '철수야 셀렉트';
+ALTER TABLE event_campaigns ADD COLUMN IF NOT EXISTS cta_text VARCHAR(60) NOT NULL DEFAULT '행사 상품 보기';
+ALTER TABLE event_campaigns ADD COLUMN IF NOT EXISTS theme_key VARCHAR(30) NOT NULL DEFAULT 'blue';

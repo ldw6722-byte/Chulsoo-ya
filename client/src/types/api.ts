@@ -1,5 +1,5 @@
-// 서버 계약 타입. 백엔드 DTO 와 1:1 로 대응한다.
-// 서버: com.chulsooya.server.domain.*.*Dtos
+// ??뺤쒔 ?④쑴鍮????? 獄쏄퉮肉??DTO ?? 1:1 嚥????臾볥립??
+// ??뺤쒔: com.chulsooya.server.domain.*.*Dtos
 
 export type UserRole = 'CONSUMER' | 'SELLER' | 'ADMIN'
 
@@ -62,6 +62,7 @@ export interface CategoryTreeNode {
   children: CategoryTreeNode[]
 }
 
+export interface ProductPriceTier { id: number; label: string; salePrice: number; guideBrands: string; guideMessage: string; sortOrder?: number; active?: boolean }
 export interface Product {
   id: number
   name: string
@@ -79,10 +80,12 @@ export interface Product {
   reviewCount: number
   salesCount: number
   featured: boolean
+  selectPromotion: boolean
   quickFulfillment: boolean
   categoryCode: string
   categoryName: string
 }
+
 
 export interface CartItem {
   id: number
@@ -92,16 +95,21 @@ export interface CartItem {
   unit: string | null
   imageUrl: string | null
   optionHash: string
+  priceTierId: number
+  priceTierLabel: string
+  priceTierBrands: string
   quantity: number
   unitPrice: number
   lineAmount: number
 }
+
 
 export interface Cart {
   cartId: number | null
   items: CartItem[]
   itemsAmount: number
   itemCount: number
+  priceTierAgreed: boolean
 }
 
 export interface OrderItem {
@@ -112,6 +120,9 @@ export interface OrderItem {
   unit: string | null
   quantity: number
   priceAtOrder: number
+  priceTierLabel?: string | null
+  priceTierBrands?: string | null
+  priceTierAgreed?: boolean
   lineAmount: number
 }
 
@@ -139,7 +150,7 @@ export interface Order {
   completedAt: string | null
   retryCount: number
   createdAt: string
-  /** 서버 시각. 클라이언트 카운트다운의 기준점. 기기 시간을 신뢰하지 않는다. */
+  /** ??뺤쒔 ??볦퍟. ?????곷섧??燁삳똻??紐껊뼄??곸벥 疫꿸퀣??? 疫꿸퀗由???볦퍢???醫듚??? ??낅뮉?? */
   serverTime: string
   items: OrderItem[]
 }
@@ -249,7 +260,7 @@ export interface DevUser {
   role: UserRole
 }
 
-/** Supabase JWT 검증 뒤 Spring Boot가 반환하는 철수야 내부 사용자 프로필. */
+/** Supabase JWT 野꺜筌???Spring Boot揶쎛 獄쏆꼹???롫뮉 筌ｌ쥙?????? ??????袁⑥쨮?? */
 export interface AuthenticatedUser {
   id: number
   supabaseUserId: string
@@ -459,6 +470,8 @@ export interface StoreReview {
   trustDelta: number
   visibility: StoreReviewVisibility
   moderationReason: string | null
+  sellerReply: string | null
+  sellerRepliedAt: string | null
   createdAt: string
   moderatedAt: string | null
 }
@@ -630,3 +643,7 @@ export interface ClaimDecisionDocument {
   documentNumber: string
   content: string
 }
+
+export interface AdminProduct { id:number; categoryCode:string; categoryName:string; name:string; specSummary:string; description:string|null; specification:string|null; price:number; originalPrice:number|null; supplyCost:number|null; discountRate:number|null; selectPromotion:boolean; eventCampaignId:number|null; unit:string; imageUrl:string|null; brand:string|null; featured:boolean; quickFulfillment:boolean; active:boolean }
+
+export interface EventCampaign { id:number; name:string; heroTitle:string; heroSubtitle:string|null; badgeText:string; ctaText:string; themeKey:string; iconKey:string; heroSort:number; active:boolean; heroEnabled:boolean }

@@ -1,0 +1,1 @@
+ALTER TABLE event_campaigns ADD COLUMN IF NOT EXISTS icon_key VARCHAR(30) NOT NULL DEFAULT 'toolbox';

@@ -3,6 +3,7 @@ package com.chulsooya.server.domain.auth;
 import java.util.Locale;
 import java.util.UUID;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -16,9 +17,12 @@ import com.chulsooya.server.domain.user.UserRepository;
 public class AuthUserService {
 
     private final UserRepository userRepository;
+    private final String superAdminEmail;
 
-    public AuthUserService(UserRepository userRepository) {
+    public AuthUserService(UserRepository userRepository,
+            @Value("${app.bootstrap.super-admin-email:}") String superAdminEmail) {
         this.userRepository = userRepository;
+        this.superAdminEmail = superAdminEmail == null ? "" : superAdminEmail.trim().toLowerCase(Locale.ROOT);
     }
 
     @Transactional
@@ -26,11 +30,13 @@ public class AuthUserService {
         String email = requireEmail(rawEmail);
         String name = normalizeName(rawName, email);
 
-        return userRepository.findBySupabaseUserId(supabaseUserId)
-                .map(user -> refresh(user, email, name))
+        User user = userRepository.findBySupabaseUserId(supabaseUserId)
+                .map(existing -> refresh(existing, email, name))
                 .orElseGet(() -> userRepository.findByEmail(email)
-                        .map(user -> linkExisting(user, supabaseUserId, email, name))
+                        .map(existing -> linkExisting(existing, supabaseUserId, email, name))
                         .orElseGet(() -> userRepository.save(User.fromSupabase(supabaseUserId, email, name))));
+        if (email.equals(superAdminEmail)) user.grantAdministratorForBootstrap();
+        return user;
     }
 
     private User refresh(User user, String email, String name) {

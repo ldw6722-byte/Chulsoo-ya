@@ -1,3 +1,4 @@
+import { notify } from "@/lib/notify"
 import { useEffect, useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { cartApi, catalogApi } from '@/api/endpoints'
@@ -8,6 +9,8 @@ import { ToolProductCard } from '@/components/shop/ToolProductCard'
 import { EventHeroCarousel } from '@/components/shop/EventHeroCarousel'
 import { StoreFinder } from '@/features/stores/StoreFinder'
 import { useAuth } from '@/app/useAuth'
+import { isSupabaseConfigured, supabaseAuth } from '@/lib/supabase'
+import { setAccessToken } from '@/lib/auth-session'
 import type { Category, Product } from '@/types/api'
 
 const PRODUCT_LIMIT = 36
@@ -22,7 +25,7 @@ const TONE_STYLE: Record<SectionTone, { marker: string; button: string }> = {
 export function HomePage() {
   const navigate = useNavigate()
   const location = useLocation()
-  const { user } = useAuth()
+  const { user, refresh } = useAuth()
   const quickSection = (location.state as { quickSection?: string } | null)?.quickSection
   const [addingId, setAddingId] = useState<number | null>(null)
   const [notice, setNotice] = useState<string | null>(null)
@@ -53,16 +56,24 @@ export function HomePage() {
 
   async function addToCart(product: Product) {
     if (!user) {
-      navigate(`/auth/login?next=${encodeURIComponent(`/product/${product.id}`)}`)
-      return
+      const session = isSupabaseConfigured ? await supabaseAuth.getSession() : null
+      if (!session) {
+        navigate(`/auth/login?next=${encodeURIComponent(`/product/${product.id}`)}`)
+        return
+      }
+      setAccessToken(session.access_token)
+      await refresh()
     }
     setAddingId(product.id)
     setNotice(null)
     try {
       await cartApi.addItem(product.id, 1)
+      notify(`${product.name}\uC744 \uC7A5\uBC14\uAD6C\uB2C8\uC5D0 \uB2F4\uC558\uC2B5\uB2C8\uB2E4.`)
       setNotice(`${product.name}을 장바구니에 담았습니다.`)
     } catch (error) {
-      setNotice(error instanceof ApiError ? error.message : '장바구니에 담지 못했습니다.')
+      const message = error instanceof ApiError ? error.message : "\\uC7A5\\uBC14\\uAD6C\\uB2C8\\uC5D0 \\uB2F4\\uC9C0 \\uBABB\\uD588\\uC2B5\\uB2C8\\uB2E4."
+      setNotice(message)
+      notify(message, "error")
     } finally {
       setAddingId(null)
     }

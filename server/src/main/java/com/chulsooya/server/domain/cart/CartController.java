@@ -35,9 +35,13 @@ public class CartController {
 	@PostMapping("/items")
 	public ApiResponse<CartResponse> add(CurrentUser user, @Valid @RequestBody AddItemRequest request) {
 		return ApiResponse.of(cartService.addItem(
-				user.userId(), request.productId(), request.optionHash(), request.quantity()));
+				user.userId(), request.productId(), request.optionHash(), request.priceTierId(), request.quantity()));
 	}
 
+        @PostMapping("/price-tier-agreement")
+        public ApiResponse<CartResponse> agreePriceTierSupply(CurrentUser user) {
+                return ApiResponse.of(cartService.agreePriceTierSupply(user.userId()));
+        }
 	@PatchMapping("/items/{cartItemId}")
 	public ApiResponse<CartResponse> updateQuantity(CurrentUser user,
 			@PathVariable Long cartItemId,

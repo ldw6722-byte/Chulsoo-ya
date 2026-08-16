@@ -1,6 +1,8 @@
 import { http, unwrap } from './client'
 import type {
-    AdminOverview,
+    AdminProduct,
+  EventCampaign,
+  AdminOverview,
   AdminStoreActivity,
   AdminSupportInquiry,
   AdminWorkflowOrder,
@@ -34,6 +36,7 @@ import type {
 
   PageResponse,
   Product,
+  ProductPriceTier,
   RegionResolveResult,
     SellerMetrics,
   SellerPenalty,
@@ -54,18 +57,21 @@ import type {
   SubmitSellerApplicationRequest,
 } from '@/types/api'
 
-/* 카탈로그 */
+/* ?곸궠?얏틦?れ뿉?蹂μ쟽 */
 
 export const catalogApi = {
   categories: () => unwrap<Category[]>(http.get('/categories')),
 
   categoryTree: () => unwrap<CategoryTreeNode[]>(http.get('/categories/tree')),
+  eventCampaignHeroes: () => unwrap<EventCampaign[]>(http.get('/event-campaigns/hero')),
+  eventCampaign: (id: number) => unwrap<EventCampaign>(http.get('/event-campaigns/' + id)),
 
   category: (code: string) => unwrap<CategoryTreeNode>(http.get(`/categories/${code}`)),
 
   products: (params: {
     categoryCode?: string
     keyword?: string
+    eventCampaignId?: number
     page?: number
     size?: number
     sort?: 'popular' | 'newest' | 'priceAsc' | 'priceDesc' | 'rating' | 'name'
@@ -78,23 +84,22 @@ export const catalogApi = {
   suggestions: (keyword: string) => unwrap<string[]>(http.get('/products/suggestions', { params: { keyword } })),
 
   product: (id: number) => unwrap<Product>(http.get(`/products/${id}`)),
+  priceTiers: (productId: number) => unwrap<ProductPriceTier[]>(http.get('/products/' + productId + '/price-tiers')),
 }
-
-/* 장바구니 */
-
 export const cartApi = {
   view: () => unwrap<Cart>(http.get('/cart')),
 
-  addItem: (productId: number, quantity: number, optionHash?: string) =>
-    unwrap<Cart>(http.post('/cart/items', { productId, quantity, optionHash })),
+  addItem: (productId: number, quantity: number, optionHash?: string, priceTierId?: number) =>
+    unwrap<Cart>(http.post('/cart/items', { productId, quantity, optionHash, priceTierId })).then((cart) => { window.dispatchEvent(new Event('chulsooya:cart-updated')); return cart }),
 
+  agreePriceTierSupply: () => unwrap<Cart>(http.post('/cart/price-tier-agreement')),
   changeQuantity: (cartItemId: number, quantity: number) =>
     unwrap<Cart>(http.patch(`/cart/items/${cartItemId}`, { quantity })),
 
   removeItem: (cartItemId: number) => unwrap<Cart>(http.delete(`/cart/items/${cartItemId}`)),
 }
 
-/* 주문 · 결제 */
+/* ?낅슣?뽪룇 鸚??롪퍒???*/
 
 export const orderApi = {
   create: (payload: CreateOrderRequest) => unwrap<Order>(http.post('/orders', payload)),
@@ -111,7 +116,7 @@ export const orderApi = {
     unwrap<Order>(http.post('/payments/confirm', { orderId, idempotencyKey, method })),
 }
 
-/* 지역 */
+/* 嶺뚯솘???*/
 
 export const regionApi = {
   resolve: (address: string) =>
@@ -120,7 +125,7 @@ export const regionApi = {
   samples: () => unwrap<string[]>(http.get('/regions/samples')),
 }
 
-/* 판매자 */
+/* ???瑗??*/
 
 export const sellerApi = {
   store: () => unwrap<SellerStore>(http.get('/seller/store')),
@@ -152,25 +157,39 @@ export const sellerApi = {
 
 }
 
-/* 인증 */
+/* ?筌뤾쑴理?*/
 
 export const authApi = {
   me: () => unwrap<AuthMeResponse>(http.get('/auth/me')),
 }
 
-/* 개발용 계정 */
+/* ?띠룇裕녻????ｌ뫒??*/
 
 export const userApi = {
   list: () => unwrap<DevUser[]>(http.get('/users')),
 }
 
 
-/* 관리자 운영 */
+/* ??㉱?洹먮봿????怨멸껀 */
 export const adminApi = {
   overview: () => unwrap<AdminOverview>(http.get('/admin/overview')),
+  listProducts: (params: { categoryCode?: string; keyword?: string; active?: boolean; page?: number; size?: number }) => unwrap<PageResponse<AdminProduct>>(http.get('/admin/products', { params })),
+  createProduct: (payload: Omit<AdminProduct, 'id' | 'categoryName' | 'active'>) => unwrap<AdminProduct>(http.post('/admin/products', payload)),
+  updateProduct: (id: number, payload: Omit<AdminProduct, 'id' | 'categoryName' | 'active'>) => unwrap<AdminProduct>(http.put('/admin/products/' + id, payload)),
+  setProductActive: (id: number, active: boolean) => unwrap<AdminProduct>(http.patch('/admin/products/' + id + '/active', { active })),
+  listEventCampaigns: () => unwrap<EventCampaign[]>(http.get('/admin/event-campaigns')),
+  createEventCampaign: (payload: Omit<EventCampaign, 'id' | 'active'>) => unwrap<EventCampaign>(http.post('/admin/event-campaigns', payload)),
+  updateEventCampaign: (id: number, payload: Omit<EventCampaign, 'id' | 'active'>) => unwrap<EventCampaign>(http.put('/admin/event-campaigns/' + id, payload)),
+  setEventCampaignActive: (id: number, active: boolean) => unwrap<EventCampaign>(http.patch('/admin/event-campaigns/' + id + '/active', { active })),
+  deleteEventCampaign: (id: number) => unwrap<void>(http.delete('/admin/event-campaigns/' + id)),
+
+  priceTiers: (productId: number) => unwrap<ProductPriceTier[]>(http.get('/admin/products/' + productId + '/price-tiers')),
+  createPriceTier: (productId: number, payload: Omit<ProductPriceTier, 'id'>) => unwrap<ProductPriceTier>(http.post('/admin/products/' + productId + '/price-tiers', payload)),
+  updatePriceTier: (id: number, payload: Omit<ProductPriceTier, 'id'>) => unwrap<ProductPriceTier>(http.put('/admin/products/price-tiers/' + id, payload)),
+  removePriceTier: (id: number) => unwrap<void>(http.delete('/admin/products/price-tiers/' + id)),
 }
 
-/* 클레임 · 정산 HOLD */
+/* ??????鸚??筌먦끆??HOLD */
 export const couponApi = {
   mine: () => unwrap<{ issues: CouponIssue[] }>(http.get('/coupons/mine')),
 }
@@ -210,7 +229,7 @@ export const adminUserApi = {
   changeRole: (userId: number, role: 'CONSUMER' | 'SELLER') => unwrap<AdminUser>(http.patch(`/admin/users/${userId}/role`, { role })),
 }
 
-/* 판매자 신청 · 사업자 증빙 · 관리자 심사 */
+/* ???瑗????ル―??鸚???驪??嶺뚯빘鍮??鸚???㉱?洹먮봿????亦?*/
 export const sellerApplicationApi = {
   submit: (payload: SubmitSellerApplicationRequest) => unwrap<SellerApplication>(http.post('/seller-applications', payload)),
   mine: () => unwrap<SellerApplication>(http.get('/seller-applications/me')),
@@ -227,7 +246,7 @@ export const adminSellerApplicationApi = {
   reject: (applicationId: number, reason: string) => unwrap<AdminSellerApplication>(http.post(`/admin/seller-applications/${applicationId}/reject`, { reason })),
 }
 
-/* 판매점 탐색 · 관리자 관리 */
+/* ???瑗???????鸚???㉱?洹먮봿????㉱??*/
 export const storeDirectoryApi = {
   list: (params: { city?: string; district?: string } = {}) =>
     unwrap<StoreDirectoryItem[]>(http.get('/stores', { params })),
@@ -240,19 +259,25 @@ export const adminStoreApi = {
   remove: (storeId: number) => unwrap<void>(http.delete('/admin/stores/' + storeId)),
 }
 
-/* 관리자 주문 생애주기 · 판매자 운영 제어 */
+/* ??㉱?洹먮봿???낅슣?뽪룇 ??諛몃쭑?낅슣?딁뵳?鸚????瑗????怨멸껀 ??戮?꽑 */
 export const adminWorkflowApi = {
   orders: () => unwrap<AdminWorkflowOrder[]>(http.get('/admin/workflow/orders')),
   storeActivity: (storeId: number) => unwrap<AdminStoreActivity>(http.get('/admin/stores/' + storeId + '/activity')),
   forceSlots: (storeId: number, payload: { configuredSlots: number; reason: string }) => unwrap<AdminStoreActivity>(http.post('/admin/stores/' + storeId + '/force-slots', payload)),
 }
 
-/* 고객센터 · 문의 · 알림 */
+/* ??μ쪙????좎댉 鸚???쒖굣??鸚????逾?*/
 export const storeReviewApi = {
   detail: (storeId: number) => unwrap<StoreDetail>(http.get(`/stores/${storeId}`)),
   create: (storeId: number, payload: { orderId: number; rating: number; comment: string }) =>
     unwrap<StoreReview>(http.post(`/stores/${storeId}/reviews`, payload)),
   adminList: () => unwrap<StoreReview[]>(http.get('/admin/store-reviews')),
+  adminForStore: (storeId: number) => unwrap<StoreReview[]>(http.get(`/admin/stores/${storeId}/reviews`)),
+  adminReply: (reviewId: number, reply: string) => unwrap<StoreReview>(http.post(`/admin/store-reviews/${reviewId}/reply`, { reply })),
+  clearReply: (reviewId: number) => unwrap<void>(http.delete(`/admin/store-reviews/${reviewId}/reply`)),
+  remove: (reviewId: number) => unwrap<void>(http.delete(`/admin/store-reviews/${reviewId}`)),
+  sellerList: () => unwrap<StoreReview[]>(http.get('/seller/reviews')),
+  sellerReply: (reviewId: number, reply: string) => unwrap<StoreReview>(http.post(`/seller/store-reviews/${reviewId}/reply`, { reply })),
   moderate: (reviewId: number, payload: { visible: boolean; reason?: string }) =>
     unwrap<StoreReview>(http.post(`/admin/store-reviews/${reviewId}/moderation`, payload)),
 }

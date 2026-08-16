@@ -82,7 +82,7 @@ public class SellerApplicationService {
                 application.getAddress(), application.getPhone(), SubscriptionTier.FREE);
         store.changeDirectoryProfile(application.getStoreName(), application.getCityName(), application.getDistrictName(),
                 application.getGuCode(), application.getAddress(), application.getPhone(), null, application.getHandledItems());
-        store.changeOperatingStatus(false, false);
+        store.changeOperatingStatus(true, true);
         stores.save(store);
         return ApplicantResponse.from(application);
     }

@@ -28,10 +28,10 @@ export function RequireIdentity({
   const useDevelopmentAdmin = import.meta.env.DEV && roles.length === 1 && roles[0] === 'ADMIN'
 
   useEffect(() => {
-    if (useDevelopmentAdmin && !identity) setIdentity(DEVELOPMENT_ADMIN)
+    if (useDevelopmentAdmin && identity?.role !== "ADMIN") setIdentity(DEVELOPMENT_ADMIN)
   }, [identity, setIdentity, useDevelopmentAdmin])
 
-  if (!identity && useDevelopmentAdmin) {
+  if (useDevelopmentAdmin && identity?.role !== "ADMIN") {
     return (
       <div className="min-h-screen bg-slate-50 px-4 py-16">
         <LoadingView label="개발 관리자 화면을 준비하는 중입니다" />

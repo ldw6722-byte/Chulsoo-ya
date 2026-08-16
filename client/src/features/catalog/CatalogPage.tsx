@@ -26,6 +26,7 @@ export function CatalogPage() {
   const [searchParams, setSearchParams] = useSearchParams()
   const categoryCode = searchParams.get('categoryCode') ?? searchParams.get('category') ?? ''
   const keyword = searchParams.get('keyword') ?? ''
+  const eventCampaignId = Number(searchParams.get('eventCampaignId') ?? '0') || undefined
   const rawSort = searchParams.get('sort') ?? 'popular'
   const sort = (['popular', 'newest', 'priceAsc', 'priceDesc', 'rating', 'name'].includes(rawSort) ? rawSort : 'popular') as 'popular' | 'newest' | 'priceAsc' | 'priceDesc' | 'rating' | 'name'
   const page = Math.max(0, Number(searchParams.get('page') ?? '0'))
@@ -34,7 +35,7 @@ export function CatalogPage() {
   const [notice, setNotice] = useState<string | null>(null)
   const tree = useAsync<CategoryTreeNode[]>(() => catalogApi.categoryTree(), [])
   const selected = useAsync<CategoryTreeNode | null>(() => categoryCode ? catalogApi.category(categoryCode) : Promise.resolve(null), [categoryCode])
-  const products = useAsync<PageResponse<Product>>(() => catalogApi.products({ categoryCode: categoryCode || undefined, keyword: keyword || undefined, page, size: PAGE_SIZE, sort }), [categoryCode, keyword, page, sort])
+  const products = useAsync<PageResponse<Product>>(() => catalogApi.products({ categoryCode: categoryCode || undefined, keyword: keyword || undefined, eventCampaignId, page, size: PAGE_SIZE, sort }), [categoryCode, keyword, page, sort])
 
   function updateParams(patch: Record<string, string | null>) { const next = new URLSearchParams(searchParams); Object.entries(patch).forEach(([key, value]) => { if (value) next.set(key, value); else next.delete(key) }); if (!Object.hasOwn(patch, 'page')) next.delete('page'); setSearchParams(next) }
   async function addToCart(product: Product) { setAddingId(product.id); setNotice(null); try { await cartApi.addItem(product.id, 1); setNotice(`${product.name}을 장바구니에 담았습니다.`) } catch (error) { setNotice(error instanceof ApiError ? error.message : '장바구니에 담지 못했습니다.') } finally { setAddingId(null) } }
@@ -44,7 +45,7 @@ export function CatalogPage() {
   const subcategories = selected.data?.children ?? []
   const items = products.data?.items ?? []
   const totalPages = products.data?.totalPages ?? 0
-  const heading = categoryCode ? `${selected.data?.name ?? '카테고리'} 상품` : keyword ? `“${keyword}” 검색 결과` : '철물·공구 전체 상품'
+  const heading = eventCampaignId ? '철수야 셀렉트 행사 상품' : categoryCode ? `${selected.data?.name ?? '카테고리'} 상품` : keyword ? `“${keyword}” 검색 결과` : '철물·공구 전체 상품'
 
   return <div className="mx-auto max-w-7xl px-4 py-7 md:py-10">
     <div className="mb-6 flex flex-wrap items-center gap-2 text-xs text-slate-400"><Link to="/" className="hover:text-brand-600">홈</Link><span>›</span>{path.length ? path.map((node, index) => <span key={node.code} className={index === path.length - 1 ? 'font-bold text-slate-700 dark:text-slate-200' : ''}>{node.name}{index < path.length - 1 ? <span className="ml-2">›</span> : null}</span>) : <span>카테고리</span>}</div>

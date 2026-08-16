@@ -1,58 +1,18 @@
-import { useState } from 'react'
+﻿import { useState } from 'react'
 import { AuthConfigurationError, supabaseAuth } from '@/lib/supabase'
-
-export function SocialAuthButtons({
-  action,
-  disabled,
-  onError,
-}: {
-  action: '로그인' | '가입'
-  disabled?: boolean
-  onError: (message: string | null) => void
-}) {
-  const [provider, setProvider] = useState<'google' | 'kakao' | null>(null)
-
-  async function begin(next: 'google' | 'kakao') {
-    setProvider(next)
-    onError(null)
-    try {
-      const { error } = await supabaseAuth.signInWithProvider(next)
-      if (error) onError(error.message)
-    } catch (cause) {
-      onError(
-        cause instanceof AuthConfigurationError
-          ? cause.message
-          : `${next === 'google' ? 'Google' : 'Kakao'} ${action}을 시작할 수 없습니다.`,
-      )
-    } finally {
-      setProvider(null)
-    }
+type Provider = 'google' | 'kakao'
+type Props = { action: 'login' | 'signup'; disabled?: boolean; onError: (message: string | null) => void; nextPath?: string }
+export function SocialAuthButtons({ disabled = false, onError, nextPath }: Props) {
+  const [pending, setPending] = useState<Provider | null>(null)
+  const start = async (provider: Provider) => {
+    if (disabled || pending) return
+    setPending(provider); onError(null)
+    try { const result = await supabaseAuth.signInWithProvider(provider, nextPath); if (result.error) onError(result.error.message) }
+    catch (error) { onError(error instanceof AuthConfigurationError ? error.message : "Social login could not be started.") }
+    finally { setPending(null) }
   }
-
-  return (
-    <div className="auth-provider-grid">
-      <button
-        type="button"
-        className="btn auth-provider auth-provider-google"
-        disabled={disabled || provider !== null}
-        onClick={() => void begin('google')}
-      >
-        <span aria-hidden="true" style={{ color: '#4285f4', fontWeight: 800 }}>
-          G
-        </span>
-        Google {action}
-      </button>
-      <button
-        type="button"
-        className="btn auth-provider auth-provider-kakao"
-        disabled={disabled || provider !== null}
-        onClick={() => void begin('kakao')}
-      >
-        <span aria-hidden="true" style={{ fontWeight: 800 }}>
-          K
-        </span>
-        Kakao {action}
-      </button>
-    </div>
-  )
+  return <div className="auth-provider-grid">
+    <button type="button" className="auth-provider auth-provider-google" disabled={disabled || Boolean(pending)} onClick={() => void start("google")}><span className="auth-google-mark" aria-hidden="true">G</span><span>{pending === "google" ? "\uC5F0\uACB0 \uC911..." : "\uAD6C\uAE00\uB85C \uB85C\uADF8\uC778"}</span></button>
+    <button type="button" className="auth-provider auth-provider-kakao" disabled={disabled || Boolean(pending)} onClick={() => void start("kakao")}><span className="auth-kakao-mark" aria-hidden="true"></span><span>{pending === "kakao" ? "\uC5F0\uACB0 \uC911..." : "\uCE74\uCE74\uC624\uB85C \uB85C\uADF8\uC778"}</span></button>
+  </div>
 }

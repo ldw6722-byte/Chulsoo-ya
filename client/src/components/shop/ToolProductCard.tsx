@@ -19,7 +19,7 @@ function ToolPlaceholder() {
 
 export function ToolProductCard({ product, adding = false, onAdd }: ToolProductCardProps) {
   const hasDiscount = Boolean(product.discountRate && product.discountRate > 0)
-  const category = product.brand ?? product.categoryName
+  const category = product.categoryName
 
   return <article className="group flex h-full flex-col overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-[0_1px_2px_rgba(15,23,42,0.04)] transition duration-200 hover:-translate-y-1 hover:border-slate-300 hover:shadow-[0_12px_28px_rgba(15,23,42,0.12)] dark:border-slate-800 dark:bg-slate-900 dark:hover:border-slate-700">
     <Link to={`/product/${product.id}`} className="flex min-h-0 flex-1 flex-col" aria-label={`${product.name} \uC0C1\uD488 \uC0C1\uC138 \uBCF4\uAE30`}>

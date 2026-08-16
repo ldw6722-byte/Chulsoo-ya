@@ -1,8 +1,9 @@
-import { createBrowserRouter } from 'react-router-dom'
+﻿import { createBrowserRouter } from 'react-router-dom'
 import { AppShell } from './AppShell'
 import { RequireIdentity } from './RequireIdentity'
 import { HomePage } from '@/features/catalog/HomePage'
 import { CatalogPage } from '@/features/catalog/CatalogPage'
+import { EventCampaignPage } from '@/features/catalog/EventCampaignPage'
 import { ProductDetailPage } from '@/features/catalog/ProductDetailPage'
 import { CartPage } from '@/features/cart/CartPage'
 import { CheckoutPage } from '@/features/checkout/CheckoutPage'
@@ -37,6 +38,9 @@ const consumerOnly = (element: React.ReactNode) => (
 const sellerOnly = (element: React.ReactNode) => (
   <RequireIdentity roles={['SELLER', 'ADMIN']}>{element}</RequireIdentity>
 )
+const authenticatedOnly = (element: React.ReactNode) => (
+  <RequireIdentity roles={['CONSUMER', 'SELLER', 'ADMIN']}>{element}</RequireIdentity>
+)
 
 export const router = createBrowserRouter([
   {
@@ -47,13 +51,14 @@ export const router = createBrowserRouter([
       { path: 'auth/login', element: <LoginPage /> },
       { path: 'auth/signup', element: <SignupPage /> },
       { path: 'auth/callback', element: <AuthCallbackPage /> },
-      { path: 'my', element: <MyPage /> },
+      { path: 'my', element: authenticatedOnly(<MyPage />) },
       { path: 'support', element: <CustomerSupportPage /> },
       { path: 'stores', element: <StoreDirectoryPage /> },
       { path: 'stores/:storeId', element: <StoreDetailPage /> },
       { path: 'catalog', element: <CatalogPage /> },
+      { path: 'events/:eventId', element: <EventCampaignPage /> },
       { path: 'product/:productId', element: <ProductDetailPage /> },
-      // 기존 공유 링크 호환용 alias. 신규 상품 링크는 Kordeal식 /product/:id를 사용한다.
+      // 湲곗〈 怨듭쑀 留곹겕 ?명솚??alias. ?좉퇋 ?곹뭹 留곹겕??Kordeal??/product/:id瑜??ъ슜?쒕떎.
       { path: 'catalog/:productId', element: <ProductDetailPage /> },
       { path: 'cart', element: consumerOnly(<CartPage />) },
       { path: 'checkout', element: consumerOnly(<CheckoutPage />) },
@@ -83,7 +88,7 @@ export const router = createBrowserRouter([
         path: '*',
         element: (
           <div className="page">
-            <EmptyView title="페이지를 찾을 수 없습니다" description="주소를 확인하거나 홈으로 이동해 주세요." />
+            <EmptyView title="?섏씠吏瑜?李얠쓣 ???놁뒿?덈떎" description="二쇱냼瑜??뺤씤?섍굅???덉쑝濡??대룞??二쇱꽭??" />
           </div>
         ),
       },

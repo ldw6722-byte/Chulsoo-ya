@@ -42,9 +42,9 @@ public class DevSeedRunner {
     void seed(UserRepository users, StoreRepository stores,
             CategoryRepository categories, ProductRepository products, boolean seedUsers) {
         if (categories.count() > 0) {
+            seedStoresIfNeeded(users, stores, seedUsers);
             return;
         }
-
         // 대분류 → 중분류 → 소분류. 상품은 소분류에 연결한다.
         Category hand = category(categories, "HAND_TOOL", "수공구·측정", "🔨", 1, null, 1);
         Category driver = category(categories, "DRIVER_WRENCH", "드라이버·렌치", "🪛", 1, hand, 2);
@@ -170,6 +170,13 @@ public class DevSeedRunner {
     }
 
     /** 개발·검증용 목데이터: 서울 10개 구에 구별 10개 판매점. */
+    private void seedStoresIfNeeded(UserRepository users, StoreRepository stores, boolean seedUsers) {
+        if (!seedUsers || stores.count() > 0) return;
+        users.findByEmail("consumer@chulsooya.dev").orElseGet(() -> users.save(new User("consumer@chulsooya.dev", "김소비", "010-1000-0001", UserRole.CONSUMER)));
+        users.findByEmail("admin@chulsooya.dev").orElseGet(() -> users.save(new User("admin@chulsooya.dev", "운영자", "010-9000-0001", UserRole.ADMIN)));
+        seedSeoulMockStores(users, stores);
+    }
+
     private void seedSeoulMockStores(UserRepository users, StoreRepository stores) {
         String[] districts = {"강남구", "강동구", "강서구", "관악구", "광진구", "마포구", "송파구", "영등포구", "용산구", "성동구"};
         String[] storeTypes = {"종합철물", "공구마켓", "배관설비", "전기자재", "건축자재", "안전용품", "생활철물", "프로공구", "설비상사", "철물센터"};

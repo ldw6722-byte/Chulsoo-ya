@@ -2,6 +2,7 @@ package com.chulsooya.server.domain.store;
 
 import java.util.List;
 
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -13,6 +14,7 @@ import com.chulsooya.server.common.ApiResponse;
 import com.chulsooya.server.domain.store.StoreReviewDtos.CreateReviewRequest;
 import com.chulsooya.server.domain.store.StoreReviewDtos.ModerationRequest;
 import com.chulsooya.server.domain.store.StoreReviewDtos.ReviewResponse;
+import com.chulsooya.server.domain.store.StoreReviewDtos.ReplyRequest;
 import com.chulsooya.server.domain.store.StoreReviewDtos.StoreDetailResponse;
 import com.chulsooya.server.support.CurrentUser;
 import jakarta.validation.Valid;
@@ -36,7 +38,18 @@ public class StoreReviewController {
 
     @GetMapping("/admin/store-reviews")
     public ApiResponse<List<ReviewResponse>> adminList(CurrentUser actor) { return ApiResponse.of(reviews.adminList(actor)); }
-
+    @GetMapping("/admin/stores/{storeId}/reviews")
+    public ApiResponse<List<ReviewResponse>> adminListForStore(@PathVariable Long storeId, CurrentUser actor) { return ApiResponse.of(reviews.adminListForStore(storeId, actor)); }
+    @PostMapping("/admin/store-reviews/{reviewId}/reply")
+    public ApiResponse<ReviewResponse> adminReply(@PathVariable Long reviewId, CurrentUser actor, @Valid @RequestBody ReplyRequest request) { return ApiResponse.of(reviews.reply(reviewId, actor, request, false)); }
+    @DeleteMapping("/admin/store-reviews/{reviewId}/reply")
+    public ApiResponse<Void> clearReply(@PathVariable Long reviewId, CurrentUser actor) { reviews.clearReply(reviewId, actor); return ApiResponse.of(null); }
+    @DeleteMapping("/admin/store-reviews/{reviewId}")
+    public ApiResponse<Void> delete(@PathVariable Long reviewId, CurrentUser actor) { reviews.delete(reviewId, actor); return ApiResponse.of(null); }
+    @GetMapping("/seller/reviews")
+    public ApiResponse<List<ReviewResponse>> sellerList(CurrentUser actor) { return ApiResponse.of(reviews.sellerList(actor)); }
+    @PostMapping("/seller/store-reviews/{reviewId}/reply")
+    public ApiResponse<ReviewResponse> sellerReply(@PathVariable Long reviewId, CurrentUser actor, @Valid @RequestBody ReplyRequest request) { return ApiResponse.of(reviews.reply(reviewId, actor, request, true)); }
     @PostMapping("/admin/store-reviews/{reviewId}/moderation")
     public ApiResponse<ReviewResponse> moderate(@PathVariable Long reviewId, CurrentUser actor, @Valid @RequestBody ModerationRequest request) {
         return ApiResponse.of(reviews.moderate(reviewId, actor, request));

@@ -9,5 +9,6 @@ public interface StoreReviewRepository extends JpaRepository<StoreReview, Long> 
     boolean existsByOrderId(Long orderId);
     Optional<StoreReview> findByOrderId(Long orderId);
     List<StoreReview> findByStoreIdAndVisibilityOrderByCreatedAtDesc(Long storeId, StoreReview.ReviewVisibility visibility);
+    List<StoreReview> findByStoreIdOrderByCreatedAtDesc(Long storeId);
     List<StoreReview> findAllByOrderByCreatedAtDesc();
 }

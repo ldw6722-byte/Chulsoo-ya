@@ -73,7 +73,42 @@ public class StoreReviewService {
         requireAdmin(actor);
         return toResponses(reviews.findAllByOrderByCreatedAtDesc());
     }
-
+    public List<ReviewResponse> adminListForStore(Long storeId, CurrentUser actor) {
+        requireAdmin(actor);
+        requireStore(storeId);
+        return toResponses(reviews.findByStoreIdOrderByCreatedAtDesc(storeId));
+    }
+    public List<ReviewResponse> sellerList(CurrentUser actor) {
+        Store store = requireSellerStore(actor);
+        return toResponses(reviews.findByStoreIdOrderByCreatedAtDesc(store.getId()));
+    }
+    @Transactional
+    public ReviewResponse reply(Long reviewId, CurrentUser actor, ReplyRequest request, boolean sellerOnly) {
+        StoreReview review = reviews.findById(reviewId).orElseThrow(() -> new DomainException(ErrorCode.NOT_FOUND, "Review not found"));
+        if (sellerOnly) {
+            Store store = requireSellerStore(actor);
+            if (!store.getId().equals(review.getStoreId())) throw new DomainException(ErrorCode.FORBIDDEN, "Not your store review");
+        } else {
+            requireAdmin(actor);
+        }
+        review.reply(request.reply(), actor.userId(), Instant.now());
+        return ReviewResponse.from(review, consumerName(review.getConsumerId()));
+    }
+    @Transactional
+    public void clearReply(Long reviewId, CurrentUser actor) {
+        requireAdmin(actor);
+        StoreReview review = reviews.findById(reviewId).orElseThrow(() -> new DomainException(ErrorCode.NOT_FOUND, "Review not found"));
+        review.clearReply();
+    }
+    @Transactional
+    public void delete(Long reviewId, CurrentUser actor) {
+        requireAdmin(actor);
+        StoreReview review = reviews.findById(reviewId).orElseThrow(() -> new DomainException(ErrorCode.NOT_FOUND, "Review not found"));
+        Store store = requireStore(review.getStoreId());
+        if (review.getVisibility() == StoreReview.ReviewVisibility.PUBLISHED) store.adjustTrustScore(-review.getTrustDelta());
+        reviews.delete(review);
+        refreshRating(store);
+    }
     @Transactional
     public ReviewResponse moderate(Long reviewId, CurrentUser actor, ModerationRequest request) {
         requireAdmin(actor);
@@ -103,6 +138,10 @@ public class StoreReviewService {
 
     private String consumerName(Long userId) { return users.findById(userId).map(User::getName).orElse("구매자"); }
     private Store requireStore(Long id) { return stores.findById(id).orElseThrow(() -> new DomainException(ErrorCode.NOT_FOUND, "판매점을 찾을 수 없습니다.")); }
+    private Store requireSellerStore(CurrentUser actor) {
+        if (!actor.isSeller()) throw new DomainException(ErrorCode.FORBIDDEN, "Seller role required");
+        return stores.findByOwnerId(actor.userId()).orElseThrow(() -> new DomainException(ErrorCode.NOT_FOUND, "Seller store not found"));
+    }
     private void requireAdmin(CurrentUser actor) { if (!actor.isAdmin()) throw new DomainException(ErrorCode.FORBIDDEN, "관리자 권한이 필요합니다."); }
     private double trustDelta(int rating) { return switch (rating) { case 5 -> 1.0; case 4 -> 0.5; case 3 -> 0.0; case 2 -> -0.5; default -> -1.0; }; }
 }

@@ -68,6 +68,10 @@ public class User {
     }
 
     /** 관리자만 소비자·판매자 역할을 전환한다. ADMIN 승격은 별도 운영 절차로 제한한다. */
+    /** 환경 설정으로 지정된 초기 슈퍼어드민에만 사용하는 부트스트랩 경로다. */
+    public void grantAdministratorForBootstrap() {
+        this.role = UserRole.ADMIN;
+    }
     public void changeRole(UserRole role) {
         if (role == UserRole.ADMIN) throw new IllegalArgumentException("관리자 역할은 이 경로에서 변경할 수 없습니다.");
         this.role = role;

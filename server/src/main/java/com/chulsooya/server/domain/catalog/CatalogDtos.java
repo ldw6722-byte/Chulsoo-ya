@@ -56,6 +56,7 @@ public final class CatalogDtos {
             int reviewCount,
             int salesCount,
             boolean featured,
+            boolean selectPromotion,
             boolean quickFulfillment,
             String categoryCode,
             String categoryName) {
@@ -78,6 +79,7 @@ public final class CatalogDtos {
                     product.getReviewCount(),
                     product.getSalesCount(),
                     product.isFeatured(),
+                    product.isSelectPromotion(),
                     product.isQuickFulfillment(),
                     product.getCategory().getCode(),
                     product.getCategory().getName());

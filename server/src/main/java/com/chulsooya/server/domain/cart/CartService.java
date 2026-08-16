@@ -14,16 +14,20 @@ import com.chulsooya.server.domain.cart.CartDtos.CartItemResponse;
 import com.chulsooya.server.domain.cart.CartDtos.CartResponse;
 import com.chulsooya.server.domain.catalog.Product;
 import com.chulsooya.server.domain.catalog.ProductRepository;
+import com.chulsooya.server.domain.catalog.ProductPriceTier;
+import com.chulsooya.server.domain.catalog.ProductPriceTierRepository;
 
 @Service
 public class CartService {
 
 	private final CartRepository cartRepository;
 	private final ProductRepository productRepository;
+        private final ProductPriceTierRepository priceTierRepository;
 
-	public CartService(CartRepository cartRepository, ProductRepository productRepository) {
+	public CartService(CartRepository cartRepository, ProductRepository productRepository, ProductPriceTierRepository priceTierRepository) {
 		this.cartRepository = cartRepository;
 		this.productRepository = productRepository;
+                this.priceTierRepository = priceTierRepository;
 	}
 
 	@Transactional
@@ -33,14 +37,15 @@ public class CartService {
 	}
 
 	@Transactional
-	public CartResponse addItem(Long consumerId, Long productId, String optionHash, int quantity) {
+	public CartResponse addItem(Long consumerId, Long productId, String optionHash, Long priceTierId, int quantity) {
 		Product product = productRepository.findById(productId)
-				.orElseThrow(() -> new DomainException(ErrorCode.NOT_FOUND, "상품을 찾을 수 없습니다."));
+				.orElseThrow(() -> new DomainException(ErrorCode.NOT_FOUND, "??⑤갭???嶺뚢돦堉??????怨룸????덈펲."));
 		if (!product.isActive()) {
 			throw new DomainException(ErrorCode.PRODUCT_INACTIVE);
 		}
+                ProductPriceTier tier = (priceTierId == null ? priceTierRepository.findByProductIdAndActiveTrueOrderBySortOrderAsc(productId).stream().findFirst() : priceTierRepository.findByIdAndProductIdAndActiveTrue(priceTierId, productId)).orElseThrow(() -> new DomainException(ErrorCode.NOT_FOUND));
 		Cart cart = getOrCreateActiveCart(consumerId);
-		cart.addOrIncrease(productId, optionHash, quantity);
+		cart.addOrIncrease(productId, optionHash, tier.getId(), tier.getLabel(), tier.getSalePrice(), tier.getGuideBrands(), quantity);
 		return toResponse(cartRepository.save(cart));
 	}
 
@@ -50,7 +55,7 @@ public class CartService {
 		CartItem item = cart.getItems().stream()
 				.filter(i -> i.getId().equals(cartItemId))
 				.findFirst()
-				.orElseThrow(() -> new DomainException(ErrorCode.NOT_FOUND, "장바구니 품목을 찾을 수 없습니다."));
+				.orElseThrow(() -> new DomainException(ErrorCode.NOT_FOUND, "?縕ヨ?琉??????嫄??嶺뚢돦堉??????怨룸????덈펲."));
 		item.changeQuantity(quantity);
 		return toResponse(cartRepository.save(cart));
 	}
@@ -66,7 +71,7 @@ public class CartService {
 	public CartResponse view(Long consumerId) {
 		return cartRepository.findByConsumerIdAndActiveTrue(consumerId)
 				.map(this::toResponse)
-				.orElseGet(() -> new CartResponse(null, List.of(), 0, 0));
+				.orElseGet(() -> new CartResponse(null, List.of(), 0, 0, false));
 	}
 
 	private Cart requireActiveCart(Long consumerId) {
@@ -91,14 +96,23 @@ public class CartService {
 							p.getUnit(),
 							p.getImageUrl(),
 							i.getOptionHash(),
+                                                        i.getPriceTierId(),
+                                                        i.getPriceTierLabel(),
+                                                        i.getPriceTierBrands(),
 							i.getQuantity(),
-							p.getPrice(),
-							p.getPrice() * i.getQuantity());
+                                                        i.getPriceTierPrice(),
+                                                        i.getPriceTierPrice() * i.getQuantity());
 				})
 				.toList();
 
 		int amount = items.stream().mapToInt(CartItemResponse::lineAmount).sum();
 		int count = items.stream().mapToInt(CartItemResponse::quantity).sum();
-		return new CartResponse(cart.getId(), items, amount, count);
+		return new CartResponse(cart.getId(), items, amount, count, cart.isPriceTierAgreed());
 	}
+        @Transactional
+        public CartResponse agreePriceTierSupply(Long consumerId) {
+                Cart cart = requireActiveCart(consumerId);
+                cart.agreeToPriceTierSupply(java.time.Instant.now());
+                return toResponse(cartRepository.save(cart));
+        }
 }

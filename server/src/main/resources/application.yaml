@@ -2,7 +2,7 @@ spring:
   application:
     name: chulsooya-server
   profiles:
-    default: local
+    default: supabase
   config:
     import: optional:file:.env[.properties]
   jackson:

@@ -12,6 +12,7 @@ public enum ErrorCode {
 
 	// 장바구니
 	CART_EMPTY(HttpStatus.BAD_REQUEST, "장바구니가 비어 있습니다."),
+       PRICE_TIER_AGREEMENT_REQUIRED(HttpStatus.BAD_REQUEST, "가격대별 납품 안내에 동의해 주세요."),
 	INVALID_QUANTITY(HttpStatus.BAD_REQUEST, "수량은 1 이상이어야 합니다."),
 	PRODUCT_INACTIVE(HttpStatus.BAD_REQUEST, "판매 중지된 상품입니다."),
 

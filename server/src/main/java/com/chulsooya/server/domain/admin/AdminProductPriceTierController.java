@@ -1,0 +1,12 @@
+package com.chulsooya.server.domain.admin;
+import java.util.*; import jakarta.validation.constraints.*; import org.springframework.web.bind.annotation.*; import com.chulsooya.server.common.*; import com.chulsooya.server.domain.catalog.*; import com.chulsooya.server.support.CurrentUser;
+@RestController @RequestMapping("/api/admin/products") public class AdminProductPriceTierController {
+private final ProductRepository products; private final ProductPriceTierRepository tiers; public AdminProductPriceTierController(ProductRepository products, ProductPriceTierRepository tiers){this.products=products;this.tiers=tiers;}
+private void admin(CurrentUser u){if(!u.isAdmin()) throw new DomainException(ErrorCode.FORBIDDEN);}
+ @GetMapping("/{productId}/price-tiers") public ApiResponse<List<View>> list(CurrentUser u,@PathVariable Long productId){admin(u);return ApiResponse.of(tiers.findByProductIdOrderBySortOrderAsc(productId).stream().map(View::of).toList());}
+ @PostMapping("/{productId}/price-tiers") public ApiResponse<View> create(CurrentUser u,@PathVariable Long productId,@RequestBody Request r){admin(u);Product p=products.findById(productId).orElseThrow(()->new DomainException(ErrorCode.NOT_FOUND));return ApiResponse.of(View.of(tiers.save(new ProductPriceTier(p,r.label(),r.salePrice(),r.guideBrands(),r.guideMessage(),r.sortOrder()))));}
+ @PutMapping("/price-tiers/{id}") public ApiResponse<View> update(CurrentUser u,@PathVariable Long id,@RequestBody Request r){admin(u);ProductPriceTier t=tiers.findById(id).orElseThrow(()->new DomainException(ErrorCode.NOT_FOUND));t.update(t.getProduct(),r.label(),r.salePrice(),r.guideBrands(),r.guideMessage(),r.sortOrder());return ApiResponse.of(View.of(tiers.save(t)));}
+ @DeleteMapping("/price-tiers/{id}") public ApiResponse<Void> remove(CurrentUser u,@PathVariable Long id){admin(u);ProductPriceTier t=tiers.findById(id).orElseThrow(()->new DomainException(ErrorCode.NOT_FOUND));t.deactivate();tiers.save(t);return ApiResponse.of(null);}
+ public record Request(@NotBlank String label,@Min(0) int salePrice,@NotBlank String guideBrands,@NotBlank String guideMessage,int sortOrder){}
+ public record View(Long id,String label,int salePrice,String guideBrands,String guideMessage,int sortOrder,boolean active){static View of(ProductPriceTier t){return new View(t.getId(),t.getLabel(),t.getSalePrice(),t.getGuideBrands(),t.getGuideMessage(),t.getSortOrder(),t.isActive());}}
+}

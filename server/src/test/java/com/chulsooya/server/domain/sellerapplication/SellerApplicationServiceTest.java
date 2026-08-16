@@ -13,6 +13,7 @@ import java.util.Optional;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
@@ -37,7 +38,7 @@ class SellerApplicationServiceTest {
     private UserRepository users;
 
     @Test
-    void admin_approval_promotes_the_applicant_and_creates_one_unverified_store() {
+    void admin_approval_promotes_the_applicant_and_creates_an_active_store() {
         User applicant = new User("seller@example.com", "신청자", "010-1234-5678", UserRole.CONSUMER);
         SellerApplication application = application(applicant);
         application.markCertificateUploaded("seller-applications/10/certificate", "image/jpeg", 120_000L);
@@ -52,7 +53,9 @@ class SellerApplicationServiceTest {
 
         assertThat(application.getStatus()).isEqualTo(SellerApplicationStatus.APPROVED);
         assertThat(applicant.getRole()).isEqualTo(UserRole.SELLER);
-        verify(stores).save(any(Store.class));
+        ArgumentCaptor<Store> createdStore = ArgumentCaptor.forClass(Store.class);
+        verify(stores).save(createdStore.capture());
+        assertThat(createdStore.getValue().canReceiveOffer(clock.instant())).isTrue();
     }
 
     @Test

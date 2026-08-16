@@ -1,88 +1,75 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
-import type { ReactNode } from 'react'
-import type { Session } from '@supabase/supabase-js'
-import { authApi } from '@/api/endpoints'
-import { ApiError } from '@/api/client'
-import { setAccessToken } from '@/lib/auth-session'
-import { isSupabaseConfigured, supabaseAuth } from '@/lib/supabase'
-import type { AuthenticatedUser } from '@/types/api'
-import { useIdentity } from './useIdentity'
-import { AuthContext } from './auth-context'
+import { useCallback, useEffect, useMemo, useState } from "react"
+import type { ReactNode } from "react"
+import type { Session } from "@supabase/supabase-js"
+import { authApi } from "@/api/endpoints"
+import { ApiError } from "@/api/client"
+import { loadAuthSnapshot, saveAuthSnapshot, setAccessToken } from "@/lib/auth-session"
+import { isSupabaseConfigured, supabaseAuth } from "@/lib/supabase"
+import type { AuthenticatedUser } from "@/types/api"
+import { useIdentity } from "./useIdentity"
+import { AuthContext } from "./auth-context"
+import { notify } from "@/lib/notify"
 
-/**
- * Kordeal의 중앙 인증 상태 모델을 참조하되, 동기화 권위는 Spring Boot JWT 검증 결과로 제한한다.
- * OAuth·이메일 세션은 Supabase가 관리하고, 역할은 백엔드 users.role만 사용한다.
- */
+function fallbackUser(session: Session): AuthenticatedUser {
+  const name = session.user.email?.split("@")[0] ?? "\uD68C\uC6D0"
+  return { id: 0, supabaseUserId: session.user.id, email: session.user.email ?? "", name, role: "CONSUMER" }
+}
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const { setIdentity } = useIdentity()
-  const [user, setUser] = useState<AuthenticatedUser | null>(null)
+  const [user, setUser] = useState<AuthenticatedUser | null>(() => {
+    const cached = loadAuthSnapshot()
+    return cached ? { id: 0, supabaseUserId: cached.supabaseUserId, email: cached.email, name: cached.name, role: "CONSUMER" } : null
+  })
   const [isLoading, setIsLoading] = useState(isSupabaseConfigured)
   const [error, setError] = useState<string | null>(null)
 
-  const synchronize = useCallback(
-    async (session: Session | null) => {
-      if (!session) {
-        setAccessToken(null)
-        setUser(null)
-        setIdentity(null)
-        return
-      }
-
-      setAccessToken(session.access_token)
+  const applySession = useCallback(async (session: Session | null, clear = false) => {
+    if (!session) {
+      setAccessToken(null)
+      if (clear) { saveAuthSnapshot(null); setUser(null); setIdentity(null) }
+      return
+    }
+    const fallback = fallbackUser(session)
+    setAccessToken(session.access_token)
+    saveAuthSnapshot({ supabaseUserId: fallback.supabaseUserId, email: fallback.email, name: fallback.name })
+    setUser(fallback)
+    setIdentity({ userId: 0, role: "CONSUMER", name: fallback.name })
+    try {
       const response = await authApi.me()
       setUser(response.user)
       setIdentity({ userId: response.user.id, role: response.user.role, name: response.user.name })
-    },
-    [setIdentity],
-  )
+      setError(null)
+    } catch (cause) {
+      setError(cause instanceof ApiError ? cause.message : "\uD68C\uC6D0 \uC815\uBCF4\uB97C \uD655\uC778\uD558\uC9C0 \uBABB\uD588\uC2B5\uB2C8\uB2E4.")
+    }
+  }, [setIdentity])
 
   const refresh = useCallback(async () => {
-    if (!isSupabaseConfigured) {
-      setIsLoading(false)
-      return
-    }
-
+    if (!isSupabaseConfigured) { setIsLoading(false); return }
     setIsLoading(true)
-    setError(null)
     try {
-      await synchronize(await supabaseAuth.getSession())
-    } catch (cause) {
-      const message = cause instanceof ApiError ? cause.message : '로그인 정보를 확인할 수 없습니다.'
-      setError(message)
-    } finally {
-      setIsLoading(false)
-    }
-  }, [synchronize])
+      const session = await supabaseAuth.getSession()
+      void applySession(session)
+    } finally { setIsLoading(false) }
+  }, [applySession])
 
   useEffect(() => {
-    if (!isSupabaseConfigured) {
-      setIsLoading(false)
-      return
-    }
-
+    if (!isSupabaseConfigured) { setIsLoading(false); return }
     void refresh()
-    const { data } = supabaseAuth.onAuthStateChange((_event, session) => {
-      void synchronize(session).catch((cause: unknown) => {
-        setError(cause instanceof ApiError ? cause.message : '사용자 정보를 동기화할 수 없습니다.')
-      })
+    const { data } = supabaseAuth.onAuthStateChange((event, session) => {
+      if (event === "SIGNED_OUT") { void applySession(null, true); return }
+      if (session) { void applySession(session); if (event === "SIGNED_IN") notify("로그인되었습니다.") }
     })
     return () => data.subscription.unsubscribe()
-  }, [refresh, synchronize])
+  }, [applySession, refresh])
 
   const signOut = useCallback(async () => {
-    setError(null)
     const { error: signOutError } = await supabaseAuth.signOut()
-    if (signOutError) {
-      setError(signOutError.message)
-      return
-    }
-    await synchronize(null)
-  }, [synchronize])
-
-  const value = useMemo(
-    () => ({ configured: isSupabaseConfigured, user, isLoading, error, refresh, signOut }),
-    [error, isLoading, refresh, signOut, user],
-  )
-
+    if (signOutError) { setError(signOutError.message); notify(signOutError.message, "error"); return }
+    await applySession(null, true)
+    notify("\uB85C\uADF8\uC544\uC6C3\uB418\uC5C8\uC2B5\uB2C8\uB2E4.")
+  }, [applySession])
+  const value = useMemo(() => ({ configured: isSupabaseConfigured, user, isLoading, error, refresh, signOut }), [error, isLoading, refresh, signOut, user])
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
 }
