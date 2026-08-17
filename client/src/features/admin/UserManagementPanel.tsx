@@ -1,30 +1,29 @@
-import { useState } from 'react'
-import { adminUserApi } from '@/api/endpoints'
+import { useMemo, useState } from 'react'
+import { ApiError } from '@/api/client'
+import { adminSellerDeactivationApi, adminUserApi } from '@/api/endpoints'
 import { ErrorView, LoadingView } from '@/components/StateViews'
 import { useAsync } from '@/hooks/useAsync'
-import type { AdminUser } from '@/types/api'
-
+import { notify } from '@/lib/notify'
+import type { AdminUser, SellerDeactivationRequest, UserRole } from '@/types/api'
+const roleLabel: Record<UserRole, string> = { CONSUMER: '일반 회원', SELLER: '판매자', ADMIN: '관리자' }
 export function UserManagementPanel() {
   const users = useAsync<AdminUser[]>(() => adminUserApi.list(), [])
+  const requests = useAsync<SellerDeactivationRequest[]>(() => adminSellerDeactivationApi.pending(), [])
   const [busyId, setBusyId] = useState<number | null>(null)
-  const [message, setMessage] = useState<string | null>(null)
-
-  const toggleSeller = async (user: AdminUser) => {
-    if (user.role === 'ADMIN') return
-    setBusyId(user.id)
-    setMessage(null)
+  const [query, setQuery] = useState('')
+  const [role, setRole] = useState<'ALL' | UserRole>('ALL')
+  const filtered = useMemo(() => (users.data ?? []).filter((user) => (role === 'ALL' || user.role === role) && [user.name, user.email, user.phone ?? ''].some((value) => value.toLowerCase().includes(query.trim().toLowerCase()))), [users.data, role, query])
+  async function process(request: SellerDeactivationRequest, action: 'approve' | 'reject') {
+    if (action === 'approve' && !window.confirm(request.sellerName + '님을 일반 회원으로 전환하고 판매점 운영을 중지하시겠습니까?')) return
+    setBusyId(request.id)
     try {
-      const next = user.role === 'SELLER' ? 'CONSUMER' : 'SELLER'
-      await adminUserApi.changeRole(user.id, next)
-      setMessage(`${user.name} 계정을 ${next === 'SELLER' ? '판매자' : '일반 회원'}로 변경했습니다.`)
-      await users.reload()
-    } finally {
-      setBusyId(null)
-    }
+      if (action === 'approve') await adminSellerDeactivationApi.approve(request.id)
+      else await adminSellerDeactivationApi.reject(request.id, '관리자 검토 반려')
+      notify(action === 'approve' ? '일반 회원 전환과 판매점 비활성화를 완료했습니다.' : '판매자 등록 해지 신청을 반려했습니다.')
+      await Promise.all([users.reload(), requests.reload()])
+    } catch (caught) { notify(caught instanceof ApiError ? caught.message : '판매자 등록 해지 요청을 처리하지 못했습니다.', 'error') } finally { setBusyId(null) }
   }
-
-  if (users.loading && !users.data) return <LoadingView label="회원 계정을 불러오는 중입니다" />
+  if (users.loading && !users.data) return <LoadingView label="회원 정보를 불러오는 중입니다" />
   if (users.error) return <ErrorView error={users.error} onRetry={users.reload} />
-  const list = users.data ?? []
-  return <section className="rounded-2xl border border-slate-200 bg-white shadow-sm"><div className="border-b border-slate-100 px-5 py-5"><p className="text-xs font-black text-brand-600">MEMBER ROLE CONTROL</p><h2 className="mt-1 text-xl font-black text-slate-900">회원 · 판매자 계정 관리</h2><p className="mt-2 text-sm text-slate-500">판매자로 전환하면 해당 회원의 마이철수에 응찰·주문 처리·운영 설정 메뉴가 활성화됩니다.</p></div>{message && <p className="mx-5 mt-4 rounded-xl bg-emerald-50 px-4 py-3 text-sm font-bold text-emerald-700">{message}</p>}<div className="overflow-x-auto"><table className="w-full min-w-170 text-left text-sm"><thead className="bg-slate-50 text-xs text-slate-500"><tr><th className="px-5 py-3">회원</th><th className="px-5 py-3">이메일</th><th className="px-5 py-3">현재 역할</th><th className="px-5 py-3 text-right">판매자 워크플로우</th></tr></thead><tbody className="divide-y divide-slate-100">{list.map(user => <tr key={user.id}><td className="px-5 py-4 font-black text-slate-900">{user.name}</td><td className="px-5 py-4 text-slate-600">{user.email}</td><td className="px-5 py-4"><span className={`rounded-full px-2.5 py-1 text-xs font-black ${user.role === 'SELLER' ? 'bg-violet-50 text-violet-700' : user.role === 'ADMIN' ? 'bg-slate-100 text-slate-700' : 'bg-blue-50 text-blue-700'}`}>{user.role === 'SELLER' ? '판매자' : user.role === 'ADMIN' ? '관리자' : '일반 회원'}</span></td><td className="px-5 py-4 text-right">{user.role === 'ADMIN' ? <span className="text-xs font-bold text-slate-400">관리자 보호</span> : <button type="button" disabled={busyId === user.id} onClick={() => void toggleSeller(user)} className={`rounded-xl px-4 py-2 text-xs font-black ${user.role === 'SELLER' ? 'border border-slate-300 bg-white text-slate-700' : 'bg-violet-600 text-white'} disabled:opacity-50`}>{busyId === user.id ? '변경 중' : user.role === 'SELLER' ? '일반 회원으로 전환' : '판매자 계정 활성화'}</button>}</td></tr>)}</tbody></table></div></section>
+  return <section className="space-y-5"><section className="rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900"><div className="border-b border-slate-100 px-5 py-5 dark:border-slate-800"><p className="text-xs font-black text-brand-600">MEMBER MANAGEMENT</p><h2 className="mt-1 text-xl font-black text-slate-900 dark:text-white">회원 관리</h2><p className="mt-2 text-sm text-slate-500">회원 ID·역할·판매점 상태를 함께 관리합니다. 판매자 일반회원 전환은 등록 해지 신청 승인으로만 처리합니다.</p><div className="mt-4 flex flex-wrap gap-2"><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="이름, 이메일, 연락처 검색" className="h-11 min-w-56 flex-1 rounded-xl border border-slate-300 bg-white px-3 text-sm outline-none focus:border-brand-500 dark:border-slate-700 dark:bg-slate-800" /><select value={role} onChange={(event) => setRole(event.target.value as 'ALL' | UserRole)} className="h-11 rounded-xl border border-slate-300 bg-white px-3 text-sm font-bold dark:border-slate-700 dark:bg-slate-800"><option value="ALL">전체 역할</option><option value="CONSUMER">일반 회원</option><option value="SELLER">판매자</option><option value="ADMIN">관리자</option></select></div></div><div className="overflow-x-auto"><table className="w-full min-w-220 text-left text-sm"><thead className="bg-slate-50 text-xs text-slate-500 dark:bg-slate-800"><tr><th className="px-5 py-3">회원</th><th className="px-5 py-3">연락처</th><th className="px-5 py-3">역할</th><th className="px-5 py-3">가입일</th><th className="px-5 py-3 text-right">계정 상태</th></tr></thead><tbody className="divide-y divide-slate-100 dark:divide-slate-800">{filtered.map((user) => { const pending = (requests.data ?? []).find((item) => item.sellerUserId === user.id); return <tr key={user.id} className="hover:bg-slate-50/70 dark:hover:bg-slate-800/40"><td className="px-5 py-4"><p className="font-black text-slate-900 dark:text-white">{user.name}</p><p className="mt-1 text-xs text-slate-500">{user.email}</p></td><td className="px-5 py-4 text-slate-600 dark:text-slate-300">{user.phone ?? '-'}</td><td className="px-5 py-4"><span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-black text-slate-700 dark:bg-slate-800 dark:text-slate-200">{roleLabel[user.role]}</span></td><td className="px-5 py-4 text-slate-500">{new Date(user.createdAt).toLocaleDateString('ko-KR')}</td><td className="px-5 py-4 text-right">{user.role === 'SELLER' && pending ? <button type="button" disabled={busyId === pending.id} onClick={() => void process(pending, 'approve')} className="rounded-xl bg-rose-600 px-3 py-2 text-xs font-black text-white disabled:opacity-60">{busyId === pending.id ? '처리 중' : '일반 회원 전환 승인'}</button> : user.role === 'SELLER' ? <span className="text-xs font-bold text-violet-700 dark:text-violet-300">판매자 활성 · 해지 신청 대기 없음</span> : user.role === 'CONSUMER' ? <span className="text-xs font-bold text-slate-500">판매자 신청 심사에서 활성화</span> : <span className="text-xs font-bold text-slate-500">관리자 보호 계정</span>}</td></tr> })}{filtered.length === 0 ? <tr><td colSpan={5} className="px-5 py-12 text-center text-sm text-slate-500">조건에 맞는 회원이 없습니다.</td></tr> : null}</tbody></table></div></section>{(requests.data ?? []).length > 0 && <section className="rounded-2xl border border-amber-200 bg-amber-50 p-5 dark:border-amber-900/60 dark:bg-amber-950/20"><p className="text-xs font-black text-amber-700">SELLER REQUEST ALERT</p><h2 className="mt-1 text-xl font-black text-amber-950 dark:text-amber-100">판매자 등록 해지 요청 {(requests.data ?? []).length}건</h2><div className="mt-4 space-y-3">{(requests.data ?? []).map((request) => <div key={request.id} className="flex flex-wrap items-center justify-between gap-3 rounded-2xl bg-white p-4 dark:bg-slate-900"><div><p className="font-black text-slate-900 dark:text-white">{request.sellerName} · {request.sellerEmail}</p><p className="mt-1 text-xs text-slate-500">신청 시각 {new Date(request.requestedAt).toLocaleString('ko-KR')} {request.reason ? '· ' + request.reason : ''}</p></div><div className="flex gap-2"><button type="button" disabled={busyId === request.id} onClick={() => void process(request, 'approve')} className="rounded-xl bg-rose-600 px-3 py-2 text-xs font-black text-white disabled:opacity-60">일반 회원 전환 승인</button><button type="button" disabled={busyId === request.id} onClick={() => void process(request, 'reject')} className="rounded-xl border border-slate-300 px-3 py-2 text-xs font-black text-slate-700 dark:border-slate-700 dark:text-slate-200">반려</button></div></div>)}</div></section>}</section>
 }

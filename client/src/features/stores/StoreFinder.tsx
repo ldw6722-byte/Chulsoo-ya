@@ -24,9 +24,11 @@ function StoreCard({ store }: { store: StoreDirectoryItem }) {
           <Stars rating={store.rating} />
         </div>
         <p className="mt-3 line-clamp-1 text-sm text-slate-600">{store.handledItems.join(', ')}</p>
+        {store.customerNoticeText ? <p className="mt-2 line-clamp-2 text-xs leading-5 text-slate-500">{store.customerNoticeText}</p> : null}
         <div className="mt-4 flex flex-wrap gap-1.5">
+          {store.customerBadgeText ? <span className="rounded-full bg-brand-50 px-2 py-1 text-[11px] font-bold text-brand-700">{store.customerBadgeText}</span> : null}
           {store.receivingOrders ? <span className="rounded-full bg-emerald-50 px-2 py-1 text-[11px] font-bold text-emerald-700">{"\uC8FC\uBB38 \uC811\uC218 \uC911"}</span> : <span className="rounded-full bg-slate-100 px-2 py-1 text-[11px] font-bold text-slate-600">{"\uC8FC\uBB38 \uC900\uBE44 \uC911"}</span>}
-          <span className="rounded-full bg-slate-100 px-2 py-1 text-[11px] font-bold text-slate-600">{"\uAC00\uC6A9 \uC2AC\uB86F"} {store.availableSlots}</span>
+          
         </div>
       </div>
     </Link>

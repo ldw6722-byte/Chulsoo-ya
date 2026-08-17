@@ -1,4 +1,4 @@
-﻿import { createBrowserRouter } from 'react-router-dom'
+import { createBrowserRouter } from 'react-router-dom'
 import { AppShell } from './AppShell'
 import { RequireIdentity } from './RequireIdentity'
 import { HomePage } from '@/features/catalog/HomePage'
@@ -19,12 +19,16 @@ import { SellerOrderWorkspacePage } from '@/features/seller/SellerOrderWorkspace
 import { SellerSettingsPage } from '@/features/seller/SellerSettingsPage'
 import { SellerClaimsPage } from '@/features/seller/SellerClaimsPage'
 import { SellerApplicationPage } from '@/features/seller/SellerApplicationPage'
+import { SellerDeactivationPage } from '@/features/seller/SellerDeactivationPage'
 
 import { AdminOverviewPage } from '@/features/admin/AdminOverviewPage'
 import { LoginPage } from '@/features/auth/LoginPage'
 import { SignupPage } from '@/features/auth/SignupPage'
 import { AuthCallbackPage } from '@/features/auth/AuthCallbackPage'
 import { MyPage } from '@/features/my/MyPage'
+import { MemberProfilePage } from '@/features/my/MemberProfilePage'
+import { DeliveryAddressPage } from '@/features/my/DeliveryAddressPage'
+import { PaymentMethodsPage } from '@/features/my/PaymentMethodsPage'
 import { StoreDirectoryPage } from '@/features/stores/StoreFinder'
 import { StoreDetailPage } from '@/features/stores/StoreDetailPage'
 import { CustomerSupportPage } from '@/features/support/CustomerSupportPage'
@@ -52,6 +56,9 @@ export const router = createBrowserRouter([
       { path: 'auth/signup', element: <SignupPage /> },
       { path: 'auth/callback', element: <AuthCallbackPage /> },
       { path: 'my', element: authenticatedOnly(<MyPage />) },
+      { path: 'my/profile', element: authenticatedOnly(<MemberProfilePage />) },
+      { path: 'my/delivery-addresses', element: authenticatedOnly(<DeliveryAddressPage />) },
+      { path: 'my/payment-methods', element: authenticatedOnly(<PaymentMethodsPage />) },
       { path: 'support', element: <CustomerSupportPage /> },
       { path: 'stores', element: <StoreDirectoryPage /> },
       { path: 'stores/:storeId', element: <StoreDetailPage /> },
@@ -69,6 +76,7 @@ export const router = createBrowserRouter([
       { path: 'orders/:orderId/claim', element: consumerOnly(<ClaimRequestPage />) },
 
             { path: 'seller/application', element: consumerOnly(<SellerApplicationPage />) },
+      { path: 'seller/deactivation', element: sellerOnly(<SellerDeactivationPage />) },
       { path: 'seller', element: sellerOnly(<SellerDashboardPage />) },
 
       { path: 'seller/offers', element: sellerOnly(<SellerOfferQueuePage />) },
@@ -95,3 +103,4 @@ export const router = createBrowserRouter([
     ],
   },
 ])
+

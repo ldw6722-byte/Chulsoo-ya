@@ -1,3 +1,4 @@
+import type { SubscriptionProduct, SellerSubscriptionStatus, AdminSellerMembership, StoreSubscriptionHistory, SellerSubscriptionTier } from '../types/api'
 import { http, unwrap } from './client'
 import type {
     AdminProduct,
@@ -7,6 +8,8 @@ import type {
   AdminSupportInquiry,
   AdminWorkflowOrder,
   AdminUser,
+  MemberProfile,
+  UpdateMemberProfileRequest,
   CustomerCenterData,
   SupportFaqItem,
   SupportInquiry,
@@ -28,16 +31,23 @@ import type {
 
   CategoryTreeNode,
   CreateOrderRequest,
+  DevelopmentPaymentApprovalHistory,
   DevUser,
   Order,
   OrderStatus,
     OrderSummary,
   PaymentRefundView,
+  SettlementSummary,
+  SettlementRecord,
 
   PageResponse,
   Product,
   ProductPriceTier,
   RegionResolveResult,
+  DeliveryAddress,
+  DeliveryAddressRequest,
+  PaymentMethod,
+  RegisterPaymentMethodRequest,
     SellerMetrics,
   SellerPenalty,
 
@@ -50,8 +60,10 @@ import type {
   StoreUpdateRequest,
   StoreDetail,
   StoreReview,
+  AdminStoreReviewNote,
   SellerApplication,
   AdminSellerApplication,
+  AdminSellerApplicationDocuments, SellerDeactivationRequest,
   SellerApplicationStatus,
   SellerClaimAction,
   SubmitSellerApplicationRequest,
@@ -93,10 +105,12 @@ export const cartApi = {
     unwrap<Cart>(http.post('/cart/items', { productId, quantity, optionHash, priceTierId })).then((cart) => { window.dispatchEvent(new Event('chulsooya:cart-updated')); return cart }),
 
   agreePriceTierSupply: () => unwrap<Cart>(http.post('/cart/price-tier-agreement')),
+  setPriceTierAgreement: (agreed: boolean) => unwrap<Cart>(http.patch('/cart/price-tier-agreement', { agreed })),
   changeQuantity: (cartItemId: number, quantity: number) =>
     unwrap<Cart>(http.patch(`/cart/items/${cartItemId}`, { quantity })),
 
   removeItem: (cartItemId: number) => unwrap<Cart>(http.delete(`/cart/items/${cartItemId}`)),
+  clear: () => unwrap<Cart>(http.delete('/cart')),
 }
 
 /* ?낅슣?뽪룇 鸚??롪퍒???*/
@@ -126,6 +140,20 @@ export const regionApi = {
 }
 
 /* ???瑗??*/
+
+export const deliveryAddressApi = {
+  list: () => unwrap<DeliveryAddress[]>(http.get('/delivery-addresses')),
+  create: (payload: DeliveryAddressRequest) => unwrap<DeliveryAddress>(http.post('/delivery-addresses', payload)),
+  update: (addressId: number, payload: DeliveryAddressRequest) => unwrap<DeliveryAddress>(http.patch('/delivery-addresses/' + addressId, payload)),
+  setDefault: (addressId: number) => unwrap<DeliveryAddress>(http.patch('/delivery-addresses/' + addressId + '/default')),
+  remove: (addressId: number) => unwrap<void>(http.delete('/delivery-addresses/' + addressId)),
+}
+
+export const paymentMethodApi = {
+  list: () => unwrap<PaymentMethod[]>(http.get('/payment-methods')),
+  register: (payload: RegisterPaymentMethodRequest) => unwrap<PaymentMethod>(http.post('/payment-methods', payload)),
+  remove: (paymentMethodId: number) => unwrap<void>(http.delete('/payment-methods/' + paymentMethodId)),
+}
 
 export const sellerApi = {
   store: () => unwrap<SellerStore>(http.get('/seller/store')),
@@ -167,6 +195,8 @@ export const authApi = {
 
 export const userApi = {
   list: () => unwrap<DevUser[]>(http.get('/users')),
+  mine: () => unwrap<MemberProfile>(http.get('/users/me')),
+  updateMine: (payload: UpdateMemberProfileRequest) => unwrap<MemberProfile>(http.patch('/users/me', payload)),
 }
 
 
@@ -221,6 +251,11 @@ export const adminClaimApi = {
 }
 
 export const adminPaymentApi = {
+  developmentPending: () => unwrap<Order[]>(http.get('/admin/payments/development-pending')),
+  developmentHistory: () => unwrap<DevelopmentPaymentApprovalHistory[]>(http.get('/admin/payments/development-history')),
+  developmentApprove: (orderId: number) => unwrap<Order>(http.post(`/admin/payments/orders/${orderId}/development-approve`)),
+  settlements: () => unwrap<SettlementRecord[]>(http.get('/admin/payments/settlements')),
+  settlementSummary: () => unwrap<SettlementSummary>(http.get('/admin/payments/settlements/summary')), 
   refund: (paymentId: number, payload: { amount: number; reason: string; idempotencyKey: string }) => unwrap<PaymentRefundView>(http.post(`/admin/payments/${paymentId}/refunds`, payload)),
 }
 
@@ -238,10 +273,26 @@ export const sellerApplicationApi = {
     form.append('file', file)
     return unwrap<SellerApplication>(http.post(`/seller-applications/${applicationId}/business-license`, form))
   },
+  uploadBankAccountCopy: (applicationId: number, file: File) => {
+    const form = new FormData()
+    form.append('file', file)
+    return unwrap<SellerApplication>(http.post(`/seller-applications/${applicationId}/bank-account-copy`, form))
+  },
+}
+
+export const sellerDeactivationApi = {
+  mine: () => unwrap<SellerDeactivationRequest | null>(http.get('/seller-deactivations/me')),
+  request: (reason: string) => unwrap<SellerDeactivationRequest>(http.post('/seller-deactivations', { reason })),
+}
+export const adminSellerDeactivationApi = {
+  pending: () => unwrap<SellerDeactivationRequest[]>(http.get('/admin/seller-deactivations')),
+  approve: (requestId: number) => unwrap<SellerDeactivationRequest>(http.post('/admin/seller-deactivations/' + requestId + '/approve')),
+  reject: (requestId: number, reason: string) => unwrap<SellerDeactivationRequest>(http.post('/admin/seller-deactivations/' + requestId + '/reject', { reason })),
 }
 
 export const adminSellerApplicationApi = {
   list: (status?: SellerApplicationStatus) => unwrap<AdminSellerApplication[]>(http.get('/admin/seller-applications', { params: status ? { status } : undefined })),
+  documents: (applicationId: number) => unwrap<AdminSellerApplicationDocuments>(http.get(`/admin/seller-applications/${applicationId}/documents`)),
   approve: (applicationId: number) => unwrap<SellerApplication>(http.post(`/admin/seller-applications/${applicationId}/approve`)),
   reject: (applicationId: number, reason: string) => unwrap<AdminSellerApplication>(http.post(`/admin/seller-applications/${applicationId}/reject`, { reason })),
 }
@@ -257,6 +308,7 @@ export const adminStoreApi = {
   create: (payload: StoreCreateRequest) => unwrap<StoreDirectoryItem>(http.post('/admin/stores', payload)),
   update: (storeId: number, payload: StoreUpdateRequest) => unwrap<StoreDirectoryItem>(http.patch('/admin/stores/' + storeId, payload)),
   remove: (storeId: number) => unwrap<void>(http.delete('/admin/stores/' + storeId)),
+  verificationDocuments: (storeId: number) => unwrap<AdminSellerApplicationDocuments>(http.get(`/admin/stores/${storeId}/verification-documents`)),
 }
 
 /* ??㉱?洹먮봿???낅슣?뽪룇 ??諛몃쭑?낅슣?딁뵳?鸚????瑗????怨멸껀 ??戮?꽑 */
@@ -273,6 +325,11 @@ export const storeReviewApi = {
     unwrap<StoreReview>(http.post(`/stores/${storeId}/reviews`, payload)),
   adminList: () => unwrap<StoreReview[]>(http.get('/admin/store-reviews')),
   adminForStore: (storeId: number) => unwrap<StoreReview[]>(http.get(`/admin/stores/${storeId}/reviews`)),
+  update: (reviewId: number, comment: string) => unwrap<StoreReview>(http.patch(`/admin/store-reviews/${reviewId}`, { comment })),
+  adminNotesForStore: (storeId: number) => unwrap<AdminStoreReviewNote[]>(http.get(`/admin/stores/${storeId}/review-notes`)),
+  createAdminNote: (storeId: number, content: string) => unwrap<AdminStoreReviewNote>(http.post(`/admin/stores/${storeId}/review-notes`, { content })),
+  updateAdminNote: (noteId: number, content: string) => unwrap<AdminStoreReviewNote>(http.patch(`/admin/store-review-notes/${noteId}`, { content })),
+  removeAdminNote: (noteId: number) => unwrap<void>(http.delete(`/admin/store-review-notes/${noteId}`)),
   adminReply: (reviewId: number, reply: string) => unwrap<StoreReview>(http.post(`/admin/store-reviews/${reviewId}/reply`, { reply })),
   clearReply: (reviewId: number) => unwrap<void>(http.delete(`/admin/store-reviews/${reviewId}/reply`)),
   remove: (reviewId: number) => unwrap<void>(http.delete(`/admin/store-reviews/${reviewId}`)),
@@ -294,3 +351,19 @@ export const adminSupportApi = {
   reply: (inquiryId: number, reply: string) => unwrap<AdminSupportInquiry>(http.post('/admin/support/inquiries/' + inquiryId + '/reply', { reply })),
   changeStatus: (inquiryId: number, status: SupportInquiryStatus) => unwrap<AdminSupportInquiry>(http.post('/admin/support/inquiries/' + inquiryId + '/status', { status })),
 }
+
+export const sellerSubscriptionApi = {
+  products: () => unwrap<SubscriptionProduct[]>(http.get('/seller/subscription/products')),
+  status: () => unwrap<SellerSubscriptionStatus>(http.get('/seller/subscription/status')),
+  purchase: (productId: number) => unwrap<SellerSubscriptionStatus>(http.post('/seller/subscription/purchase', { productId })),
+}
+export const adminSubscriptionApi = {
+  products: () => unwrap<SubscriptionProduct[]>(http.get('/admin/subscriptions/products')),
+  createProduct: (payload: Omit<SubscriptionProduct, 'id'>) => unwrap<SubscriptionProduct>(http.post('/admin/subscriptions/products', payload)),
+  updateProduct: (id: number, payload: Omit<SubscriptionProduct, 'id'>) => unwrap<SubscriptionProduct>(http.put('/admin/subscriptions/products/' + id, payload)),
+  removeProduct: (id: number) => unwrap<void>(http.delete('/admin/subscriptions/products/' + id)),
+  memberships: () => unwrap<AdminSellerMembership[]>(http.get('/admin/subscriptions/memberships')),
+  changeMembership: (storeId: number, payload: { tier: SellerSubscriptionTier; expiresAt: string | null; reason?: string }) => unwrap<AdminSellerMembership>(http.post('/admin/subscriptions/stores/' + storeId + '/membership', payload)),
+  history: (storeId: number) => unwrap<StoreSubscriptionHistory[]>(http.get('/admin/subscriptions/stores/' + storeId + '/history')),
+}
+

@@ -155,6 +155,14 @@ export interface Order {
   items: OrderItem[]
 }
 
+export interface DevelopmentPaymentApprovalHistory {
+  order: Order
+  paymentStatus: 'READY' | 'PAID' | 'CANCEL_PENDING' | 'CANCELLED' | 'REFUNDING' | 'PARTIAL_REFUNDED' | 'REFUNDED'
+  method: string
+  transactionKey: string | null
+  approvedAt: string | null
+}
+
 export interface OrderSummary {
   id: number
   status: OrderStatus
@@ -319,9 +327,12 @@ export interface StoreDirectoryItem {
   rating: number
   verified: boolean
   receivingOrders: boolean
+  directoryVisible: boolean
+  customerBadgeText: string | null
+  customerNoticeText: string | null
   restricted: boolean
   availableSlots: number
-  tier: 'FREE' | 'STANDARD' | 'PREMIUM'
+  tier: SellerSubscriptionTier
   ownerEmail: string
 }
 
@@ -343,6 +354,9 @@ export interface StoreCreateRequest {
   rating: number
   verified: boolean
   receivingOrders: boolean
+  directoryVisible: boolean
+  customerBadgeText: string
+  customerNoticeText: string
 }
 
 export interface StoreUpdateRequest {
@@ -356,6 +370,9 @@ export interface StoreUpdateRequest {
   rating: number
   verified: boolean
   receivingOrders: boolean
+  directoryVisible: boolean
+  customerBadgeText: string
+  customerNoticeText: string
 }
 
 export interface WorkflowTimelineEvent {
@@ -476,6 +493,15 @@ export interface StoreReview {
   moderatedAt: string | null
 }
 
+export interface AdminStoreReviewNote {
+  id: number
+  storeId: number
+  authorId: number
+  content: string
+  createdAt: string
+  updatedAt: string
+}
+
 export interface StoreReviewEligibility {
   eligible: boolean
   reason: string
@@ -495,7 +521,23 @@ export interface AdminUser {
   id: number
   email: string
   name: string
+  phone: string | null
   role: UserRole
+  createdAt: string
+}
+
+export interface MemberProfile {
+  id: number
+  email: string
+  name: string
+  phone: string | null
+  role: UserRole
+  createdAt: string
+}
+
+export interface UpdateMemberProfileRequest {
+  name: string
+  phone: string
 }
 
 export type SellerApplicationStatus = 'PENDING' | 'MANUAL_REVIEW' | 'APPROVED' | 'REJECTED'
@@ -524,6 +566,7 @@ export interface SellerApplication {
   status: SellerApplicationStatus
   ntsStatus: NtsVerificationStatus
   certificateSubmitted: boolean
+  bankAccountCopySubmitted: boolean
   submittedAt: string
   reviewedAt: string | null
   rejectionReason: string | null
@@ -533,10 +576,27 @@ export interface AdminSellerApplication extends SellerApplication {
   applicantUserId: number
   applicantName: string
   applicantEmail: string
+  applicantPhone: string
   representativeName: string
+  businessRegistrationNumber: string
   businessRegistrationNumberMasked: string
+  businessOpenedOn: string | null
   ntsMessage: string | null
   reviewedByUserId: number | null
+}
+
+export interface SellerVerificationDocument {
+  type: 'BUSINESS_LICENSE' | 'BANK_ACCOUNT_COPY'
+  label: string
+  submitted: boolean
+  contentType: string | null
+  sizeBytes: number | null
+  signedUrl: string | null
+}
+export interface AdminSellerApplicationDocuments {
+  applicationId: number
+  businessLicense: SellerVerificationDocument
+  bankAccountCopy: SellerVerificationDocument
 }
 
 export interface SellerPenalty {
@@ -647,3 +707,85 @@ export interface ClaimDecisionDocument {
 export interface AdminProduct { id:number; categoryCode:string; categoryName:string; name:string; specSummary:string; description:string|null; specification:string|null; price:number; originalPrice:number|null; supplyCost:number|null; discountRate:number|null; selectPromotion:boolean; eventCampaignId:number|null; unit:string; imageUrl:string|null; brand:string|null; featured:boolean; quickFulfillment:boolean; active:boolean }
 
 export interface EventCampaign { id:number; name:string; heroTitle:string; heroSubtitle:string|null; badgeText:string; ctaText:string; themeKey:string; iconKey:string; heroSort:number; active:boolean; heroEnabled:boolean }
+
+export interface DeliveryAddress {
+  id: number
+  label: string
+  recipientName: string
+  recipientPhone: string
+  cityName: string
+  districtName: string
+  roadAddress: string
+  addressDetail: string | null
+  fullAddress: string
+  defaultAddress: boolean
+  createdAt: string
+  updatedAt: string
+}
+
+export interface DeliveryAddressRequest {
+  label: string
+  recipientName: string
+  recipientPhone: string
+  cityName: string
+  districtName: string
+  roadAddress: string
+  addressDetail?: string
+  defaultAddress: boolean
+}
+
+export type PaymentMethodType = 'BANK_ACCOUNT' | 'CARD'
+
+export interface PaymentMethod {
+  id: number
+  methodType: PaymentMethodType
+  providerName: string
+  maskedLabel: string
+  createdAt: string
+}
+
+export interface RegisterPaymentMethodRequest {
+  methodType: PaymentMethodType
+  providerName: string
+  lastFour: string
+}
+
+
+export interface SettlementSummary {
+  grossAmount: number
+  commissionAmount: number
+  refundedAmount: number
+  sellerPayableAmount: number
+  pendingCount: number
+  holdCount: number
+}
+
+export interface SettlementRecord {
+  id: number
+  orderId: number
+  storeId: number
+  storeName: string | null
+  paymentId: number
+  grossAmount: number
+  commissionRateBps: number
+  commissionAmount: number
+  refundedAmount: number
+  sellerPayableAmount: number
+  paymentStatus: PaymentStatus
+  status: 'PENDING' | 'HOLD' | 'RELEASABLE' | 'SETTLED' | 'CANCELLED'
+  holdReason: string | null
+  approvedAt: string | null
+  createdAt: string
+  updatedAt: string
+}
+
+export type SellerDeactivationStatus = 'PENDING' | 'APPROVED' | 'REJECTED'
+export interface SellerDeactivationRequest { id: number; sellerUserId: number; sellerName: string; sellerEmail: string; status: SellerDeactivationStatus; reason: string | null; requestedAt: string; reviewedAt: string | null; rejectionReason: string | null }
+
+export type SellerSubscriptionTier = 'PREMIUM' | 'GOLD' | 'SILVER'
+export type SubscriptionHistoryEvent = 'PURCHASED' | 'ADMIN_CHANGED' | 'EXPIRED'
+export interface SubscriptionProduct { id: number; name: string; tier: SellerSubscriptionTier; price: number; durationMonths: number; description: string | null; active: boolean; displayOrder: number }
+export interface StoreSubscriptionHistory { id: number; productId: number | null; previousTier: SellerSubscriptionTier; nextTier: SellerSubscriptionTier; previousExpiresAt: string | null; expiresAt: string | null; eventType: SubscriptionHistoryEvent; changedByUserId: number | null; reason: string | null; createdAt: string }
+export interface SellerSubscriptionStatus { storeId: number; storeName: string; tier: SellerSubscriptionTier; subscriptionExpiresAt: string | null; activePaidMembership: boolean; history: StoreSubscriptionHistory[] }
+export interface AdminSellerMembership { storeId: number; storeName: string; ownerEmail: string; tier: SellerSubscriptionTier; subscriptionExpiresAt: string | null; activePaidMembership: boolean; configuredSlots: number; tierSlotCap: number }
+

@@ -1,13 +1,38 @@
 /* oxlint-disable react/only-export-components */
 import type { ReactNode } from 'react'
 
+const GENERATED_THEME_OPTIONS = [
+  ['workshopCobalt', '워크샵 코발트', 'from-blue-950 via-blue-700 to-cyan-500', 'workshop-cobalt.jpg'],
+  ['emberForge', '엠버 포지', 'from-stone-950 via-orange-700 to-amber-300', 'ember-forge.jpg'],
+  ['forestCraft', '포레스트 크래프트', 'from-emerald-950 via-emerald-700 to-amber-400', 'forest-craft.jpg'],
+  ['midnightSteel', '미드나이트 스틸', 'from-slate-950 via-indigo-900 to-cyan-500', 'midnight-steel.jpg'],
+  ['sandstoneBuild', '샌드스톤 빌드', 'from-stone-900 via-orange-600 to-amber-200', 'sandstone-build.jpg'],
+  ['copperPipe', '코퍼 파이프', 'from-teal-950 via-cyan-700 to-orange-400', 'copper-pipe.jpg'],
+  ['cleanElectric', '클린 일렉트릭', 'from-sky-900 via-blue-500 to-cyan-200', 'clean-electric.jpg'],
+  ['safetyYellow', '세이프티 옐로', 'from-slate-950 via-amber-500 to-yellow-300', 'safety-yellow.jpg'],
+  ['rainyRepair', '레인 리페어', 'from-slate-950 via-slate-600 to-sky-400', 'rainy-repair.jpg'],
+  ['springRenovation', '스프링 리노베이션', 'from-emerald-900 via-teal-500 to-lime-200', 'spring-renovation.jpg'],
+  ['summerCooling', '서머 쿨링', 'from-cyan-950 via-sky-500 to-cyan-200', 'summer-cooling.jpg'],
+  ['autumnWood', '어텀 우드', 'from-stone-950 via-orange-800 to-amber-500', 'autumn-wood.jpg'],
+  ['winterInsulation', '윈터 인슐레이션', 'from-indigo-950 via-blue-700 to-slate-100', 'winter-insulation.jpg'],
+  ['purpleTools', '퍼플 툴즈', 'from-violet-950 via-purple-700 to-fuchsia-400', 'purple-tools.jpg'],
+  ['roseRenewal', '로즈 리뉴얼', 'from-rose-950 via-rose-600 to-orange-300', 'rose-renewal.jpg'],
+  ['graphiteFastener', '그래파이트 패스너', 'from-zinc-950 via-slate-600 to-slate-300', 'graphite-fastener.jpg'],
+  ['tealPlumbing', '틸 플러밍', 'from-teal-950 via-cyan-700 to-amber-300', 'teal-plumbing.jpg'],
+  ['crimsonPower', '크림슨 파워', 'from-red-950 via-rose-700 to-orange-400', 'crimson-power.jpg'],
+  ['ivoryMinimal', '아이보리 미니멀', 'from-stone-800 via-stone-500 to-amber-100', 'ivory-minimal.jpg'],
+  ['neonNightwork', '네온 나이트워크', 'from-slate-950 via-indigo-800 to-fuchsia-500', 'neon-nightwork.jpg'],
+] as const
+
 export const THEME_OPTIONS = [
   ['blue', '블루 웨이브', 'from-indigo-700 via-blue-600 to-cyan-500'], ['orange', '오렌지 스파크', 'from-rose-700 via-orange-600 to-amber-500'], ['charcoal', '차콜 스틸', 'from-slate-800 via-slate-600 to-stone-500'], ['green', '그린 워크', 'from-teal-700 via-emerald-600 to-lime-500'], ['violet', '바이올렛 나이트', 'from-violet-800 via-purple-700 to-fuchsia-600'],
   ['ocean', '오션 딥', 'from-cyan-800 via-sky-600 to-blue-400'], ['sunset', '선셋 코랄', 'from-orange-800 via-rose-600 to-pink-400'], ['copper', '코퍼 브론즈', 'from-amber-900 via-orange-700 to-yellow-500'], ['lime', '라임 필드', 'from-lime-800 via-green-600 to-emerald-400'], ['graphite', '그래파이트', 'from-zinc-900 via-slate-700 to-slate-500'],
   ['ruby', '루비 레드', 'from-red-900 via-rose-700 to-red-400'], ['sky', '스카이 클리어', 'from-sky-800 via-sky-500 to-cyan-300'], ['navy', '네이비 블루', 'from-blue-950 via-blue-800 to-indigo-500'], ['coral', '코랄 핑크', 'from-rose-800 via-pink-600 to-orange-400'], ['mint', '민트 글로우', 'from-emerald-800 via-teal-500 to-cyan-300'],
   ['amber', '앰버 골드', 'from-yellow-900 via-amber-600 to-orange-400'], ['midnight', '미드나이트', 'from-slate-950 via-indigo-900 to-blue-700'], ['sand', '샌드 베이지', 'from-stone-800 via-amber-600 to-yellow-300'], ['aurora', '오로라', 'from-violet-900 via-cyan-700 to-emerald-400'], ['berry', '베리 그라데이션', 'from-fuchsia-900 via-purple-700 to-rose-500'],
+  ...GENERATED_THEME_OPTIONS,
 ] as const
 export const THEME_CLASS = Object.fromEntries(THEME_OPTIONS.map(([key, , value]) => [key, value])) as Record<string, string>
+export const THEME_IMAGE_URL: Record<string, string> = Object.fromEntries(GENERATED_THEME_OPTIONS.map(([key, , , file]) => [key, 'https://gvsnsnjfvtogvlyvmlkt.supabase.co/storage/v1/object/public/event-assets/themes/' + file]))
 
 type IconOption = { key: string; label: string; paths: string[]; extras?: ReactNode }
 export const ICON_OPTIONS: IconOption[] = [
@@ -42,5 +67,71 @@ export const ICON_OPTIONS: IconOption[] = [
   { key: 'cloud', label: '구름', paths: ['M6 17h11a4 4 0 0 0 0-8 5 5 0 0 0-9-1 4 4 0 0 0-2 8z'] },
   { key: 'wind', label: '바람', paths: ['M4 9h11a3 3 0 1 0-3-3', 'M4 13h15a3 3 0 1 1-3 3', 'M4 17h7'] },
 ]
+export const HARDWARE_IMAGE_ICON_OPTIONS: IconOption[] = [
+  { key: 'asset-drill', label: '충전 드릴', paths: [] },
+  { key: 'asset-hammer', label: '클로 해머', paths: [] },
+  { key: 'asset-wrench', label: '조절 렌치', paths: [] },
+  { key: 'asset-pliers', label: '플라이어', paths: [] },
+  { key: 'asset-screwdrivers', label: '드라이버 세트', paths: [] },
+  { key: 'asset-tape', label: '줄자', paths: [] },
+  { key: 'asset-handsaw', label: '목공 톱', paths: [] },
+  { key: 'asset-circular-saw', label: '원형 톱', paths: [] },
+  { key: 'asset-grinder', label: '그라인더', paths: [] },
+  { key: 'asset-impact', label: '임팩트 드라이버', paths: [] },
+  { key: 'asset-bits', label: '비트 케이스', paths: [] },
+  { key: 'asset-fasteners', label: '볼트·너트', paths: [] },
+  { key: 'asset-anchor', label: '앙카·피스', paths: [] },
+  { key: 'asset-caulk', label: '실리콘 건', paths: [] },
+  { key: 'asset-roller', label: '페인트 롤러', paths: [] },
+  { key: 'asset-brush', label: '페인트 붓', paths: [] },
+  { key: 'asset-pipe-wrench', label: '파이프 렌치', paths: [] },
+  { key: 'asset-faucet', label: '수전', paths: [] },
+  { key: 'asset-pvc', label: 'PVC 배관', paths: [] },
+  { key: 'asset-valve', label: '밸브', paths: [] },
+  { key: 'asset-hardhat', label: '안전모', paths: [] },
+  { key: 'asset-gloves', label: '작업 장갑', paths: [] },
+  { key: 'asset-goggles', label: '보안경', paths: [] },
+  { key: 'asset-ladder', label: '사다리', paths: [] },
+  { key: 'asset-cart', label: '공구 카트', paths: [] },
+  { key: 'asset-toolbox', label: '공구함', paths: [] },
+  { key: 'asset-worklight', label: '작업등', paths: [] },
+  { key: 'asset-doorlock', label: '도어락', paths: [] },
+  { key: 'asset-level', label: '수평계', paths: [] },
+  { key: 'asset-laser', label: '레이저 측정기', paths: [] },
+]
+export const HARDWARE_IMAGE_ICON_URL: Record<string, string> = {
+  'asset-drill': 'https://gvsnsnjfvtogvlyvmlkt.supabase.co/storage/v1/object/public/event-assets/icons/icon-01-cordless-drill.webp',
+  'asset-hammer': 'https://gvsnsnjfvtogvlyvmlkt.supabase.co/storage/v1/object/public/event-assets/icons/icon-02-claw-hammer.webp',
+  'asset-wrench': 'https://gvsnsnjfvtogvlyvmlkt.supabase.co/storage/v1/object/public/event-assets/icons/icon-03-adjustable-wrench.webp',
+  'asset-pliers': 'https://gvsnsnjfvtogvlyvmlkt.supabase.co/storage/v1/object/public/event-assets/icons/icon-04-pliers.webp',
+  'asset-screwdrivers': 'https://gvsnsnjfvtogvlyvmlkt.supabase.co/storage/v1/object/public/event-assets/icons/icon-05-screwdriver-set.webp',
+  'asset-tape': 'https://gvsnsnjfvtogvlyvmlkt.supabase.co/storage/v1/object/public/event-assets/icons/icon-06-tape-measure.webp',
+  'asset-handsaw': 'https://gvsnsnjfvtogvlyvmlkt.supabase.co/storage/v1/object/public/event-assets/icons/icon-07-handsaw.webp',
+  'asset-circular-saw': 'https://gvsnsnjfvtogvlyvmlkt.supabase.co/storage/v1/object/public/event-assets/icons/icon-08-circular-saw.webp',
+  'asset-grinder': 'https://gvsnsnjfvtogvlyvmlkt.supabase.co/storage/v1/object/public/event-assets/icons/icon-09-angle-grinder.webp',
+  'asset-impact': 'https://gvsnsnjfvtogvlyvmlkt.supabase.co/storage/v1/object/public/event-assets/icons/icon-10-impact-driver.webp',
+  'asset-bits': 'https://gvsnsnjfvtogvlyvmlkt.supabase.co/storage/v1/object/public/event-assets/icons/icon-11-bits-box.webp',
+  'asset-fasteners': 'https://gvsnsnjfvtogvlyvmlkt.supabase.co/storage/v1/object/public/event-assets/icons/icon-12-bolts-nuts.webp',
+  'asset-anchor': 'https://gvsnsnjfvtogvlyvmlkt.supabase.co/storage/v1/object/public/event-assets/icons/icon-13-wall-anchor.webp',
+  'asset-caulk': 'https://gvsnsnjfvtogvlyvmlkt.supabase.co/storage/v1/object/public/event-assets/icons/icon-14-caulk-gun.webp',
+  'asset-roller': 'https://gvsnsnjfvtogvlyvmlkt.supabase.co/storage/v1/object/public/event-assets/icons/icon-15-paint-roller.webp',
+  'asset-brush': 'https://gvsnsnjfvtogvlyvmlkt.supabase.co/storage/v1/object/public/event-assets/icons/icon-16-paint-brush.webp',
+  'asset-pipe-wrench': 'https://gvsnsnjfvtogvlyvmlkt.supabase.co/storage/v1/object/public/event-assets/icons/icon-17-pipe-wrench.webp',
+  'asset-faucet': 'https://gvsnsnjfvtogvlyvmlkt.supabase.co/storage/v1/object/public/event-assets/icons/icon-18-faucet.webp',
+  'asset-pvc': 'https://gvsnsnjfvtogvlyvmlkt.supabase.co/storage/v1/object/public/event-assets/icons/icon-19-pvc-pipe.webp',
+  'asset-valve': 'https://gvsnsnjfvtogvlyvmlkt.supabase.co/storage/v1/object/public/event-assets/icons/icon-20-valve.webp',
+  'asset-hardhat': 'https://gvsnsnjfvtogvlyvmlkt.supabase.co/storage/v1/object/public/event-assets/icons/icon-21-hardhat.webp',
+  'asset-gloves': 'https://gvsnsnjfvtogvlyvmlkt.supabase.co/storage/v1/object/public/event-assets/icons/icon-22-safety-gloves.webp',
+  'asset-goggles': 'https://gvsnsnjfvtogvlyvmlkt.supabase.co/storage/v1/object/public/event-assets/icons/icon-23-safety-goggles.webp',
+  'asset-ladder': 'https://gvsnsnjfvtogvlyvmlkt.supabase.co/storage/v1/object/public/event-assets/icons/icon-24-ladder.webp',
+  'asset-cart': 'https://gvsnsnjfvtogvlyvmlkt.supabase.co/storage/v1/object/public/event-assets/icons/icon-25-tool-cart.webp',
+  'asset-toolbox': 'https://gvsnsnjfvtogvlyvmlkt.supabase.co/storage/v1/object/public/event-assets/icons/icon-26-toolbox.webp',
+  'asset-worklight': 'https://gvsnsnjfvtogvlyvmlkt.supabase.co/storage/v1/object/public/event-assets/icons/icon-27-worklight.webp',
+  'asset-doorlock': 'https://gvsnsnjfvtogvlyvmlkt.supabase.co/storage/v1/object/public/event-assets/icons/icon-28-doorlock.webp',
+  'asset-level': 'https://gvsnsnjfvtogvlyvmlkt.supabase.co/storage/v1/object/public/event-assets/icons/icon-29-spirit-level.webp',
+  'asset-laser': 'https://gvsnsnjfvtogvlyvmlkt.supabase.co/storage/v1/object/public/event-assets/icons/icon-30-laser-measure.webp',
+}
+ICON_OPTIONS.push(...HARDWARE_IMAGE_ICON_OPTIONS)
+
 export const ICON_MAP = Object.fromEntries(ICON_OPTIONS.map(item => [item.key, item])) as Record<string, IconOption>
-export function CampaignIcon({ iconKey, className = 'h-20 w-20', strokeWidth = 1.6 }: { iconKey: string; className?: string; strokeWidth?: number }) { const icon = ICON_MAP[iconKey] ?? ICON_MAP.toolbox; return <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round" className={className}>{icon.paths.map((path, index) => <path key={`${icon.key}-${index}`} d={path} />)}</svg> }
+export function CampaignIcon({ iconKey, className = 'h-20 w-20', strokeWidth = 1.6 }: { iconKey: string; className?: string; strokeWidth?: number }) { if (!iconKey || iconKey === 'none') return null; const imageUrl = HARDWARE_IMAGE_ICON_URL[iconKey]; if (imageUrl) return <img aria-hidden="true" src={imageUrl} alt="" className={`${className} object-contain`} />; const icon = ICON_MAP[iconKey] ?? ICON_MAP.toolbox; return <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round" className={className}>{icon.paths.map((path, index) => <path key={`${icon.key}-${index}`} d={path} />)}</svg> }

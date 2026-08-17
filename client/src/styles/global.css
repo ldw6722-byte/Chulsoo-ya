@@ -337,3 +337,21 @@ textarea {
   font-weight: 600;
   background: var(--c-surface-muted);
 }
+
+
+/* 다크 변형이 없는 관리자 레거시 패널도 전역 테마와 같은 대비로 유지한다. */
+.dark .admin-theme .bg-white { background-color: #0f172a !important; }
+.dark .admin-theme .bg-slate-50 { background-color: #020617 !important; }
+.dark .admin-theme .bg-white\/95 { background-color: rgba(15, 23, 42, 0.95) !important; }
+.dark .admin-theme .border-slate-100,
+.dark .admin-theme .border-slate-200,
+.dark .admin-theme .border-slate-300 { border-color: #334155 !important; }
+.dark .admin-theme .text-slate-900,
+.dark .admin-theme .text-slate-800,
+.dark .admin-theme .text-slate-700 { color: #e2e8f0 !important; }
+.dark .admin-theme .text-slate-600,
+.dark .admin-theme .text-slate-500,
+.dark .admin-theme .text-slate-400 { color: #94a3b8 !important; }
+.dark .admin-theme input,
+.dark .admin-theme select,
+.dark .admin-theme textarea { background-color: #0f172a; color: #e2e8f0; border-color: #475569; }
