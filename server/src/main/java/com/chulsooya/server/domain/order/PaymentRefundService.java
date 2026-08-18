@@ -9,6 +9,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.chulsooya.server.common.DomainException;
 import com.chulsooya.server.common.ErrorCode;
+import com.chulsooya.server.domain.claim.SettlementService;
 import com.chulsooya.server.domain.store.Store;
 import com.chulsooya.server.domain.coupon.CouponService;
 import com.chulsooya.server.domain.store.StoreRepository;
@@ -24,15 +25,17 @@ public class PaymentRefundService {
     private final PaymentRefundRepository refunds;
     private final StoreRepository stores;
     private final CouponService couponService;
+    private final SettlementService settlementService;
     private final Clock clock;
 
     public PaymentRefundService(OrderRepository orders, PaymentRepository payments,
-            PaymentRefundRepository refunds, StoreRepository stores, CouponService couponService, Clock clock) {
+            PaymentRefundRepository refunds, StoreRepository stores, CouponService couponService, SettlementService settlementService, Clock clock) {
         this.orders = orders;
         this.payments = payments;
         this.refunds = refunds;
         this.stores = stores;
         this.couponService = couponService;
+        this.settlementService = settlementService;
         this.clock = clock;
     }
 
@@ -95,6 +98,7 @@ public class PaymentRefundService {
                 amount, reason, idempotencyKey, actor.userId(), now);
         refunds.save(refund);
         payment.applyRefund(amount);
+        settlementService.applyRefund(order, payment, amount, now);
         refund.markSucceeded(actor.userId(), stubCancelKey(), "개발 환불 승인", now);
         if (payment.getRemainingAmount() == 0) cancelOrderAndReleaseSlot(order, now);
         return refund;
@@ -126,6 +130,7 @@ public class PaymentRefundService {
                 amount, reason, idempotencyKey, actor.userId(), now);
         refunds.save(refund);
         payment.applyRefund(amount);
+        settlementService.applyRefund(order, payment, amount, now);
         refund.markSucceeded(actor.userId(), stubCancelKey(), "클레임 환불 승인", now);
         if (payment.getRemainingAmount() == 0 && !order.getStatus().isTerminal()) {
             cancelOrderAndReleaseSlot(order, now);

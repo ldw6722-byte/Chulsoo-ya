@@ -17,6 +17,13 @@ public final class StoreReviewDtos {
             @NotBlank @Size(max = 1000) String comment) {}
 
     public record ModerationRequest(boolean visible, @Size(max = 300) String reason) {}
+    public record UpdateReviewRequest(@NotBlank @Size(max = 1000) String comment) {}
+    public record AdminStoreNoteRequest(@NotBlank @Size(max = 1000) String content) {}
+    public record AdminStoreNoteResponse(Long id, Long storeId, Long authorId, String content, Instant createdAt, Instant updatedAt) {
+        static AdminStoreNoteResponse from(AdminStoreReviewNote note) {
+            return new AdminStoreNoteResponse(note.getId(), note.getStoreId(), note.getAuthorId(), note.getContent(), note.getCreatedAt(), note.getUpdatedAt());
+        }
+    }
     public record ReplyRequest(@NotBlank @Size(max = 1000) String reply) {}
 
     public record ReviewResponse(Long id, Long storeId, Long orderId, String consumerName, int rating,

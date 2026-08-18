@@ -67,7 +67,14 @@ public class CartService {
 		return toResponse(cartRepository.save(cart));
 	}
 
-	@Transactional(readOnly = true)
+	    @Transactional
+    public CartResponse clear(Long consumerId) {
+            Cart cart = requireActiveCart(consumerId);
+            cart.clear();
+            return toResponse(cartRepository.save(cart));
+    }
+
+@Transactional(readOnly = true)
 	public CartResponse view(Long consumerId) {
 		return cartRepository.findByConsumerIdAndActiveTrue(consumerId)
 				.map(this::toResponse)
@@ -111,8 +118,12 @@ public class CartService {
 	}
         @Transactional
         public CartResponse agreePriceTierSupply(Long consumerId) {
+                return updatePriceTierAgreement(consumerId, true);
+        }
+        @Transactional
+        public CartResponse updatePriceTierAgreement(Long consumerId, boolean agreed) {
                 Cart cart = requireActiveCart(consumerId);
-                cart.agreeToPriceTierSupply(java.time.Instant.now());
+                cart.setPriceTierAgreement(agreed, java.time.Instant.now());
                 return toResponse(cartRepository.save(cart));
         }
 }

@@ -17,6 +17,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import com.chulsooya.server.domain.store.StoreRepository;
 import com.chulsooya.server.domain.coupon.CouponService;
+import com.chulsooya.server.domain.claim.SettlementService;
 import com.chulsooya.server.domain.user.UserRole;
 import com.chulsooya.server.support.CurrentUser;
 
@@ -28,13 +29,14 @@ class PaymentRefundServiceTest {
     @Mock private PaymentRefundRepository refunds;
     @Mock private StoreRepository stores;
     @Mock private CouponService couponService;
+    @Mock private SettlementService settlementService;
 
     @Test
     void consumer_cancel_after_payment_creates_a_cancel_audit_and_closes_order_and_payment() {
         Instant now = Instant.parse("2026-08-13T00:00:00Z");
         Order order = paidOrder(now);
         Payment payment = paidPayment(now, 10_000);
-        PaymentRefundService service = new PaymentRefundService(orders, payments, refunds, stores, couponService,
+        PaymentRefundService service = new PaymentRefundService(orders, payments, refunds, stores, couponService, settlementService,
                 Clock.fixed(now, ZoneOffset.UTC));
 
         when(orders.findByIdForUpdate(1L)).thenReturn(Optional.of(order));
@@ -54,7 +56,7 @@ class PaymentRefundServiceTest {
         Instant now = Instant.parse("2026-08-13T00:00:00Z");
         Order order = paidOrder(now);
         Payment payment = paidPayment(now, 10_000);
-        PaymentRefundService service = new PaymentRefundService(orders, payments, refunds, stores, couponService,
+        PaymentRefundService service = new PaymentRefundService(orders, payments, refunds, stores, couponService, settlementService,
                 Clock.fixed(now, ZoneOffset.UTC));
         CurrentUser admin = new CurrentUser(1L, UserRole.ADMIN);
 

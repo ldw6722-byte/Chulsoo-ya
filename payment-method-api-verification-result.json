@@ -1,0 +1,6 @@
+{
+  "bankMethodId": 1,
+  "cardMethodId": 2,
+  "returnedRawLastFour": false,
+  "cleanupCount": 0
+}

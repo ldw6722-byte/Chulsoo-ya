@@ -55,11 +55,19 @@ public class Store {
     private double rating = 4.0;
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
-    private SubscriptionTier tier = SubscriptionTier.FREE;
+    private SubscriptionTier tier = SubscriptionTier.SILVER;
+    @Column(name = "subscription_expires_at")
+    private Instant subscriptionExpiresAt;
     @Column(nullable = false)
     private boolean verified = false;
     @Column(nullable = false)
     private boolean receivingOrders = true;
+    @Column(nullable = false)
+    private boolean directoryVisible = true;
+    @Column(length = 60)
+    private String customerBadgeText;
+    @Column(length = 200)
+    private String customerNoticeText;
     @Column(nullable = false)
     private int configuredSlots = 3;
     @Column(nullable = false)
@@ -108,6 +116,11 @@ public class Store {
         this.verified = verified;
         this.receivingOrders = receivingOrders;
     }
+    public void changeCustomerDisplaySettings(String badgeText, String noticeText, boolean directoryVisible) {
+        this.customerBadgeText = badgeText == null || badgeText.isBlank() ? null : badgeText.trim();
+        this.customerNoticeText = noticeText == null || noticeText.isBlank() ? null : noticeText.trim();
+        this.directoryVisible = directoryVisible;
+    }
 
     public void changeConfiguredSlots(int next) {
         if (next < 0 || next > getTierSlotCap()) {
@@ -129,6 +142,25 @@ public class Store {
     public void changeTier(SubscriptionTier next) {
         this.tier = next;
         if (this.configuredSlots > next.getSlotCap()) this.configuredSlots = next.getSlotCap();
+    }
+    public Instant getSubscriptionExpiresAt() { return subscriptionExpiresAt; }
+    public boolean hasActivePaidMembership(Instant now) {
+        return tier != SubscriptionTier.SILVER && subscriptionExpiresAt != null && subscriptionExpiresAt.isAfter(now);
+    }
+    public void activateMembership(SubscriptionTier next, Instant expiresAt) {
+        if (next == SubscriptionTier.SILVER || expiresAt == null) {
+            changeTier(SubscriptionTier.SILVER);
+            subscriptionExpiresAt = null;
+            return;
+        }
+        changeTier(next);
+        subscriptionExpiresAt = expiresAt;
+    }
+    public boolean expireMembershipIfNeeded(Instant now) {
+        if (tier == SubscriptionTier.SILVER || subscriptionExpiresAt == null || subscriptionExpiresAt.isAfter(now)) return false;
+        changeTier(SubscriptionTier.SILVER);
+        subscriptionExpiresAt = null;
+        return true;
     }
     public void adjustTrustScore(double delta) { this.trustScore = Math.max(0, Math.min(100, this.trustScore + delta)); }
 }

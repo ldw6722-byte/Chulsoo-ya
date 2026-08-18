@@ -57,10 +57,14 @@ public class User {
         return user;
     }
 
-    /** OAuth 메타데이터는 표시 프로필만 갱신하며, 플랫폼 역할은 절대 변경하지 않는다. */
+    /** 인증 제공자는 이메일만 동기화한다. 회원이 직접 저장한 표시 이름은 보존한다. */
     public void refreshSupabaseProfile(String email, String name) {
         this.email = email;
-        if (name != null && !name.isBlank()) this.name = name.trim();
+        if ((this.name == null || this.name.isBlank()) && name != null && !name.isBlank()) this.name = name.trim();
+    }
+    public void updateMemberProfile(String name, String phone) {
+        this.name = name.trim();
+        this.phone = phone.trim();
     }
 
     public void linkSupabaseIdentity(UUID supabaseUserId) {

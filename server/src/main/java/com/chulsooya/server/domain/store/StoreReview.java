@@ -57,6 +57,9 @@ public class StoreReview {
         this.trustDelta = trustDelta;
     }
 
+    public void updateComment(String comment) {
+        this.comment = comment.trim();
+    }
     public void moderate(boolean visible, String reason, Long adminId, Instant now) {
         this.visibility = visible ? ReviewVisibility.PUBLISHED : ReviewVisibility.HIDDEN;
         this.moderationReason = reason == null || reason.isBlank() ? null : reason.trim();

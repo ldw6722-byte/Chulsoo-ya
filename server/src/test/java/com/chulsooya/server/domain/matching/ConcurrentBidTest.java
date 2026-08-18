@@ -141,9 +141,9 @@ class ConcurrentBidTest {
 		Order saved = orderRepository.save(order);
 
 		int dispatched = offerDispatchService.dispatch(saved);
-		assertThat(dispatched).isEqualTo(1);
+		assertThat(dispatched).isEqualTo(2);
 		assertThat(storeRepository.findById(a).orElseThrow().getReservedSlots()).isEqualTo(1);
-		assertThat(storeRepository.findById(b).orElseThrow().getReservedSlots()).isZero();
+		assertThat(storeRepository.findById(b).orElseThrow().getReservedSlots()).isEqualTo(1);
 
 		bidService.placeBid(saved.getId(), a);
 

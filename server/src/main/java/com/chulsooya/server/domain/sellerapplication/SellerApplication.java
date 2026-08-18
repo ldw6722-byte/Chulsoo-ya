@@ -83,7 +83,15 @@ public class SellerApplication {
 
     private Long certificateSizeBytes;
 
-    @Column(nullable = false)
+    
+    @Column(length = 500)
+    private String bankAccountCopyObjectKey;
+
+    @Column(length = 100)
+    private String bankAccountCopyContentType;
+
+    private Long bankAccountCopySizeBytes;
+@Column(nullable = false)
     private Instant submittedAt = Instant.now();
 
     private Long reviewedByUserId;
@@ -121,6 +129,13 @@ public class SellerApplication {
         this.certificateObjectKey = required(objectKey);
         this.certificateContentType = required(contentType);
         this.certificateSizeBytes = sizeBytes;
+    }
+
+    public void markBankAccountCopyUploaded(String objectKey, String contentType, long sizeBytes) {
+        requirePending();
+        this.bankAccountCopyObjectKey = required(objectKey);
+        this.bankAccountCopyContentType = required(contentType);
+        this.bankAccountCopySizeBytes = sizeBytes;
     }
 
     public void markNtsVerification(NtsVerificationStatus next, String message) {

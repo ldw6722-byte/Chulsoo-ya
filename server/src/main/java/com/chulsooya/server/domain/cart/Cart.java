@@ -59,7 +59,11 @@ public class Cart {
                 findItem(productId, normalized).filter(i -> i.getPriceTierId().equals(priceTierId)).ifPresentOrElse(i -> i.increase(quantity), () -> items.add(new CartItem(this, productId, normalized, priceTierId, priceTierLabel, priceTierPrice, priceTierBrands, quantity)));
                 priceTierAgreed = false; priceTierAgreedAt = null;
         }
-        public void agreeToPriceTierSupply(Instant now) { priceTierAgreed = true; priceTierAgreedAt = now; }
+        public void agreeToPriceTierSupply(Instant now) { setPriceTierAgreement(true, now); }
+        public void setPriceTierAgreement(boolean agreed, Instant now) {
+                priceTierAgreed = agreed;
+                priceTierAgreedAt = agreed ? now : null;
+        }
 	public void removeItem(Long cartItemId) {
 		items.removeIf(i -> i.getId() != null && i.getId().equals(cartItemId));
 	}

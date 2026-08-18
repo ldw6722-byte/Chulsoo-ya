@@ -27,26 +27,22 @@ import com.chulsooya.server.domain.store.SubscriptionTier;
 public class OfferDispatchService {
 
     private static final List<SubscriptionTier> PRIORITY_TIERS = List.of(
-            SubscriptionTier.PREMIUM, SubscriptionTier.STANDARD, SubscriptionTier.FREE);
+            SubscriptionTier.PREMIUM, SubscriptionTier.GOLD, SubscriptionTier.SILVER);
 
     private final StoreRepository storeRepository;
     private final MatchOfferRepository offerRepository;
     private final MissedOrderLogRepository missedOrderLogRepository;
-    private final DispatchCursorRepository cursorRepository;
     private final AppProperties properties;
     private final java.time.Clock clock;
 
     public OfferDispatchService(StoreRepository storeRepository,
             MatchOfferRepository offerRepository,
             MissedOrderLogRepository missedOrderLogRepository,
-            DispatchCursorRepository cursorRepository,
             AppProperties properties,
             java.time.Clock clock) {
         this.storeRepository = storeRepository;
         this.offerRepository = offerRepository;
-        this.missedOrderLogRepository = missedOrderLogRepository;
-        this.cursorRepository = cursorRepository;
-        this.properties = properties;
+        this.missedOrderLogRepository = missedOrderLogRepository;this.properties = properties;
         this.clock = clock;
     }
 
@@ -87,15 +83,17 @@ public class OfferDispatchService {
             Instant matchingStartedAt = order.getMatchDeadlineAt().minusSeconds(properties.matching().matchWindowSeconds());
             boolean tierDelayPassed = !now.isBefore(matchingStartedAt.plusSeconds(tier.getDispatchDelaySeconds()));
             if (!tierDelayPassed && !higherTierHasNoCandidate) {
-                // 상위 판매자가 수신 가능한 경우에는 계약된 0/3/6초 우선 시간을 존중한다.
+                // 상위 판매자가 수신 가능한 경우에는 계약된 0/30/60초 우선 시간을 존중한다.
                 return 0;
             }
 
-            Store selected = selectRoundRobin(order.getGuCode(), tier, candidates);
-            selected.reserveSlot();
-            offerRepository.save(new MatchOffer(order.getId(), selected.getId(), order.getRetryCount(), tier, now,
-                    properties.matching().offerTtlSeconds()));
-            return 1;
+            // 같은 멤버십 단계의 가용 판매자에게 동시에 공개하되, 각 판매자의 가용 슬롯만큼만 수신한다.
+            for (Store candidate : candidates) {
+                candidate.reserveSlot();
+                offerRepository.save(new MatchOffer(order.getId(), candidate.getId(), order.getRetryCount(), tier, now,
+                        properties.matching().offerTtlSeconds()));
+            }
+            return candidates.size();
         }
         return 0;
     }
@@ -115,11 +113,6 @@ public class OfferDispatchService {
         return candidates;
     }
 
-    private Store selectRoundRobin(String guCode, SubscriptionTier tier, List<Store> candidates) {
-        DispatchCursor cursor = cursorRepository.findByGuCodeAndTierForUpdate(guCode, tier)
-                .orElseGet(() -> cursorRepository.save(new DispatchCursor(guCode, tier)));
-        return candidates.get(cursor.nextIndex(candidates.size()));
-    }
 
     private String missReason(Store store, Instant now) {
         if (store.isRestricted(now)) return "RESTRICTED";
@@ -127,3 +120,4 @@ public class OfferDispatchService {
         return "SLOT_FULL";
     }
 }
+

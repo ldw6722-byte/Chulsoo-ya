@@ -1,0 +1,76 @@
+{
+  "order9": {
+    "orderId": 9,
+    "status": "PREPARING",
+    "fulfillmentMethod": "DELIVERY",
+    "addressMasked": "서울특별시 강남구 테헤란로 ***",
+    "totalAmount": 137500,
+    "itemCount": 10,
+    "lines": [
+      {
+        "productName": "스텐 사각 환기구 벤트 150x150",
+        "specSummary": "외벽 매립형 벤트 캡",
+        "quantity": 1,
+        "unit": "개"
+      },
+      {
+        "productName": "욕실 환기구 셔터 그릴 150각",
+        "specSummary": "역풍 방지 윈드 셔터 내장",
+        "quantity": 1,
+        "unit": "개"
+      },
+      {
+        "productName": "천장형 원형 디퓨저 100파이",
+        "specSummary": "공기조화 및 환기 디퓨저",
+        "quantity": 1,
+        "unit": "개"
+      },
+      {
+        "productName": "알루미늄 환기구 그릴 200x200",
+        "specSummary": "급기 및 배기 겸용 루버 그릴",
+        "quantity": 1,
+        "unit": "개"
+      },
+      {
+        "productName": "스텐 외부 후드캡 150파이",
+        "specSummary": "외벽 배기용 대형 후드캡",
+        "quantity": 1,
+        "unit": "개"
+      },
+      {
+        "productName": "방충망 부착형 환기구 그릴",
+        "specSummary": "벌레 유입 방지 모기장 일체형",
+        "quantity": 1,
+        "unit": "개"
+      },
+      {
+        "productName": "코드선 일체형 간편 설치 환풍기",
+        "specSummary": "220V 플러그 타입 콘센트 연결형",
+        "quantity": 1,
+        "unit": "대"
+      },
+      {
+        "productName": "고출력 상업용 대형 환풍기 250각",
+        "specSummary": "설치규격 250x250mm, 업소용",
+        "quantity": 1,
+        "unit": "대"
+      },
+      {
+        "productName": "고정식 그릴 일체형 다용도 환풍기",
+        "specSummary": "베란다 및 창고 환기용",
+        "quantity": 1,
+        "unit": "대"
+      },
+      {
+        "productName": "소형 닥트용 원형 환풍기 100파이",
+        "specSummary": "배기 닥트 직결형 환기팬",
+        "quantity": 1,
+        "unit": "대"
+      }
+    ],
+    "sellerConfirmationDeadlineAt": "2026-08-17T03:38:51.791525Z",
+    "matchedAt": "2026-08-17T03:36:51.791525Z",
+    "serverTime": "2026-08-17T03:40:43.651876400Z"
+  },
+  "verified": true
+}

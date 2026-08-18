@@ -39,6 +39,7 @@ public class OrderService {
 	private final CouponService couponService;
 	private final AppProperties properties;
 	private final Clock clock;
+        private final OrderDeliveryNotificationService deliveryNotifications;
 
 	public OrderService(OrderRepository orderRepository,
 			CartRepository cartRepository,
@@ -48,7 +49,8 @@ public class OrderService {
 			PaymentRefundService paymentRefundService,
 			CouponService couponService,
 			AppProperties properties,
-			Clock clock) {
+			Clock clock,
+                        OrderDeliveryNotificationService deliveryNotifications) {
 		this.orderRepository = orderRepository;
 		this.cartRepository = cartRepository;
 		this.productRepository = productRepository;
@@ -58,6 +60,7 @@ public class OrderService {
 		this.couponService = couponService;
 		this.properties = properties;
 		this.clock = clock;
+                this.deliveryNotifications = deliveryNotifications;
 	}
 
 	/**
@@ -142,6 +145,7 @@ public class OrderService {
 			throw new DomainException(ErrorCode.FORBIDDEN, "낙찰 판매자만 이행 상태를 변경할 수 있습니다.");
 		}
 		order.transitionTo(next, now);
+                deliveryNotifications.notifyConsumer(order, next);
 		if (next == OrderStatus.COMPLETED) {
 			storeRepository.findByIdForUpdate(storeId).ifPresent(Store::releaseActiveSlot);
 		}

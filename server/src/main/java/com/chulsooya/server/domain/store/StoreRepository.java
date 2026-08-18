@@ -10,8 +10,11 @@ import jakarta.persistence.LockModeType;
 
 public interface StoreRepository extends JpaRepository<Store, Long> {
     Optional<Store> findByOwnerId(Long ownerId);
+    List<Store> findByTierNotAndSubscriptionExpiresAtLessThanEqual(SubscriptionTier tier, java.time.Instant now);
     List<Store> findByCityNameAndVerifiedTrueOrderByRatingDescNameAsc(String cityName);
     List<Store> findByCityNameAndDistrictNameAndVerifiedTrueOrderByRatingDescNameAsc(String cityName, String districtName);
+    List<Store> findByCityNameAndVerifiedTrueAndDirectoryVisibleTrueOrderByRatingDescNameAsc(String cityName);
+    List<Store> findByCityNameAndDistrictNameAndVerifiedTrueAndDirectoryVisibleTrueOrderByRatingDescNameAsc(String cityName, String districtName);
     @Query("select s from Store s where s.guCode = :guCode and s.verified = true")
     List<Store> findEligible(@Param("guCode") String guCode);
     @Lock(LockModeType.PESSIMISTIC_WRITE)

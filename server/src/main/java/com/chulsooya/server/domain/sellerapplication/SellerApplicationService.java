@@ -61,7 +61,7 @@ public class SellerApplicationService {
 
     public List<AdminResponse> adminList(CurrentUser actor, SellerApplicationStatus status) {
         requireAdmin(actor);
-        return (status == null ? applications.findAll() : applications.findAllByStatusOrderBySubmittedAtAsc(status)).stream()
+        return (status == null ? applications.findAllByOrderBySubmittedAtAsc() : applications.findAllByStatusOrderBySubmittedAtAsc(status)).stream()
                 .map(AdminResponse::from).toList();
     }
 
@@ -79,7 +79,7 @@ public class SellerApplicationService {
         application.approve(actor.userId(), clock.instant());
         application.getApplicant().changeRole(UserRole.SELLER);
         Store store = new Store(application.getApplicant(), application.getStoreName(), application.getGuCode(),
-                application.getAddress(), application.getPhone(), SubscriptionTier.FREE);
+                application.getAddress(), application.getPhone(), SubscriptionTier.SILVER);
         store.changeDirectoryProfile(application.getStoreName(), application.getCityName(), application.getDistrictName(),
                 application.getGuCode(), application.getAddress(), application.getPhone(), null, application.getHandledItems());
         store.changeOperatingStatus(true, true);

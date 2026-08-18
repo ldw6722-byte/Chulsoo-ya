@@ -13,6 +13,7 @@ import com.chulsooya.server.common.ApiResponse;
 import com.chulsooya.server.domain.cart.CartDtos.AddItemRequest;
 import com.chulsooya.server.domain.cart.CartDtos.CartResponse;
 import com.chulsooya.server.domain.cart.CartDtos.UpdateQuantityRequest;
+import com.chulsooya.server.domain.cart.CartDtos.UpdatePriceTierAgreementRequest;
 import com.chulsooya.server.support.CurrentUser;
 
 import jakarta.validation.Valid;
@@ -42,7 +43,11 @@ public class CartController {
         public ApiResponse<CartResponse> agreePriceTierSupply(CurrentUser user) {
                 return ApiResponse.of(cartService.agreePriceTierSupply(user.userId()));
         }
-	@PatchMapping("/items/{cartItemId}")
+    @PatchMapping("/price-tier-agreement")
+    public ApiResponse<CartResponse> updatePriceTierAgreement(CurrentUser user, @RequestBody UpdatePriceTierAgreementRequest request) {
+            return ApiResponse.of(cartService.updatePriceTierAgreement(user.userId(), request.agreed()));
+    }
+    @PatchMapping("/items/{cartItemId}")
 	public ApiResponse<CartResponse> updateQuantity(CurrentUser user,
 			@PathVariable Long cartItemId,
 			@Valid @RequestBody UpdateQuantityRequest request) {
@@ -53,4 +58,8 @@ public class CartController {
 	public ApiResponse<CartResponse> remove(CurrentUser user, @PathVariable Long cartItemId) {
 		return ApiResponse.of(cartService.removeItem(user.userId(), cartItemId));
 	}
+        @DeleteMapping
+        public ApiResponse<CartResponse> clear(CurrentUser user) {
+                return ApiResponse.of(cartService.clear(user.userId()));
+        }
 }

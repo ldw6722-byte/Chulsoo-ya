@@ -7,6 +7,10 @@ spring:
     import: optional:file:.env[.properties]
   jackson:
     default-property-inclusion: non_null
+  servlet:
+    multipart:
+      max-file-size: 5MB
+      max-request-size: 5MB
 
 server:
   port: 8080
@@ -20,6 +24,10 @@ app:
     offer-ttl-seconds: 30
   delivery:
     fee: 3000
+
+  settlement:
+    # 개발 검증 기준 10.00%. 운영 전 판매자 약관·계약 기준으로 확정한다.
+    commission-bps: 1000
 
 ---
 spring:

@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import java.time.Instant;
+import java.time.LocalDate;
 
 import org.junit.jupiter.api.Test;
 
@@ -60,4 +61,21 @@ class SellerApplicationTest {
         assertThat(application.getStatus()).isEqualTo(SellerApplicationStatus.REJECTED);
         assertThat(application.getRejectionReason()).isEqualTo("사업자등록증 재제출이 필요합니다.");
     }
+    @Test
+    void admin_response_includes_all_submitted_business_and_applicant_contact_information() {
+        User applicant = new User("seller@example.com", "신청자", "010-1234-5678", UserRole.CONSUMER);
+        SellerApplication application = new SellerApplication(
+                applicant, "철수 철물", "김철수", "123-45-67890", "서울특별시", "강남구", "GU_GANGNAM",
+                "서울특별시 강남구 테헤란로 1", "010-9999-8888", "철물,공구");
+        application.setBusinessOpenedOn(LocalDate.of(2020, 2, 3));
+
+        SellerApplicationDtos.AdminResponse response = SellerApplicationDtos.AdminResponse.from(application);
+
+        assertThat(response.applicantPhone()).isEqualTo("010-1234-5678");
+        assertThat(response.businessOpenedOn()).isEqualTo(LocalDate.of(2020, 2, 3));
+        assertThat(response.address()).isEqualTo("서울특별시 강남구 테헤란로 1");
+        assertThat(response.phone()).isEqualTo("010-9999-8888");
+        assertThat(response.handledItems()).containsExactly("철물", "공구");
+    }
+
 }

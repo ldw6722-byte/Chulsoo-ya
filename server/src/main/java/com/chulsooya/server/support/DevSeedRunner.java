@@ -191,7 +191,7 @@ public class DevSeedRunner {
                 if (district.equals("강남구") && number == 3) { email = "seller3@chulsooya.dev"; storeName = "만능철물"; }
                 String phone = "02-" + String.format("%04d", districtIndex * 10 + number) + "-" + String.format("%04d", 1000 + number);
                 User owner = users.save(new User(email, storeName + " 사장", phone, UserRole.SELLER));
-                SubscriptionTier tier = number <= 2 ? SubscriptionTier.PREMIUM : number <= 6 ? SubscriptionTier.STANDARD : SubscriptionTier.FREE;
+                SubscriptionTier tier = number <= 2 ? SubscriptionTier.PREMIUM : number <= 6 ? SubscriptionTier.GOLD : SubscriptionTier.SILVER;
                 Store store = new Store(owner, storeName, guCode(district), "서울특별시 " + district + " 철수로 " + number, phone, tier);
                 store.changeDirectoryProfile(storeName, "서울특별시", district, guCode(district), "서울특별시 " + district + " 철수로 " + number, phone, "https://placehold.co/640x420/e2e8f0/0f172a?text=Store-" + (districtIndex + 1) + "-" + number, itemSets[number - 1]);
                 store.changeRating(3.8 + (number % 7) * 0.15);

@@ -1,0 +1,55 @@
+{
+  "settlement": {
+    "id": 1,
+    "orderId": 9,
+    "storeId": 101,
+    "storeName": "테스트 강남 철물점",
+    "paymentId": 1,
+    "grossAmount": 137500,
+    "commissionRateBps": 1000,
+    "commissionAmount": 0,
+    "refundedAmount": 137500,
+    "sellerPayableAmount": 0,
+    "paymentStatus": "REFUNDED",
+    "status": "CANCELLED",
+    "approvedAt": "2026-08-17T03:37:25.805232Z",
+    "createdAt": "2026-08-17T04:26:42.847562Z",
+    "updatedAt": "2026-08-17T04:29:42.376530Z"
+  },
+  "payment": {
+    "paymentId": 1,
+    "paymentStatus": "REFUNDED",
+    "amount": 137500,
+    "remainingAmount": 0,
+    "method": "DEVELOPMENT_ADMIN_APPROVAL",
+    "paidAt": "2026-08-17T03:37:25.805232Z",
+    "refunds": [
+      {
+        "id": 2,
+        "refundType": "REFUND",
+        "amount": 136500,
+        "reason": "개발 정산 전액 환불 검증",
+        "status": "SUCCEEDED",
+        "createdAt": "2026-08-17T04:29:42.376530Z",
+        "completedAt": "2026-08-17T04:29:42.376530Z"
+      },
+      {
+        "id": 1,
+        "refundType": "REFUND",
+        "amount": 1000,
+        "reason": "개발 정산 부분 환불 검증",
+        "status": "SUCCEEDED",
+        "createdAt": "2026-08-17T04:26:43.273688Z",
+        "completedAt": "2026-08-17T04:26:43.273688Z"
+      }
+    ]
+  },
+  "summary": {
+    "grossAmount": 137500,
+    "commissionAmount": 0,
+    "refundedAmount": 137500,
+    "sellerPayableAmount": 0,
+    "pendingCount": 0,
+    "holdCount": 0
+  }
+}

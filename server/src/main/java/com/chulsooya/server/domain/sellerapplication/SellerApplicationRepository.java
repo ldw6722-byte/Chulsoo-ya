@@ -15,6 +15,7 @@ public interface SellerApplicationRepository extends JpaRepository<SellerApplica
     Optional<SellerApplication> findByApplicantId(Long applicantUserId);
 
     List<SellerApplication> findAllByStatusOrderBySubmittedAtAsc(SellerApplicationStatus status);
+    List<SellerApplication> findAllByOrderBySubmittedAtAsc();
 
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("select application from SellerApplication application where application.id = :id")

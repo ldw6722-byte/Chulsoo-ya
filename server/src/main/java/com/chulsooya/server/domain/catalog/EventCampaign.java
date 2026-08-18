@@ -23,12 +23,26 @@ public class EventCampaign {
     @Column(name = "cta_text", nullable = false, length = 60) private String ctaText = "행사 상품 보기";
     @Column(name = "theme_key", nullable = false, length = 30) private String themeKey = "blue";
     @Column(name = "icon_key", nullable = false, length = 30) private String iconKey = "toolbox";
+    @Column(name = "theme_asset_id") private Long themeAssetId;
+    @Column(name = "icon_asset_id") private Long iconAssetId;
     @Column(name = "hero_sort", nullable = false) private int heroSort = 0;
     @Column(nullable = false) private boolean active = true;
     @Column(name = "hero_enabled", nullable = false) private boolean heroEnabled = true;
 
-    public EventCampaign(String name, String heroTitle, String heroSubtitle, String badgeText, String ctaText, String themeKey, String iconKey, int heroSort, boolean heroEnabled) { update(name, heroTitle, heroSubtitle, badgeText, ctaText, themeKey, iconKey, heroSort, heroEnabled); }
-    public void update(String name, String heroTitle, String heroSubtitle, String badgeText, String ctaText, String themeKey, String iconKey, int heroSort, boolean heroEnabled) { this.name = name; this.heroTitle = heroTitle; this.heroSubtitle = heroSubtitle; this.badgeText = badgeText; this.ctaText = ctaText; this.themeKey = themeKey; this.iconKey = iconKey; this.heroSort = heroSort; this.heroEnabled = heroEnabled; }
+    public EventCampaign(String name, String heroTitle, String heroSubtitle, String badgeText, String ctaText,
+            String themeKey, String iconKey, int heroSort, boolean heroEnabled) {
+        this(name, heroTitle, heroSubtitle, badgeText, ctaText, themeKey, iconKey, null, null, heroSort, heroEnabled);
+    }
+    public EventCampaign(String name, String heroTitle, String heroSubtitle, String badgeText, String ctaText,
+            String themeKey, String iconKey, Long themeAssetId, Long iconAssetId, int heroSort, boolean heroEnabled) {
+        update(name, heroTitle, heroSubtitle, badgeText, ctaText, themeKey, iconKey, themeAssetId, iconAssetId, heroSort, heroEnabled);
+    }
+    public void update(String name, String heroTitle, String heroSubtitle, String badgeText, String ctaText,
+            String themeKey, String iconKey, Long themeAssetId, Long iconAssetId, int heroSort, boolean heroEnabled) {
+        this.name = name; this.heroTitle = heroTitle; this.heroSubtitle = heroSubtitle; this.badgeText = badgeText; this.ctaText = ctaText;
+        this.themeKey = themeKey; this.iconKey = iconKey; this.themeAssetId = themeAssetId; this.iconAssetId = iconAssetId;
+        this.heroSort = heroSort; this.heroEnabled = heroEnabled;
+    }
     public void activate() { this.active = true; }
     public void deactivate() { this.active = false; }
 }

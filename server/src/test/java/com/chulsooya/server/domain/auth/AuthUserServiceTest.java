@@ -47,7 +47,7 @@ class AuthUserServiceTest {
     }
 
     @Test
-    void existingUserProfileIsRefreshedWithoutChangingPlatformRole() {
+    void existingUserEmailIsRefreshedWithoutChangingSavedNameOrPlatformRole() {
         UUID subject = UUID.randomUUID();
         User seller = new User("old@example.com", "기존 판매자", null, UserRole.SELLER);
         given(userRepository.findBySupabaseUserId(subject)).willReturn(Optional.of(seller));
@@ -56,7 +56,7 @@ class AuthUserServiceTest {
 
         assertThat(result).isSameAs(seller);
         assertThat(result.getEmail()).isEqualTo("new@example.com");
-        assertThat(result.getName()).isEqualTo("새 이름");
+        assertThat(result.getName()).isEqualTo("기존 판매자");
         assertThat(result.getRole()).isEqualTo(UserRole.SELLER);
         then(userRepository).shouldHaveNoMoreInteractions();
     }

@@ -16,6 +16,7 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
 	List<Order> findByConsumerIdOrderByIdDesc(Long consumerId);
 
 	List<Order> findByWinningStoreIdOrderByIdDesc(Long winningStoreId);
+        List<Order> findByStatusOrderByCreatedAtAsc(OrderStatus status);
 
 	/** 낙찰 트랜잭션 진입점. 주문 단위 비관적 락으로 단일 낙찰자를 보장한다. */
 	@Lock(LockModeType.PESSIMISTIC_WRITE)

@@ -4,6 +4,9 @@ import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import java.util.Arrays;
+import java.awt.image.BufferedImage;
+import java.io.ByteArrayOutputStream;
+import javax.imageio.ImageIO;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.mock.web.MockMultipartFile;
@@ -11,9 +14,9 @@ import org.springframework.mock.web.MockMultipartFile;
 class SellerCertificateValidatorTest {
 
     @Test
-    void accepts_a_jpeg_with_allowed_size_and_matching_signature() {
-        byte[] content = bytes(120_000, (byte) 0xFF, (byte) 0xD8, (byte) 0xFF, (byte) 0xE0);
-        MockMultipartFile file = new MockMultipartFile("file", "license.jpg", "image/jpeg", content);
+    void accepts_a_jpeg_with_allowed_size_and_matching_signature() throws Exception {
+        byte[] content = imageBytes(1200, 900);
+        MockMultipartFile file = new MockMultipartFile("file", "license.png", "image/png", content);
 
         assertThatCode(() -> new SellerCertificateValidator().validate(file)).doesNotThrowAnyException();
     }
@@ -36,6 +39,15 @@ class SellerCertificateValidatorTest {
                 .isInstanceOf(IllegalArgumentException.class);
     }
 
+    private byte[] imageBytes(int width, int height) throws Exception {
+        BufferedImage image = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
+        for (int y = 0; y < height; y++) for (int x = 0; x < width; x++) image.setRGB(x, y, ((x * 31 + y * 17) & 0xFF) << 16 | ((x * 13 + y * 29) & 0xFF) << 8 | ((x * 7 + y * 11) & 0xFF));
+        ByteArrayOutputStream output = new ByteArrayOutputStream();
+        ImageIO.write(image, "png", output);
+        byte[] encoded = output.toByteArray();
+        if (encoded.length < 100_000) throw new IllegalStateException("테스트 이미지가 최소 용량에 미달합니다.");
+        return encoded;
+    }
     private byte[] bytes(int size, byte... header) {
         byte[] content = new byte[size];
         Arrays.fill(content, (byte) 0x1A);

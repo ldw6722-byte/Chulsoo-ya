@@ -42,6 +42,11 @@ public class SellerApplicationController {
     @PostMapping(path = "/{applicationId}/business-license", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ApiResponse<ApplicantResponse> uploadCertificate(CurrentUser actor, @PathVariable Long applicationId,
             @RequestPart("file") MultipartFile file) {
-        return ApiResponse.of(documents.uploadCertificate(actor, applicationId, file));
+        return ApiResponse.of(documents.upload(actor, applicationId, SellerApplicationDocumentType.BUSINESS_LICENSE, file));
+    }
+    @PostMapping(path = "/{applicationId}/bank-account-copy", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ApiResponse<ApplicantResponse> uploadBankAccountCopy(CurrentUser actor, @PathVariable Long applicationId,
+            @RequestPart("file") MultipartFile file) {
+        return ApiResponse.of(documents.upload(actor, applicationId, SellerApplicationDocumentType.BANK_ACCOUNT_COPY, file));
     }
 }

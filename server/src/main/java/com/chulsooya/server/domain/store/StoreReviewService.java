@@ -29,16 +29,21 @@ public class StoreReviewService {
     private final OrderRepository orders;
     private final StoreReviewRepository reviews;
     private final UserRepository users;
+    private final AdminStoreReviewNoteRepository notes;
 
-    public StoreReviewService(StoreRepository stores, OrderRepository orders, StoreReviewRepository reviews, UserRepository users) {
+    public StoreReviewService(StoreRepository stores, OrderRepository orders, StoreReviewRepository reviews, UserRepository users, AdminStoreReviewNoteRepository notes) {
         this.stores = stores;
         this.orders = orders;
         this.reviews = reviews;
         this.users = users;
+        this.notes = notes;
     }
 
     public StoreDetailResponse detail(Long storeId, CurrentUser actor) {
         Store store = requireStore(storeId);
+        if (!store.isVerified() || !store.isDirectoryVisible()) {
+            throw new DomainException(ErrorCode.NOT_FOUND, "판매점을 찾을 수 없습니다.");
+        }
         List<StoreReview> published = reviews.findByStoreIdAndVisibilityOrderByCreatedAtDesc(storeId, StoreReview.ReviewVisibility.PUBLISHED);
         return new StoreDetailResponse(StoreDirectoryDtos.StoreResponse.from(store, Instant.now()), toResponses(published),
                 published.size(), average(published), actor == null ? new ReviewEligibility(false, "로그인 후 거래 후기를 작성할 수 있습니다.", null, null) : eligibility(storeId, actor));
@@ -93,6 +98,38 @@ public class StoreReviewService {
         }
         review.reply(request.reply(), actor.userId(), Instant.now());
         return ReviewResponse.from(review, consumerName(review.getConsumerId()));
+    }
+
+    @Transactional
+    public ReviewResponse updateComment(Long reviewId, CurrentUser actor, UpdateReviewRequest request) {
+        requireAdmin(actor);
+        StoreReview review = reviews.findById(reviewId).orElseThrow(() -> new DomainException(ErrorCode.NOT_FOUND, "후기를 찾을 수 없습니다."));
+        review.updateComment(request.comment());
+        return ReviewResponse.from(review, consumerName(review.getConsumerId()));
+    }
+    public List<AdminStoreNoteResponse> adminNotesForStore(Long storeId, CurrentUser actor) {
+        requireAdmin(actor);
+        requireStore(storeId);
+        return notes.findByStoreIdOrderByCreatedAtDesc(storeId).stream().map(AdminStoreNoteResponse::from).toList();
+    }
+    @Transactional
+    public AdminStoreNoteResponse createAdminNote(Long storeId, CurrentUser actor, AdminStoreNoteRequest request) {
+        requireAdmin(actor);
+        requireStore(storeId);
+        return AdminStoreNoteResponse.from(notes.save(new AdminStoreReviewNote(storeId, actor.userId(), request.content())));
+    }
+    @Transactional
+    public AdminStoreNoteResponse updateAdminNote(Long noteId, CurrentUser actor, AdminStoreNoteRequest request) {
+        requireAdmin(actor);
+        AdminStoreReviewNote note = notes.findById(noteId).orElseThrow(() -> new DomainException(ErrorCode.NOT_FOUND, "관리자 메모를 찾을 수 없습니다."));
+        note.updateContent(request.content(), Instant.now());
+        return AdminStoreNoteResponse.from(note);
+    }
+    @Transactional
+    public void deleteAdminNote(Long noteId, CurrentUser actor) {
+        requireAdmin(actor);
+        AdminStoreReviewNote note = notes.findById(noteId).orElseThrow(() -> new DomainException(ErrorCode.NOT_FOUND, "관리자 메모를 찾을 수 없습니다."));
+        notes.delete(note);
     }
     @Transactional
     public void clearReply(Long reviewId, CurrentUser actor) {

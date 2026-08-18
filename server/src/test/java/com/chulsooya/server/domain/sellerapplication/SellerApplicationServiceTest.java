@@ -41,7 +41,8 @@ class SellerApplicationServiceTest {
     void admin_approval_promotes_the_applicant_and_creates_an_active_store() {
         User applicant = new User("seller@example.com", "신청자", "010-1234-5678", UserRole.CONSUMER);
         SellerApplication application = application(applicant);
-        application.markCertificateUploaded("seller-applications/10/certificate", "image/jpeg", 120_000L);
+        application.markCertificateUploaded("seller-applications/10/business-license", "image/jpeg", 120_000L);
+        application.markBankAccountCopyUploaded("seller-applications/10/bank-account-copy", "image/jpeg", 120_000L);
         Clock clock = Clock.fixed(Instant.parse("2026-08-13T00:00:00Z"), ZoneOffset.UTC);
         SellerApplicationService service = new SellerApplicationService(applications, stores, users, clock);
         CurrentUser admin = new CurrentUser(99L, UserRole.ADMIN);

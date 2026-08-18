@@ -23,6 +23,7 @@ import com.chulsooya.server.domain.penalty.PenaltyRepository;
 
 import com.chulsooya.server.domain.store.SlotSettingsLogRepository;
 import com.chulsooya.server.domain.store.Store;
+import com.chulsooya.server.domain.store.SubscriptionTier;
 import com.chulsooya.server.domain.store.StoreRepository;
 import com.chulsooya.server.domain.store.StoreSlotSettingsLog;
 import com.chulsooya.server.domain.user.User;
@@ -105,17 +106,45 @@ public class AdminWorkflowService {
         List<MatchOffer> orderOffers = offers.findByOrderIdAndAttempt(order.getId(), order.getRetryCount());
         List<TimelineEvent> timeline = new ArrayList<>();
         timeline.add(new TimelineEvent("ORDER_CREATED", "주문 접수", order.getCreatedAt(), "매칭 대기 시작"));
-        if (order.getMatchedAt() != null) timeline.add(new TimelineEvent("BID_WON", "낙찰", order.getMatchedAt(), storeNames.get(order.getWinningStoreId())));
+        for (SubscriptionTier tier : List.of(SubscriptionTier.PREMIUM, SubscriptionTier.GOLD, SubscriptionTier.SILVER)) {
+            List<MatchOffer> tierOffers = orderOffers.stream().filter(offer -> offer.getTier() == tier)
+                    .sorted(Comparator.comparing(MatchOffer::getOfferedAt)).toList();
+            if (!tierOffers.isEmpty()) {
+                timeline.add(new TimelineEvent("OFFER_" + tier.name(), tierOfferLabel(tier), tierOffers.get(0).getOfferedAt(),
+                        tierOfferDetail(tier, tierOffers.size())));
+            }
+        }
         Bid winner = orderBids.stream().filter(Bid::isWinner).findFirst().orElse(null);
-        if (winner != null) timeline.add(new TimelineEvent("BID", "응찰 확정", winner.getCreatedAt(), storeNames.get(winner.getStoreId())));
+        if (winner != null) timeline.add(new TimelineEvent("BID_SUBMITTED", "응찰 접수", winner.getCreatedAt(),
+                storeNames.get(winner.getStoreId())));
+        if (order.getMatchedAt() != null) timeline.add(new TimelineEvent("BID_WON", "낙찰 확정", order.getMatchedAt(),
+                (storeNames.get(order.getWinningStoreId()) == null ? "판매점" : storeNames.get(order.getWinningStoreId())) + " · 물품 확인 대기"));
         if (order.getSellerConfirmedAt() != null) timeline.add(new TimelineEvent("SELLER_CONFIRMED", "판매자 물품 확인", order.getSellerConfirmedAt(), "결제 진행 가능"));
         if (order.getPaidAt() != null) timeline.add(new TimelineEvent("PAYMENT", "결제 완료", order.getPaidAt(), "주문 준비 시작"));
-        if (order.getCompletedAt() != null) timeline.add(new TimelineEvent("COMPLETED", "주문 완료", order.getCompletedAt(), "이행 완료"));
+        if (order.getDeliveryStartedAt() != null) timeline.add(new TimelineEvent("DELIVERY_STARTED", "배달 시작", order.getDeliveryStartedAt(), "판매자가 배달을 시작했습니다."));
+        if (order.getCompletedAt() != null) timeline.add(new TimelineEvent("COMPLETED", order.getFulfillmentMethod() == com.chulsooya.server.domain.order.FulfillmentMethod.DELIVERY ? "배달 완료" : "주문 완료", order.getCompletedAt(), "이행 완료"));
         return new WorkflowOrder(order.getId(), order.getStatus().name(), consumers.getOrDefault(order.getConsumerId(), "구매자"),
                 order.getWinningStoreId() == null ? null : storeNames.get(order.getWinningStoreId()), order.getGuCode(),
                 order.getTotalAmount(), order.getItems().size(), orderOffers.size(), orderBids.size(), order.getCreatedAt(),
                 order.getMatchDeadlineAt(), order.getSellerConfirmationDeadlineAt(), order.getMatchedAt(),
                 order.getSellerConfirmedAt(), order.getPaidAt(), order.getCompletedAt(), timeline);
+    }
+
+    private String tierOfferLabel(SubscriptionTier tier) {
+        return switch (tier) {
+            case PREMIUM -> "프리미엄 우선 제안";
+            case GOLD -> "골드 판매자 경쟁 제안";
+            case SILVER -> "실버 판매자 전체 경쟁 제안";
+        };
+    }
+
+    private String tierOfferDetail(SubscriptionTier tier, int storeCount) {
+        int delaySeconds = switch (tier) {
+            case PREMIUM -> 0;
+            case GOLD -> 30;
+            case SILVER -> 60;
+        };
+        return delaySeconds + "초 " + (delaySeconds == 0 ? "즉시" : "지연") + " 제안 · " + storeCount + "개 판매점";
     }
 
     private void requireAdmin(CurrentUser actor) {

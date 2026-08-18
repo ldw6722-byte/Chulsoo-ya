@@ -1,0 +1,44 @@
+[
+  {
+    "email": "test.consumer01@chulsooya.dev",
+    "role": "CONSUMER",
+    "verifiedLogin": true,
+    "cartCount": 0,
+    "roleEndpoint": "cart"
+  },
+  {
+    "email": "test.consumer02@chulsooya.dev",
+    "role": "CONSUMER",
+    "verifiedLogin": true,
+    "cartCount": 0,
+    "roleEndpoint": "cart"
+  },
+  {
+    "email": "test.consumer03@chulsooya.dev",
+    "role": "CONSUMER",
+    "verifiedLogin": true,
+    "cartCount": 0,
+    "roleEndpoint": "cart"
+  },
+  {
+    "email": "test.seller01@chulsooya.dev",
+    "role": "SELLER",
+    "verifiedLogin": true,
+    "cartCount": 0,
+    "roleEndpoint": "seller/reviews"
+  },
+  {
+    "email": "test.seller02@chulsooya.dev",
+    "role": "SELLER",
+    "verifiedLogin": true,
+    "cartCount": 0,
+    "roleEndpoint": "seller/reviews"
+  },
+  {
+    "email": "test.admin01@chulsooya.dev",
+    "role": "ADMIN",
+    "verifiedLogin": true,
+    "cartCount": 0,
+    "roleEndpoint": "admin/stores"
+  }
+]

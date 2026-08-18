@@ -1,0 +1,9 @@
+{
+  "orderId": 9,
+  "sellerAccountNumber": 4,
+  "sellerEmail": "test.seller01@chulsooya.dev",
+  "afterBidStatus": "SELLER_CONFIRMING",
+  "paymentPendingStatus": "PAYMENT_PENDING",
+  "adminPendingListContainsOrder": true,
+  "nextAction": "슈퍼어드민이 관리자 화면에서 개발용 결제 승인 버튼을 직접 클릭"
+}

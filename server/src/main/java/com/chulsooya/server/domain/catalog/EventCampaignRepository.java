@@ -6,4 +6,5 @@ import org.springframework.data.jpa.repository.JpaRepository;
 public interface EventCampaignRepository extends JpaRepository<EventCampaign, Long> {
     List<EventCampaign> findAllByOrderByHeroSortAscIdAsc();
     List<EventCampaign> findByActiveTrueAndHeroEnabledTrueOrderByHeroSortAscIdAsc();
+    boolean existsByThemeAssetIdOrIconAssetId(Long themeAssetId, Long iconAssetId);
 }

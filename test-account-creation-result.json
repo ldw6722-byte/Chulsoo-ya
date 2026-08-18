@@ -1,0 +1,49 @@
+{
+  "createdAt": "2026-08-17T00:14:34.967Z",
+  "accountCount": 6,
+  "accounts": [
+    {
+      "email": "test.consumer01@chulsooya.dev",
+      "name": "테스트 구매자 01",
+      "role": "CONSUMER",
+      "appUserId": 104,
+      "verifiedLogin": true
+    },
+    {
+      "email": "test.consumer02@chulsooya.dev",
+      "name": "테스트 구매자 02",
+      "role": "CONSUMER",
+      "appUserId": 105,
+      "verifiedLogin": true
+    },
+    {
+      "email": "test.consumer03@chulsooya.dev",
+      "name": "테스트 구매자 03",
+      "role": "CONSUMER",
+      "appUserId": 106,
+      "verifiedLogin": true
+    },
+    {
+      "email": "test.seller01@chulsooya.dev",
+      "name": "테스트 판매자 01",
+      "role": "SELLER",
+      "appUserId": 107,
+      "verifiedLogin": true
+    },
+    {
+      "email": "test.seller02@chulsooya.dev",
+      "name": "테스트 판매자 02",
+      "role": "SELLER",
+      "appUserId": 108,
+      "verifiedLogin": true
+    },
+    {
+      "email": "test.admin01@chulsooya.dev",
+      "name": "테스트 일반 관리자",
+      "role": "ADMIN",
+      "appUserId": 109,
+      "verifiedLogin": true
+    }
+  ],
+  "sellerStoreCount": 2
+}

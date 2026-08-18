@@ -26,7 +26,7 @@ class PenaltyServiceTest {
     @Test
     void timeout_penalty_is_recorded_and_applied_to_the_store_once() {
         Store store = new Store(new User("seller@example.com", "판매자", "010", UserRole.SELLER),
-                "철수 철물", "GU_TEST", "서울시 테스트구 1", "02", SubscriptionTier.FREE);
+                "철수 철물", "GU_TEST", "서울시 테스트구 1", "02", SubscriptionTier.SILVER);
         Instant now = Instant.parse("2026-08-13T00:00:00Z");
         PenaltyService service = new PenaltyService(penalties);
 
@@ -44,7 +44,7 @@ class PenaltyServiceTest {
     @Test
     void duplicate_timeout_penalty_does_not_change_the_store_again() {
         Store store = new Store(new User("seller@example.com", "판매자", "010", UserRole.SELLER),
-                "철수 철물", "GU_TEST", "서울시 테스트구 1", "02", SubscriptionTier.FREE);
+                "철수 철물", "GU_TEST", "서울시 테스트구 1", "02", SubscriptionTier.SILVER);
         Instant now = Instant.parse("2026-08-13T00:00:00Z");
         PenaltyService service = new PenaltyService(penalties);
 

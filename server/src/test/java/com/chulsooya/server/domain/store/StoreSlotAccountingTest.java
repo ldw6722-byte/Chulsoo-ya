@@ -23,7 +23,7 @@ class StoreSlotAccountingTest {
 	@BeforeEach
 	void setUp() {
 		User owner = new User("s@x.dev", "사장", "010", UserRole.SELLER);
-		store = new Store(owner, "철수네", "GU_TEST", "서울 강남구 1", "02", SubscriptionTier.STANDARD);
+		store = new Store(owner, "철수네", "GU_TEST", "서울 강남구 1", "02", SubscriptionTier.GOLD);
 		store.verify();
 		store.changeConfiguredSlots(5);
 	}
@@ -101,7 +101,7 @@ class StoreSlotAccountingTest {
 	@DisplayName("등급 하향 시 설정 슬롯이 새 상한으로 조정된다")
 	void tierDowngradeClampsSlots() {
 		store.changeConfiguredSlots(8);
-		store.changeTier(SubscriptionTier.FREE);
+		store.changeTier(SubscriptionTier.SILVER);
 
 		assertThat(store.getConfiguredSlots()).isEqualTo(3);
 	}
@@ -110,7 +110,7 @@ class StoreSlotAccountingTest {
 	@DisplayName("미검증 매장은 제안 대상이 아니다")
 	void unverifiedStoreExcluded() {
 		User owner = new User("s2@x.dev", "사장2", "010", UserRole.SELLER);
-		Store unverified = new Store(owner, "신규", "GU_TEST", "서울 강남구 2", "02", SubscriptionTier.FREE);
+		Store unverified = new Store(owner, "신규", "GU_TEST", "서울 강남구 2", "02", SubscriptionTier.SILVER);
 
 		assertThat(unverified.canReceiveOffer(NOW)).isFalse();
 	}

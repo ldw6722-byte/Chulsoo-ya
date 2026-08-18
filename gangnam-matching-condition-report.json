@@ -1,0 +1,52 @@
+{
+  "buyer": {
+    "email": "test.consumer01@chulsooya.dev",
+    "defaultAddress": {
+      "id": 6,
+      "label": "동대문 현장",
+      "recipientName": "김야옹",
+      "recipientPhone": "010-0000-0001",
+      "cityName": "서울특별시",
+      "districtName": "동대문구",
+      "roadAddress": "청대문 1234",
+      "addressDetail": "4556-12",
+      "fullAddress": "서울특별시 동대문구 청대문 1234",
+      "defaultAddress": true,
+      "createdAt": "2026-08-17T01:48:30.083452Z",
+      "updatedAt": "2026-08-17T02:22:47.351241Z"
+    }
+  },
+  "sellerAccountNumber": 4,
+  "seller": {
+    "email": "test.seller01@chulsooya.dev",
+    "store": {
+      "id": 101,
+      "name": "테스트 강남 철물점",
+      "guCode": "GU_C99",
+      "address": "서울특별시 강남구 테스트로 101",
+      "phone": "02-555-0101",
+      "tier": "FREE",
+      "tierSlotCap": 3,
+      "configuredSlots": 3,
+      "reservedSlots": 0,
+      "activeSlots": 0,
+      "availableSlots": 3,
+      "receivingOrders": true,
+      "verified": true,
+      "trustScore": 60,
+      "serverTime": "2026-08-17T03:32:38.522194500Z"
+    },
+    "openOffers": [],
+    "assignedOrders": []
+  },
+  "matchingEligibility": {
+    "buyerGu": "동대문구",
+    "sellerGuCode": "GU_C99",
+    "expectedGangnamGuCode": "11680",
+    "sameGangnamGu": false,
+    "verified": true,
+    "receivingOrders": true,
+    "availableSlots": 3,
+    "restricted": true
+  }
+}

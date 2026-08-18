@@ -99,8 +99,8 @@ public class DeadlineScheduler {
 		}
 	}
 
-	/** 지연 발송 제안이 도달 시각을 넘긴 주문에 대해 추가 확산을 시도한다. */
-	@Scheduled(fixedDelay = 15_000)
+	/** 0·3·6초 멤버십 시간차를 최대 1초 오차로 지키기 위해 1초마다 추가 확산을 시도한다. */
+    @Scheduled(fixedDelay = 1_000)
 	@Transactional
 	public void spreadPendingOrders() {
 		Instant now = clock.instant();

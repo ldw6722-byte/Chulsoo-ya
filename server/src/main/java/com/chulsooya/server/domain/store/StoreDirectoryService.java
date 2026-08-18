@@ -32,13 +32,14 @@ public class StoreDirectoryService {
         String city = cityName == null || cityName.isBlank() ? "서울특별시" : cityName.trim();
         Instant now = Instant.now();
         List<Store> result = districtName == null || districtName.isBlank()
-                ? stores.findByCityNameAndVerifiedTrueOrderByRatingDescNameAsc(city)
-                : stores.findByCityNameAndDistrictNameAndVerifiedTrueOrderByRatingDescNameAsc(city, districtName.trim());
+                ? stores.findByCityNameAndVerifiedTrueAndDirectoryVisibleTrueOrderByRatingDescNameAsc(city)
+                : stores.findByCityNameAndDistrictNameAndVerifiedTrueAndDirectoryVisibleTrueOrderByRatingDescNameAsc(city, districtName.trim());
         return result.stream().map(store -> response(store, now)).toList();
     }
 
     public List<RegionOption> regions() {
         return stores.findAll().stream()
+                .filter(store -> store.isVerified() && store.isDirectoryVisible())
                 .map(store -> new RegionOption(store.getCityName(), store.getDistrictName()))
                 .distinct()
                 .sorted(Comparator.comparing(RegionOption::cityName).thenComparing(RegionOption::districtName))
@@ -62,10 +63,11 @@ public class StoreDirectoryService {
         if (owner.getRole() != UserRole.SELLER || stores.findByOwnerId(owner.getId()).isPresent()) {
             throw new DomainException(ErrorCode.VALIDATION_FAILED, "이미 등록된 판매자 이메일입니다.");
         }
-        Store store = new Store(owner, request.name().trim(), guCode(request.districtName()), request.address().trim(), request.phone().trim(), SubscriptionTier.FREE);
+        Store store = new Store(owner, request.name().trim(), guCode(request.districtName()), request.address().trim(), request.phone().trim(), SubscriptionTier.SILVER);
         store.changeDirectoryProfile(request.name(), request.cityName(), request.districtName(), guCode(request.districtName()), request.address(), request.phone(), request.imageUrl(), request.handledItems());
         // 후기 기반 별점은 StoreReviewService가 공개 후기 평균으로만 갱신한다.
         store.changeOperatingStatus(request.verified(), request.receivingOrders());
+        store.changeCustomerDisplaySettings(request.customerBadgeText(), request.customerNoticeText(), request.directoryVisible());
         return response(stores.save(store), Instant.now());
     }
 
@@ -76,6 +78,7 @@ public class StoreDirectoryService {
         store.changeDirectoryProfile(request.name(), request.cityName(), request.districtName(), guCode(request.districtName()), request.address(), request.phone(), request.imageUrl(), request.handledItems());
         // 후기 기반 별점은 StoreReviewService가 공개 후기 평균으로만 갱신한다.
         store.changeOperatingStatus(request.verified(), request.receivingOrders());
+        store.changeCustomerDisplaySettings(request.customerBadgeText(), request.customerNoticeText(), request.directoryVisible());
         return response(store, Instant.now());
     }
 
@@ -89,7 +92,8 @@ public class StoreDirectoryService {
         List<StoreReview> published = reviews.findByStoreIdAndVisibilityOrderByCreatedAtDesc(store.getId(), StoreReview.ReviewVisibility.PUBLISHED);
         double rating = published.isEmpty() ? 0 : Math.round(published.stream().mapToInt(StoreReview::getRating).average().orElse(0) * 10.0) / 10.0;
         StoreResponse base = StoreResponse.from(store, now);
-        return new StoreResponse(base.id(), base.name(), base.cityName(), base.districtName(), base.address(), base.phone(), base.imageUrl(), base.handledItems(), rating, base.verified(), base.receivingOrders(), base.restricted(), base.availableSlots(), base.tier(), base.ownerEmail());
+        return new StoreResponse(base.id(), base.name(), base.cityName(), base.districtName(), base.address(), base.phone(), base.imageUrl(), base.handledItems(), rating, base.verified(), base.receivingOrders(), base.directoryVisible(), base.customerBadgeText(), base.customerNoticeText(),
+                base.restricted(), base.availableSlots(), base.tier(), base.ownerEmail());
     }
 
     private Store requireStore(Long id) {
