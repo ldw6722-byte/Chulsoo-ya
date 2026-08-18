@@ -2,6 +2,7 @@ package com.chulsooya.server.domain.store;
 
 import java.util.List;
 
+import org.springframework.lang.Nullable;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -31,7 +32,7 @@ public class StoreReviewController {
     public StoreReviewController(StoreReviewService reviews) { this.reviews = reviews; }
 
     @GetMapping("/stores/{storeId}")
-    public ApiResponse<StoreDetailResponse> detail(@PathVariable Long storeId, CurrentUser actor) {
+    public ApiResponse<StoreDetailResponse> detail(@PathVariable Long storeId, @Nullable CurrentUser actor) {
         return ApiResponse.of(reviews.detail(storeId, actor));
     }
 

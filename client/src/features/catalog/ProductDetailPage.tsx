@@ -6,6 +6,7 @@ import { useAsync } from '@/hooks/useAsync'
 import { ErrorView, LoadingView } from '@/components/StateViews'
 import { formatWon } from '@/components/format'
 import { useAuth } from '@/app/useAuth'
+import { notify } from '@/lib/notify'
 import type { Product, ProductPriceTier } from '@/types/api'
 
 function Stars({ rating }: { rating: number }) { return <span className="text-amber-400">{'★'.repeat(Math.max(0, Math.min(5, Math.round(rating))))}{'☆'.repeat(Math.max(0, 5 - Math.round(rating)))}</span> }
@@ -24,7 +25,7 @@ export function ProductDetailPage() {
   const id = Number(productId)
   const product = useAsync<Product>(() => catalogApi.product(id), [id])
   const tiers = useAsync<ProductPriceTier[]>(() => catalogApi.priceTiers(id), [id])
-  async function addToCart(goToCart: boolean) { if (!user) { navigate(`/auth/login?next=${encodeURIComponent(`${location.pathname}${location.search}`)}`); return } setSubmitting(true); setNotice(null); try { await cartApi.addItem(id, quantity, undefined, selectedTierId ?? tiers.data?.[0]?.id); if (goToCart) navigate('/cart'); else setNotice('장바구니에 담았습니다. 동네 판매자 매칭을 시작할 준비가 되었어요.') } catch (error) { setNotice(error instanceof ApiError ? error.message : '장바구니에 담지 못했습니다.') } finally { setSubmitting(false) } }
+  async function addToCart(goToCart: boolean) { if (!user) { notify('장바구니는 로그인 후 이용할 수 있습니다.'); navigate(`/auth/login?next=${encodeURIComponent(`${location.pathname}${location.search}`)}`); return } setSubmitting(true); setNotice(null); try { await cartApi.addItem(id, quantity, undefined, selectedTierId ?? tiers.data?.[0]?.id); if (goToCart) navigate('/cart'); else setNotice('장바구니에 담았습니다. 동네 판매자 매칭을 시작할 준비가 되었어요.') } catch (error) { setNotice(error instanceof ApiError ? error.message : '장바구니에 담지 못했습니다.') } finally { setSubmitting(false) } }
   if (product.loading) return <div className="mx-auto max-w-7xl px-4 py-16"><LoadingView label="상품 정보를 불러오는 중입니다" /></div>
   if (product.error) return <div className="mx-auto max-w-7xl px-4 py-16"><ErrorView error={product.error} onRetry={product.reload} /></div>
   if (!product.data) return null

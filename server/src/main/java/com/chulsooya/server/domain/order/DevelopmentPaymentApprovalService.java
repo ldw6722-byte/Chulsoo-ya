@@ -13,6 +13,9 @@ import com.chulsooya.server.domain.claim.SettlementService;
 import com.chulsooya.server.common.ErrorCode;
 import com.chulsooya.server.domain.order.OrderDtos.OrderResponse;
 import com.chulsooya.server.domain.user.UserRole;
+import com.chulsooya.server.domain.store.StoreRepository;
+import com.chulsooya.server.domain.support.BusinessNotificationService;
+
 import com.chulsooya.server.support.CurrentUser;
 
 @Service
@@ -23,14 +26,20 @@ public class DevelopmentPaymentApprovalService {
     private final PaymentRepository payments;
     private final OrderService orderService;
     private final SettlementService settlementService;
+    private final StoreRepository stores;
+    private final BusinessNotificationService notifications;
     private final Clock clock;
 
-    public DevelopmentPaymentApprovalService(OrderRepository orders, PaymentRepository payments, OrderService orderService, SettlementService settlementService, Clock clock) {
+        public DevelopmentPaymentApprovalService(OrderRepository orders, PaymentRepository payments, OrderService orderService, SettlementService settlementService, StoreRepository stores, BusinessNotificationService notifications, Clock clock) {
+
         this.orders = orders;
         this.payments = payments;
         this.orderService = orderService;
-        this.settlementService = settlementService;
+                this.settlementService = settlementService;
+        this.stores = stores;
+        this.notifications = notifications;
         this.clock = clock;
+
     }
 
     @Transactional(readOnly = true)
@@ -74,9 +83,16 @@ public class DevelopmentPaymentApprovalService {
                 order.getTotalAmount(), "DEVELOPMENT_ADMIN_APPROVAL"));
         payment.markPaid("development_admin_" + UUID.randomUUID(), now);
         settlementService.ensureForApprovedPayment(order, payment, now);
-        order.markPaid(now);
+                order.markPaid(now);
         order.transitionTo(OrderStatus.PREPARING, now);
+        notifications.notifyUser(order.getConsumerId(), "PAYMENT_APPROVED", "결제가 완료되었습니다",
+                "주문 #" + orderId + "의 결제가 승인되어 판매점이 준비를 시작합니다.", "/my");
+        if (order.getWinningStoreId() != null) {
+            stores.findById(order.getWinningStoreId()).ifPresent(store -> notifications.notifyUser(store.getOwner().getId(),
+                    "ORDER_PAYMENT_APPROVED", "주문 결제가 완료되었습니다", "주문 #" + orderId + "의 준비를 시작해 주세요.", "/seller"));
+        }
         return orderService.toResponse(order);
+
     }
 
     private void requireAdmin(CurrentUser actor) {

@@ -20,12 +20,10 @@ import com.chulsooya.server.support.CurrentUser;
 public class StoreDirectoryService {
     private final StoreRepository stores;
     private final UserRepository users;
-    private final StoreReviewRepository reviews;
 
-    public StoreDirectoryService(StoreRepository stores, UserRepository users, StoreReviewRepository reviews) {
+    public StoreDirectoryService(StoreRepository stores, UserRepository users) {
         this.stores = stores;
         this.users = users;
-        this.reviews = reviews;
     }
 
     public List<StoreResponse> find(String cityName, String districtName) {
@@ -34,7 +32,7 @@ public class StoreDirectoryService {
         List<Store> result = districtName == null || districtName.isBlank()
                 ? stores.findByCityNameAndVerifiedTrueAndDirectoryVisibleTrueOrderByRatingDescNameAsc(city)
                 : stores.findByCityNameAndDistrictNameAndVerifiedTrueAndDirectoryVisibleTrueOrderByRatingDescNameAsc(city, districtName.trim());
-        return result.stream().map(store -> response(store, now)).toList();
+        return responses(result, now, false);
     }
 
     public List<RegionOption> regions() {
@@ -49,9 +47,9 @@ public class StoreDirectoryService {
     public List<StoreResponse> adminList(CurrentUser actor) {
         requireAdmin(actor);
         Instant now = Instant.now();
-        return stores.findAll().stream().sorted(Comparator.comparing(Store::getCityName)
-                .thenComparing(Store::getDistrictName).thenComparing(Store::getName))
-                .map(store -> response(store, now)).toList();
+        List<Store> result = stores.findAll().stream().sorted(Comparator.comparing(Store::getCityName)
+                .thenComparing(Store::getDistrictName).thenComparing(Store::getName)).toList();
+        return responses(result, now, true);
     }
 
     @Transactional
@@ -68,7 +66,7 @@ public class StoreDirectoryService {
         // 후기 기반 별점은 StoreReviewService가 공개 후기 평균으로만 갱신한다.
         store.changeOperatingStatus(request.verified(), request.receivingOrders());
         store.changeCustomerDisplaySettings(request.customerBadgeText(), request.customerNoticeText(), request.directoryVisible());
-        return response(stores.save(store), Instant.now());
+        return response(stores.save(store), Instant.now(), true);
     }
 
     @Transactional
@@ -79,7 +77,7 @@ public class StoreDirectoryService {
         // 후기 기반 별점은 StoreReviewService가 공개 후기 평균으로만 갱신한다.
         store.changeOperatingStatus(request.verified(), request.receivingOrders());
         store.changeCustomerDisplaySettings(request.customerBadgeText(), request.customerNoticeText(), request.directoryVisible());
-        return response(store, Instant.now());
+        return response(store, Instant.now(), true);
     }
 
     @Transactional
@@ -88,12 +86,13 @@ public class StoreDirectoryService {
         stores.delete(requireStore(storeId));
     }
 
-    private StoreResponse response(Store store, Instant now) {
-        List<StoreReview> published = reviews.findByStoreIdAndVisibilityOrderByCreatedAtDesc(store.getId(), StoreReview.ReviewVisibility.PUBLISHED);
-        double rating = published.isEmpty() ? 0 : Math.round(published.stream().mapToInt(StoreReview::getRating).average().orElse(0) * 10.0) / 10.0;
-        StoreResponse base = StoreResponse.from(store, now);
-        return new StoreResponse(base.id(), base.name(), base.cityName(), base.districtName(), base.address(), base.phone(), base.imageUrl(), base.handledItems(), rating, base.verified(), base.receivingOrders(), base.directoryVisible(), base.customerBadgeText(), base.customerNoticeText(),
-                base.restricted(), base.availableSlots(), base.tier(), base.ownerEmail());
+    private List<StoreResponse> responses(List<Store> stores, Instant now, boolean includeOwnerEmail) {
+        return stores.stream().map(store -> response(store, now, includeOwnerEmail)).toList();
+    }
+
+    private StoreResponse response(Store store, Instant now, boolean includeOwnerEmail) {
+        // ponytail: 후기 생성·수정·숨김 시 StoreReviewService가 Store.rating을 갱신하고, 고객 목록은 판매자 이메일이 필요 없다.
+        return includeOwnerEmail ? StoreResponse.from(store, now) : StoreResponse.fromPublic(store, now);
     }
 
     private Store requireStore(Long id) {

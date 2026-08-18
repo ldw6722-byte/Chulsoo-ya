@@ -76,10 +76,22 @@ spring:
       # Supabase 무료 Session pooler의 연결 한도를 초과하지 않도록 보수적으로 유지한다.
       maximum-pool-size: 3
       minimum-idle: 0
+      # 원격 DB·네트워크 지연이 HTTP 요청을 무한 대기 상태로 만들지 않도록 제한한다.
+      connection-timeout: 5000
+      validation-timeout: 3000
+      idle-timeout: 60000
+      max-lifetime: 600000
+      keepalive-time: 120000
+      data-source-properties:
+        connectTimeout: 5
+        socketTimeout: 15
+        tcpKeepAlive: true
   jpa:
     hibernate:
       ddl-auto: validate
     open-in-view: false
+    properties:
+      jakarta.persistence.query.timeout: 15000
   flyway:
     enabled: true
     locations: classpath:db/supabase

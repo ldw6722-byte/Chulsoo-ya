@@ -4,6 +4,7 @@ import java.util.Map;
 import java.util.UUID;
 
 import org.springframework.core.MethodParameter;
+import org.springframework.lang.Nullable;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.jwt.Jwt;
@@ -43,6 +44,8 @@ public class CurrentUserResolver implements HandlerMethodArgumentResolver {
 
         Jwt jwt = authenticatedJwt();
         if (jwt != null) return fromSupabaseJwt(jwt);
+        String rawId = webRequest.getHeader(HEADER_USER_ID);
+        if (parameter != null && parameter.getParameterAnnotation(Nullable.class) != null && (rawId == null || rawId.isBlank())) return null;
         return fromDevelopmentHeaders(webRequest);
     }
 

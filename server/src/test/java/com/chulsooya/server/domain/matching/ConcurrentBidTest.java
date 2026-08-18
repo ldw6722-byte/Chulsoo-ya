@@ -29,6 +29,8 @@ import com.chulsooya.server.domain.order.OrderStatus;
 import com.chulsooya.server.domain.store.Store;
 import com.chulsooya.server.domain.store.StoreRepository;
 import com.chulsooya.server.domain.store.SubscriptionTier;
+import com.chulsooya.server.domain.support.CustomerNotificationRepository;
+
 import com.chulsooya.server.domain.user.User;
 import com.chulsooya.server.domain.user.UserRepository;
 import com.chulsooya.server.domain.user.UserRole;
@@ -52,8 +54,11 @@ class ConcurrentBidTest {
 	private OfferDispatchService offerDispatchService;
 	@Autowired
 	private BidService bidService;
-	@Autowired
+		@Autowired
 	private BidRepository bidRepository;
+	@Autowired
+	private CustomerNotificationRepository notificationRepository;
+
 	@Autowired
 	private TransactionTemplate transactionTemplate;
 	@Autowired
@@ -61,8 +66,31 @@ class ConcurrentBidTest {
 	@Autowired
 	private Clock clock;
 
+		@Test
+	@Transactional
+	@DisplayName("새 주문 제안은 수신 판매자에게 미확인 알림을 생성한다")
+	void dispatchCreatesUnreadNotificationForOfferedStore() {
+		String gu = "GU_NOTIFICATION";
+		User seller = userRepository.save(new User("offer-notification@test.dev", "알림 판매자", "010", UserRole.SELLER));
+		Store store = new Store(seller, "알림 매장", gu, "서울 강남구 알림", "02", SubscriptionTier.PREMIUM);
+		store.verify();
+		storeRepository.save(store);
+		Order order = new Order(1L, gu, FulfillmentMethod.PICKUP, null, null, null, 3000);
+		order.submitForMatching(clock.instant(), properties.matching().matchWindowSeconds());
+		Order saved = orderRepository.save(order);
+
+		offerDispatchService.dispatch(saved);
+
+		assertThat(notificationRepository.findTop50ByUserIdOrderByCreatedAtDesc(seller.getId()))
+				.anySatisfy(notification -> {
+					assertThat(notification.getType()).isEqualTo("MATCH_OFFER_RECEIVED");
+					assertThat(notification.getReadAt()).isNull();
+				});
+	}
+
 	@Test
 	@DisplayName("여러 판매자가 동시에 응찰해도 낙찰자는 정확히 한 명이다")
+
 	void onlyOneWinnerUnderConcurrency() throws Exception {
 		String gu = "GU_CONCURRENT";
 		List<Long> storeIds = transactionTemplate.execute(status -> {

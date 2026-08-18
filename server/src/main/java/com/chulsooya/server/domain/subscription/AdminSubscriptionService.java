@@ -15,11 +15,13 @@ import com.chulsooya.server.domain.subscription.SubscriptionDtos.AdminMembership
 import com.chulsooya.server.domain.subscription.SubscriptionDtos.HistoryResponse;
 import com.chulsooya.server.domain.subscription.SubscriptionDtos.ProductRequest;
 import com.chulsooya.server.domain.subscription.SubscriptionDtos.ProductResponse;
+import com.chulsooya.server.domain.support.BusinessNotificationService;
 
 @Service
 public class AdminSubscriptionService {
-    private final StoreRepository stores; private final SubscriptionProductRepository products; private final StoreSubscriptionHistoryRepository history; private final Clock clock;
-    public AdminSubscriptionService(StoreRepository stores, SubscriptionProductRepository products, StoreSubscriptionHistoryRepository history, Clock clock) { this.stores = stores; this.products = products; this.history = history; this.clock = clock; }
+        private final StoreRepository stores; private final SubscriptionProductRepository products; private final StoreSubscriptionHistoryRepository history; private final Clock clock; private final BusinessNotificationService notifications;
+    public AdminSubscriptionService(StoreRepository stores, SubscriptionProductRepository products, StoreSubscriptionHistoryRepository history, Clock clock, BusinessNotificationService notifications) { this.stores = stores; this.products = products; this.history = history; this.clock = clock; this.notifications = notifications; }
+
     @Transactional(readOnly = true)
     public List<ProductResponse> products() { return products.findAllByOrderByDisplayOrderAscIdAsc().stream().map(ProductResponse::from).toList(); }
     @Transactional
@@ -38,7 +40,8 @@ public class AdminSubscriptionService {
     @Transactional(readOnly = true)
     public List<AdminMembershipResponse> memberships() { Instant now = clock.instant(); return stores.findAll().stream().map(store -> toMembership(store, now)).toList(); }
     @Transactional
-    public AdminMembershipResponse changeMembership(Long storeId, Long adminId, AdminChangeRequest request) { Instant now = clock.instant(); Store store = stores.findByIdForUpdate(storeId).orElseThrow(() -> new DomainException(ErrorCode.NOT_FOUND, "판매점을 찾을 수 없습니다.")); SubscriptionTier before = store.getTier(); Instant beforeExpiry = store.getSubscriptionExpiresAt(); Instant expiresAt = request.tier() == SubscriptionTier.SILVER ? null : request.expiresAt(); if (request.tier() != SubscriptionTier.SILVER && (expiresAt == null || !expiresAt.isAfter(now))) throw new DomainException(ErrorCode.VALIDATION_FAILED, "유료 등급은 미래의 만료일이 필요합니다."); store.activateMembership(request.tier(), expiresAt); history.save(new StoreSubscriptionHistory(storeId, null, before, request.tier(), beforeExpiry, expiresAt, SubscriptionHistoryEvent.ADMIN_CHANGED, adminId, request.reason() == null || request.reason().isBlank() ? "관리자 등급 조절" : request.reason().trim(), now)); return toMembership(store, now); }
+        public AdminMembershipResponse changeMembership(Long storeId, Long adminId, AdminChangeRequest request) { Instant now = clock.instant(); Store store = stores.findByIdForUpdate(storeId).orElseThrow(() -> new DomainException(ErrorCode.NOT_FOUND, "판매점을 찾을 수 없습니다.")); SubscriptionTier before = store.getTier(); Instant beforeExpiry = store.getSubscriptionExpiresAt(); Instant expiresAt = request.tier() == SubscriptionTier.SILVER ? null : request.expiresAt(); if (request.tier() != SubscriptionTier.SILVER && (expiresAt == null || !expiresAt.isAfter(now))) throw new DomainException(ErrorCode.VALIDATION_FAILED, "유료 등급은 미래의 만료일이 필요합니다."); store.activateMembership(request.tier(), expiresAt); history.save(new StoreSubscriptionHistory(storeId, null, before, request.tier(), beforeExpiry, expiresAt, SubscriptionHistoryEvent.ADMIN_CHANGED, adminId, request.reason() == null || request.reason().isBlank() ? "관리자 등급 조절" : request.reason().trim(), now)); notifications.notifyUser(store.getOwner().getId(), "SUBSCRIPTION_ADMIN_CHANGED", "구독 등급이 변경되었습니다", "현재 등급: " + request.tier().name(), "/seller/subscription"); return toMembership(store, now); }
+
     @Transactional(readOnly = true)
     public List<HistoryResponse> history(Long storeId) { if (!stores.existsById(storeId)) throw new DomainException(ErrorCode.NOT_FOUND, "판매점을 찾을 수 없습니다."); return history.findTop100ByStoreIdOrderByCreatedAtDesc(storeId).stream().map(HistoryResponse::from).toList(); }
     private AdminMembershipResponse toMembership(Store store, Instant now) { return new AdminMembershipResponse(store.getId(), store.getName(), store.getOwner().getEmail(), store.getTier(), store.getSubscriptionExpiresAt(), store.hasActivePaidMembership(now), store.getConfiguredSlots(), store.getTierSlotCap()); }

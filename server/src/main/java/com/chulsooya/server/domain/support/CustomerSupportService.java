@@ -35,11 +35,13 @@ public class CustomerSupportService {
     private final SupportInquiryRepository inquiries;
     private final CustomerNotificationRepository notifications;
     private final UserRepository users;
+    private final BusinessNotificationService businessNotifications;
 
-    public CustomerSupportService(SupportInquiryRepository inquiries, CustomerNotificationRepository notifications, UserRepository users) {
+    public CustomerSupportService(SupportInquiryRepository inquiries, CustomerNotificationRepository notifications, UserRepository users, BusinessNotificationService businessNotifications) {
         this.inquiries = inquiries;
         this.notifications = notifications;
         this.users = users;
+        this.businessNotifications = businessNotifications;
     }
 
     public List<FaqItem> faqs() {
@@ -50,6 +52,8 @@ public class CustomerSupportService {
     public InquiryResponse createInquiry(CurrentUser user, CreateInquiryRequest request) {
         SupportInquiry inquiry = inquiries.save(new SupportInquiry(user.userId(), request.category().trim(), request.title().trim(), request.content().trim()));
         notifications.save(new CustomerNotification(user.userId(), "INQUIRY_RECEIVED", "문의가 접수되었습니다", "고객센터에서 답변을 준비하고 있습니다.", "/support"));
+        businessNotifications.notifyAdmins("INQUIRY_SUBMITTED", "새 고객 문의가 접수되었습니다",
+                inquiry.getTitle() + " 문의에 답변해 주세요.", "/admin");
         return InquiryResponse.from(inquiry);
     }
 

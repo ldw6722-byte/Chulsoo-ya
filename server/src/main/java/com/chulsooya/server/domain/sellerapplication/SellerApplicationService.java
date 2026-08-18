@@ -18,6 +18,8 @@ import com.chulsooya.server.domain.store.SubscriptionTier;
 import com.chulsooya.server.domain.user.User;
 import com.chulsooya.server.domain.user.UserRepository;
 import com.chulsooya.server.domain.user.UserRole;
+import com.chulsooya.server.domain.support.BusinessNotificationService;
+
 import com.chulsooya.server.support.CurrentUser;
 
 @Service
@@ -28,13 +30,17 @@ public class SellerApplicationService {
     private final StoreRepository stores;
     private final UserRepository users;
     private final Clock clock;
+    private final BusinessNotificationService notifications;
 
-    public SellerApplicationService(SellerApplicationRepository applications, StoreRepository stores,
-            UserRepository users, Clock clock) {
+        public SellerApplicationService(SellerApplicationRepository applications, StoreRepository stores,
+            UserRepository users, Clock clock, BusinessNotificationService notifications) {
+
         this.applications = applications;
         this.stores = stores;
         this.users = users;
-        this.clock = clock;
+                this.clock = clock;
+        this.notifications = notifications;
+
     }
 
     @Transactional
@@ -50,8 +56,12 @@ public class SellerApplicationService {
         SellerApplication application = new SellerApplication(applicant, request.storeName(), request.representativeName(),
                 request.businessRegistrationNumber(), request.cityName(), request.districtName(), guCode(request.districtName()),
                 request.address(), request.phone(), request.handledItems());
-        application.setBusinessOpenedOn(request.businessOpenedOn());
-        return ApplicantResponse.from(applications.save(application));
+                application.setBusinessOpenedOn(request.businessOpenedOn());
+        SellerApplication saved = applications.save(application);
+        notifications.notifyAdmins("SELLER_APPLICATION_SUBMITTED", "새 판매자 신청이 접수되었습니다",
+                saved.getStoreName() + " 판매자 신청을 심사해 주세요.", "/admin");
+        return ApplicantResponse.from(saved);
+
     }
 
     public ApplicantResponse mine(CurrentUser actor) {
@@ -83,16 +93,22 @@ public class SellerApplicationService {
         store.changeDirectoryProfile(application.getStoreName(), application.getCityName(), application.getDistrictName(),
                 application.getGuCode(), application.getAddress(), application.getPhone(), null, application.getHandledItems());
         store.changeOperatingStatus(true, true);
-        stores.save(store);
+                stores.save(store);
+        notifications.notifyUser(application.getApplicant().getId(), "SELLER_APPLICATION_APPROVED", "판매자 신청이 승인되었습니다",
+                "판매자 운영과 응찰 기능을 이용할 수 있습니다.", "/seller");
         return ApplicantResponse.from(application);
+
     }
 
     @Transactional
     public AdminResponse reject(CurrentUser actor, Long applicationId, String reason) {
         requireAdmin(actor);
         SellerApplication application = requireApplicationForUpdate(applicationId);
-        application.reject(actor.userId(), reason, clock.instant());
+                application.reject(actor.userId(), reason, clock.instant());
+        notifications.notifyUser(application.getApplicant().getId(), "SELLER_APPLICATION_REJECTED", "판매자 신청 심사 결과를 확인해 주세요",
+                reason == null || reason.isBlank() ? "신청이 반려되었습니다." : reason.trim(), "/seller/application");
         return AdminResponse.from(application);
+
     }
 
     @Transactional

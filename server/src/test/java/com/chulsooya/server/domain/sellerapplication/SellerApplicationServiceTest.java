@@ -23,6 +23,8 @@ import com.chulsooya.server.domain.store.StoreRepository;
 import com.chulsooya.server.domain.user.User;
 import com.chulsooya.server.domain.user.UserRole;
 import com.chulsooya.server.domain.user.UserRepository;
+import com.chulsooya.server.domain.support.BusinessNotificationService;
+
 import com.chulsooya.server.support.CurrentUser;
 
 @ExtendWith(MockitoExtension.class)
@@ -37,6 +39,9 @@ class SellerApplicationServiceTest {
     @Mock
     private UserRepository users;
 
+    @Mock
+    private BusinessNotificationService notifications;
+
     @Test
     void admin_approval_promotes_the_applicant_and_creates_an_active_store() {
         User applicant = new User("seller@example.com", "신청자", "010-1234-5678", UserRole.CONSUMER);
@@ -44,7 +49,8 @@ class SellerApplicationServiceTest {
         application.markCertificateUploaded("seller-applications/10/business-license", "image/jpeg", 120_000L);
         application.markBankAccountCopyUploaded("seller-applications/10/bank-account-copy", "image/jpeg", 120_000L);
         Clock clock = Clock.fixed(Instant.parse("2026-08-13T00:00:00Z"), ZoneOffset.UTC);
-        SellerApplicationService service = new SellerApplicationService(applications, stores, users, clock);
+                SellerApplicationService service = new SellerApplicationService(applications, stores, users, clock, notifications);
+
         CurrentUser admin = new CurrentUser(99L, UserRole.ADMIN);
 
         when(applications.findByIdForUpdate(10L)).thenReturn(Optional.of(application));
@@ -64,7 +70,7 @@ class SellerApplicationServiceTest {
         User applicant = new User("seller@example.com", "신청자", "010-1234-5678", UserRole.CONSUMER);
         SellerApplication application = application(applicant);
         SellerApplicationService service = new SellerApplicationService(applications, stores, users,
-                Clock.fixed(Instant.parse("2026-08-13T00:00:00Z"), ZoneOffset.UTC));
+                Clock.fixed(Instant.parse("2026-08-13T00:00:00Z"), ZoneOffset.UTC), notifications);
 
         when(applications.findByIdForUpdate(10L)).thenReturn(Optional.of(application));
 

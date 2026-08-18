@@ -18,13 +18,21 @@ public final class StoreDirectoryDtos {
             boolean receivingOrders, boolean directoryVisible, String customerBadgeText, String customerNoticeText,
             boolean restricted, int availableSlots, String tier, String ownerEmail) {
         public static StoreResponse from(Store store, Instant now) {
+            return from(store, now, store.getOwner().getEmail());
+        }
+
+        public static StoreResponse fromPublic(Store store, Instant now) {
+            return from(store, now, null);
+        }
+
+        private static StoreResponse from(Store store, Instant now, String ownerEmail) {
             List<String> items = Arrays.stream(store.getHandledItems().split(","))
                     .map(String::trim).filter(value -> !value.isBlank()).toList();
             return new StoreResponse(store.getId(), store.getName(), store.getCityName(), store.getDistrictName(),
                     store.getAddress(), store.getPhone(), store.getImageUrl(), items, store.getRating(),
                     store.isVerified(), store.isReceivingOrders(), store.isDirectoryVisible(), store.getCustomerBadgeText(),
                     store.getCustomerNoticeText(), store.isRestricted(now), store.getAvailableSlots(),
-                    store.getTier().name(), store.getOwner().getEmail());
+                    store.getTier().name(), ownerEmail);
         }
     }
 

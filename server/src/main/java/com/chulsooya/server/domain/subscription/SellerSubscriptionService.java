@@ -15,6 +15,7 @@ import com.chulsooya.server.domain.store.SubscriptionTier;
 import com.chulsooya.server.domain.subscription.SubscriptionDtos.HistoryResponse;
 import com.chulsooya.server.domain.subscription.SubscriptionDtos.ProductResponse;
 import com.chulsooya.server.domain.subscription.SubscriptionDtos.StatusResponse;
+import com.chulsooya.server.domain.support.BusinessNotificationService;
 
 @Service
 public class SellerSubscriptionService {
@@ -22,9 +23,11 @@ public class SellerSubscriptionService {
     private final StoreRepository stores;
     private final SubscriptionProductRepository products;
     private final StoreSubscriptionHistoryRepository history;
-    private final Clock clock;
-    public SellerSubscriptionService(StoreRepository stores, SubscriptionProductRepository products, StoreSubscriptionHistoryRepository history, Clock clock) {
-        this.stores = stores; this.products = products; this.history = history; this.clock = clock;
+        private final Clock clock;
+    private final BusinessNotificationService notifications;
+    public SellerSubscriptionService(StoreRepository stores, SubscriptionProductRepository products, StoreSubscriptionHistoryRepository history, Clock clock, BusinessNotificationService notifications) {
+        this.stores = stores; this.products = products; this.history = history; this.clock = clock; this.notifications = notifications;
+
     }
     @Transactional(readOnly = true)
     public List<ProductResponse> activeProducts() { return products.findByActiveTrueOrderByDisplayOrderAscIdAsc().stream().map(ProductResponse::from).toList(); }
@@ -40,8 +43,11 @@ public class SellerSubscriptionService {
         Instant base = beforeExpiry != null && beforeExpiry.isAfter(now) ? beforeExpiry : now;
         Instant expiresAt = ZonedDateTime.ofInstant(base, KOREA).plusMonths(product.getDurationMonths()).toInstant();
         store.activateMembership(product.getTier(), expiresAt);
-        history.save(new StoreSubscriptionHistory(store.getId(), product.getId(), beforeTier, product.getTier(), beforeExpiry, expiresAt, SubscriptionHistoryEvent.PURCHASED, ownerId, "개발 결제 자동 승인", now));
+                history.save(new StoreSubscriptionHistory(store.getId(), product.getId(), beforeTier, product.getTier(), beforeExpiry, expiresAt, SubscriptionHistoryEvent.PURCHASED, ownerId, "개발 결제 자동 승인", now));
+        notifications.notifyUser(ownerId, "SUBSCRIPTION_PURCHASED", "구독이 적용되었습니다",
+                product.getName() + " 구독이 " + expiresAt + "까지 적용되었습니다.", "/seller/subscription");
         return toStatus(store);
+
     }
     @Transactional(readOnly = true)
     public StatusResponse toStatus(Store store) { return new StatusResponse(store.getId(), store.getName(), store.getTier(), store.getSubscriptionExpiresAt(), store.hasActivePaidMembership(clock.instant()), history.findTop100ByStoreIdOrderByCreatedAtDesc(store.getId()).stream().map(HistoryResponse::from).toList()); }

@@ -14,6 +14,8 @@ import com.chulsooya.server.domain.store.Store;
 import com.chulsooya.server.domain.coupon.CouponService;
 import com.chulsooya.server.domain.store.StoreRepository;
 import com.chulsooya.server.domain.user.UserRole;
+import com.chulsooya.server.domain.support.BusinessNotificationService;
+
 import com.chulsooya.server.support.CurrentUser;
 
 @Service
@@ -26,17 +28,21 @@ public class PaymentRefundService {
     private final StoreRepository stores;
     private final CouponService couponService;
     private final SettlementService settlementService;
+    private final BusinessNotificationService notifications;
     private final Clock clock;
 
     public PaymentRefundService(OrderRepository orders, PaymentRepository payments,
-            PaymentRefundRepository refunds, StoreRepository stores, CouponService couponService, SettlementService settlementService, Clock clock) {
+                        PaymentRefundRepository refunds, StoreRepository stores, CouponService couponService, SettlementService settlementService, BusinessNotificationService notifications, Clock clock) {
+
         this.orders = orders;
         this.payments = payments;
         this.refunds = refunds;
         this.stores = stores;
         this.couponService = couponService;
-        this.settlementService = settlementService;
+                this.settlementService = settlementService;
+        this.notifications = notifications;
         this.clock = clock;
+
     }
 
     /** 결제 전 취소와 결제 직후 전액 취소를 하나의 소비자 액션으로 처리한다. */
@@ -47,10 +53,13 @@ public class PaymentRefundService {
         if (!order.getConsumerId().equals(consumerId)) throw new DomainException(ErrorCode.FORBIDDEN);
 
         Payment payment = payments.findByOrderIdForUpdate(orderId).orElse(null);
-        if (payment == null) {
+                if (payment == null) {
             cancelOrderAndReleaseSlot(order, now);
             couponService.restoreAfterOrderCancellation(order, consumerId);
+            notifications.notifyUser(consumerId, "ORDER_CANCELLED", "주문이 취소되었습니다", "주문 #" + orderId + "이 취소되었습니다.", "/my");
+            notifyWinningStoreOfCancellation(order, orderId);
             return order;
+
         }
         requireIdempotencyKey(idempotencyKey);
         if (refunds.findByIdempotencyKey(idempotencyKey).isPresent()) return order;
@@ -63,9 +72,12 @@ public class PaymentRefundService {
         refunds.save(refund);
         payment.cancelFull();
         refund.markSucceeded(consumerId, stubCancelKey(), "개발 결제 취소 승인", now);
-        cancelOrderAndReleaseSlot(order, now);
+                cancelOrderAndReleaseSlot(order, now);
         couponService.restoreAfterOrderCancellation(order, consumerId);
+        notifications.notifyUser(consumerId, "PAYMENT_CANCELLED", "결제가 취소되었습니다", "주문 #" + orderId + "의 결제가 취소되었습니다.", "/my");
+        notifyWinningStoreOfCancellation(order, orderId);
         return order;
+
     }
 
     /** 관리자만 반품·분쟁 확정 뒤 전액 또는 부분 환불을 수행한다. */
@@ -100,8 +112,10 @@ public class PaymentRefundService {
         payment.applyRefund(amount);
         settlementService.applyRefund(order, payment, amount, now);
         refund.markSucceeded(actor.userId(), stubCancelKey(), "개발 환불 승인", now);
-        if (payment.getRemainingAmount() == 0) cancelOrderAndReleaseSlot(order, now);
+                if (payment.getRemainingAmount() == 0) cancelOrderAndReleaseSlot(order, now);
+        notifications.notifyUser(order.getConsumerId(), "PAYMENT_REFUNDED", "환불이 완료되었습니다", "주문 #" + order.getId() + "의 환불 금액 " + amount + "원이 처리되었습니다.", "/my");
         return refund;
+
     }
 
     /** 클레임 관리자 결정 전용 환불. 완료 주문은 거래 상태를 되돌리지 않고 결제·환불 이력만 종결한다. */
@@ -132,10 +146,12 @@ public class PaymentRefundService {
         payment.applyRefund(amount);
         settlementService.applyRefund(order, payment, amount, now);
         refund.markSucceeded(actor.userId(), stubCancelKey(), "클레임 환불 승인", now);
-        if (payment.getRemainingAmount() == 0 && !order.getStatus().isTerminal()) {
+                if (payment.getRemainingAmount() == 0 && !order.getStatus().isTerminal()) {
             cancelOrderAndReleaseSlot(order, now);
         }
+        notifications.notifyUser(order.getConsumerId(), "CLAIM_REFUND_APPROVED", "클레임 환불이 완료되었습니다", "주문 #" + order.getId() + "의 환불 금액 " + amount + "원이 처리되었습니다.", "/my");
         return refund;
+
     }
 
     @Transactional(readOnly = true)
@@ -160,7 +176,15 @@ public class PaymentRefundService {
         }
     }
 
+        private void notifyWinningStoreOfCancellation(Order order, Long orderId) {
+        if (order.getWinningStoreId() != null) {
+            stores.findById(order.getWinningStoreId()).ifPresent(store -> notifications.notifyUser(store.getOwner().getId(),
+                    "ORDER_CANCELLED", "주문이 취소되었습니다", "주문 #" + orderId + "이 취소되었습니다.", "/seller"));
+        }
+    }
+
     private void requireIdempotencyKey(String idempotencyKey) {
+
         if (idempotencyKey == null || idempotencyKey.isBlank()) {
             throw new DomainException(ErrorCode.IDEMPOTENCY_KEY_REQUIRED);
         }

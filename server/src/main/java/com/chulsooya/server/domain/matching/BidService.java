@@ -14,6 +14,7 @@ import com.chulsooya.server.domain.order.OrderRepository;
 import com.chulsooya.server.domain.order.OrderStatus;
 import com.chulsooya.server.domain.store.Store;
 import com.chulsooya.server.domain.store.StoreRepository;
+import com.chulsooya.server.domain.support.BusinessNotificationService;
 
 /**
  * 낙찰 동시성 제어.
@@ -29,19 +30,22 @@ public class BidService {
 	private final BidRepository bidRepository;
 	private final AppProperties properties;
 	private final Clock clock;
+	private final BusinessNotificationService notifications;
 
 	public BidService(OrderRepository orderRepository,
 			StoreRepository storeRepository,
 			MatchOfferRepository offerRepository,
 			BidRepository bidRepository,
 			AppProperties properties,
-			Clock clock) {
+			Clock clock,
+			BusinessNotificationService notifications) {
 		this.orderRepository = orderRepository;
 		this.storeRepository = storeRepository;
 		this.offerRepository = offerRepository;
 		this.bidRepository = bidRepository;
 		this.properties = properties;
 		this.clock = clock;
+		this.notifications = notifications;
 	}
 
 	/** 판매자 응찰. 성공 시 낙찰(단일 판매자 책임 납품, 부분 응찰 없음). */
@@ -87,6 +91,10 @@ public class BidService {
 
 		// 같은 회차의 다른 열린 제안은 종료하고 예약 슬롯을 즉시 해제한다.
 		closeRemainingOffers(orderId, order.getRetryCount(), storeId, now);
+		notifications.notifyUser(order.getConsumerId(), "MATCH_WINNER_SELECTED", "판매점이 주문을 확인 중입니다",
+				store.getName() + "이 주문 #" + orderId + "의 낙찰자로 선정되었습니다.", "/my");
+		notifications.notifyUser(store.getOwner().getId(), "MATCH_WINNER_SELECTED", "주문 낙찰이 확정되었습니다",
+				"주문 #" + orderId + "의 물품 확인을 진행해 주세요.", "/seller");
 
 		return bidRepository.save(new Bid(orderId, storeId, true, now));
 	}
@@ -118,6 +126,8 @@ public class BidService {
 		}
 		order.confirmStock(now);
 		bidRepository.findByOrderIdAndWinnerTrue(orderId).ifPresent(bid -> bid.markConfirmed(now));
+		notifications.notifyUser(order.getConsumerId(), "SELLER_STOCK_CONFIRMED", "판매점 물품 확인이 완료되었습니다",
+				"주문 #" + orderId + "의 결제를 진행할 수 있습니다.", "/my");
 		return order;
 	}
 

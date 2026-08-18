@@ -15,6 +15,7 @@ import com.chulsooya.server.domain.store.MissedOrderLogRepository;
 import com.chulsooya.server.domain.store.Store;
 import com.chulsooya.server.domain.store.StoreRepository;
 import com.chulsooya.server.domain.store.SubscriptionTier;
+import com.chulsooya.server.domain.support.BusinessNotificationService;
 
 /**
  * 가용 슬롯 기반 계층형 분산 매칭.
@@ -34,16 +35,19 @@ public class OfferDispatchService {
     private final MissedOrderLogRepository missedOrderLogRepository;
     private final AppProperties properties;
     private final java.time.Clock clock;
+    private final BusinessNotificationService notifications;
 
     public OfferDispatchService(StoreRepository storeRepository,
             MatchOfferRepository offerRepository,
             MissedOrderLogRepository missedOrderLogRepository,
             AppProperties properties,
-            java.time.Clock clock) {
+            java.time.Clock clock,
+            BusinessNotificationService notifications) {
         this.storeRepository = storeRepository;
         this.offerRepository = offerRepository;
         this.missedOrderLogRepository = missedOrderLogRepository;this.properties = properties;
         this.clock = clock;
+        this.notifications = notifications;
     }
 
     /**
@@ -92,6 +96,8 @@ public class OfferDispatchService {
                 candidate.reserveSlot();
                 offerRepository.save(new MatchOffer(order.getId(), candidate.getId(), order.getRetryCount(), tier, now,
                         properties.matching().offerTtlSeconds()));
+                notifications.notifyUser(candidate.getOwner().getId(), "MATCH_OFFER_RECEIVED", "새 주문 제안이 도착했습니다",
+                        "주문 #" + order.getId() + "의 응찰 요청을 확인해 주세요.", "/seller");
             }
             return candidates.size();
         }
