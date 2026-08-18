@@ -706,7 +706,33 @@ export interface ClaimDecisionDocument {
 
 export interface AdminProduct { id:number; categoryCode:string; categoryName:string; name:string; specSummary:string; description:string|null; specification:string|null; price:number; originalPrice:number|null; supplyCost:number|null; discountRate:number|null; selectPromotion:boolean; eventCampaignId:number|null; unit:string; imageUrl:string|null; brand:string|null; featured:boolean; quickFulfillment:boolean; active:boolean }
 
-export interface EventCampaign { id:number; name:string; heroTitle:string; heroSubtitle:string|null; badgeText:string; ctaText:string; themeKey:string; iconKey:string; heroSort:number; active:boolean; heroEnabled:boolean }
+export interface EventCampaign {
+  id: number
+  name: string
+  heroTitle: string
+  heroSubtitle: string | null
+  badgeText: string
+  ctaText: string
+  themeKey: string
+  iconKey: string
+  themeAssetId?: number | null
+  iconAssetId?: number | null
+  themeImageUrl?: string | null
+  iconImageUrl?: string | null
+  heroSort: number
+  active: boolean
+  heroEnabled: boolean
+}
+export interface EventAsset {
+  id: number
+  assetType: 'THEME' | 'ICON'
+  name: string
+  publicUrl: string
+  sourceType: 'ADMIN_UPLOAD' | 'AI_GENERATED'
+  sortOrder: number
+  active: boolean
+}
+export interface EventAsset { id:number; assetType:'THEME'|'ICON'; name:string; publicUrl:string; sourceType:'ADMIN_UPLOAD'|'AI_GENERATED'; sortOrder:number; active:boolean }
 
 export interface DeliveryAddress {
   id: number

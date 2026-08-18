@@ -7,6 +7,7 @@ import { ProductManagementPanel } from './ProductManagementPanel'
 import { WorkflowMonitorPanel } from './WorkflowMonitorPanel'
 import { SupportManagementPanel } from './SupportManagementPanel'
 import { EventCampaignManagementPanel } from './EventCampaignManagementPanel'
+import { EventAssetManagementPanel } from './EventAssetManagementPanel'
 import { SellerApplicationManagementPanel } from './SellerApplicationManagementPanel'
 import { PaymentManagementPanel } from './PaymentManagementPanel'
 import { CouponManagementPanel } from './CouponManagementPanel'
@@ -152,7 +153,7 @@ export function AdminOverviewPage() {
   const content = activeView === 'orders' ? <WorkflowMonitorPanel />
     : activeView === 'stores' ? <StoreManagementPanel />
     : activeView === 'users' ? <UserManagementPanel />
-    : activeView === 'events' ? <EventCampaignManagementPanel />    : activeView === 'subscriptions' ? <SubscriptionManagementPanel />
+    : activeView === 'events' ? <><EventCampaignManagementPanel /><EventAssetManagementPanel /></>    : activeView === 'subscriptions' ? <SubscriptionManagementPanel />
     : activeView === 'applications' ? <SellerApplicationManagementPanel />
     : activeView === 'catalog' ? <div className="grid gap-4 md:grid-cols-2"><article className="rounded-2xl border border-slate-200 bg-white p-6"><p className="text-sm font-bold text-brand-600">CATALOG</p><p className="mt-3 text-4xl font-black text-slate-900">{data.summary.totalProductCount.toLocaleString()}</p><p className="mt-2 text-sm text-slate-500">등록된 철물·공구 상품</p></article><article className="rounded-2xl border border-slate-200 bg-white p-6"><p className="text-sm font-bold text-brand-600">CATEGORY</p><p className="mt-3 text-lg font-black text-slate-900">9대분류 · 32소분류</p><p className="mt-2 text-sm leading-6 text-slate-500">상품과 카테고리의 등록·수정 API는 운영 승인 워크플로우와 함께 연결합니다.</p></article></div>
         : activeView === 'finance' ? <div className="grid gap-4"><article className="rounded-2xl border border-slate-200 bg-white p-6"><p className="text-sm font-bold text-brand-600">TODAY REVENUE</p><p className="mt-3 text-4xl font-black text-slate-900">{money(data.summary.todayRevenue)}</p><p className="mt-2 text-sm text-slate-500">결제 완료 기준 당일 매출</p></article><PaymentManagementPanel /></div>

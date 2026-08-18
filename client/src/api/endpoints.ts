@@ -3,6 +3,7 @@ import { http, unwrap } from './client'
 import type {
     AdminProduct,
   EventCampaign,
+  EventAsset,
   AdminOverview,
   AdminStoreActivity,
   AdminSupportInquiry,
@@ -212,6 +213,11 @@ export const adminApi = {
   updateEventCampaign: (id: number, payload: Omit<EventCampaign, 'id' | 'active'>) => unwrap<EventCampaign>(http.put('/admin/event-campaigns/' + id, payload)),
   setEventCampaignActive: (id: number, active: boolean) => unwrap<EventCampaign>(http.patch('/admin/event-campaigns/' + id + '/active', { active })),
   deleteEventCampaign: (id: number) => unwrap<void>(http.delete('/admin/event-campaigns/' + id)),
+  listEventAssets: () => unwrap<EventAsset[]>(http.get('/admin/event-assets')),
+  uploadEventAsset: (payload: { type: 'THEME' | 'ICON'; name: string; sourceType: 'ADMIN_UPLOAD' | 'AI_GENERATED'; sortOrder: number; file: File }) => { const form = new FormData(); form.append('type', payload.type); form.append('name', payload.name); form.append('sourceType', payload.sourceType); form.append('sortOrder', String(payload.sortOrder)); form.append('file', payload.file); return unwrap<EventAsset>(http.post('/admin/event-assets', form)) },
+  updateEventAsset: (id: number, payload: { name: string; sortOrder: number; active: boolean }) => unwrap<EventAsset>(http.patch('/admin/event-assets/' + id, payload)),
+  replaceEventAssetFile: (id: number, file: File) => { const form = new FormData(); form.append('file', file); return unwrap<EventAsset>(http.post('/admin/event-assets/' + id + '/file', form)) },
+  deleteEventAsset: (id: number) => unwrap<void>(http.delete('/admin/event-assets/' + id)),
 
   priceTiers: (productId: number) => unwrap<ProductPriceTier[]>(http.get('/admin/products/' + productId + '/price-tiers')),
   createPriceTier: (productId: number, payload: Omit<ProductPriceTier, 'id'>) => unwrap<ProductPriceTier>(http.post('/admin/products/' + productId + '/price-tiers', payload)),
