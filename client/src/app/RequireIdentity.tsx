@@ -1,7 +1,10 @@
 import { useEffect } from 'react'
+import { Navigate, useLocation } from 'react-router-dom'
+
 import type { ReactNode } from 'react'
 import { useAuth } from './useAuth'
 import { useIdentity } from './useIdentity'
+import { isSupabaseConfigured } from '@/lib/supabase'
 
 import { EmptyView, LoadingView } from '@/components/StateViews'
 import type { UserRole } from '@/types/api'
@@ -28,8 +31,10 @@ export function RequireIdentity({
 }) {
   const { identity, setIdentity } = useIdentity()
   const { user, isLoading } = useAuth()
-  const effectiveIdentity = identity ?? (user ? { userId: user.id, role: user.role, name: user.name } : null)
-  const useDevelopmentAdmin = import.meta.env.DEV && roles.length === 1 && roles[0] === 'ADMIN'
+  const location = useLocation()
+  const authenticatedIdentity = user ? { userId: user.id, role: user.role, name: user.name } : null
+  const effectiveIdentity = isSupabaseConfigured ? authenticatedIdentity : (identity ?? authenticatedIdentity)
+  const useDevelopmentAdmin = import.meta.env.DEV && !isSupabaseConfigured && roles.length === 1 && roles[0] === 'ADMIN'
 
   useEffect(() => {
     if (useDevelopmentAdmin && identity?.role !== "ADMIN") setIdentity(DEVELOPMENT_ADMIN)
@@ -43,20 +48,13 @@ export function RequireIdentity({
     )
   }
 
-    if (isLoading && !effectiveIdentity) {
+  if (isLoading) {
     return <div className="min-h-screen bg-slate-50 px-4 py-16"><LoadingView label="로그인 정보를 확인하는 중입니다" /></div>
   }
 
   if (!effectiveIdentity) {
-
-    return (
-      <div className="page">
-        <EmptyView
-          title="계정을 선택해 주세요"
-          description="상단의 개발 계정 전환 바에서 사용할 계정을 선택하면 화면이 표시됩니다."
-        />
-      </div>
-    )
+    const next = location.pathname + location.search
+    return <Navigate to={`/auth/login?next=${encodeURIComponent(next)}`} replace />
   }
 
     if (!roles.includes(effectiveIdentity.role)) {

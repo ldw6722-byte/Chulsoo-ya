@@ -18,7 +18,7 @@ public final class SubscriptionDtos {
         public static HistoryResponse from(StoreSubscriptionHistory value) { return new HistoryResponse(value.getId(), value.getProductId(), value.getPreviousTier(), value.getNextTier(), value.getPreviousExpiresAt(), value.getExpiresAt(), value.getEventType(), value.getChangedByUserId(), value.getReason(), value.getCreatedAt()); }
     }
     public record StatusResponse(Long storeId, String storeName, SubscriptionTier tier, Instant subscriptionExpiresAt, boolean activePaidMembership, List<HistoryResponse> history) {}
-    public record AdminMembershipResponse(Long storeId, String storeName, String ownerEmail, SubscriptionTier tier, Instant subscriptionExpiresAt, boolean activePaidMembership, int configuredSlots, int tierSlotCap) {}
+    public record AdminMembershipResponse(Long storeId, String storeName, String ownerEmail, String districtName, String handledItems, SubscriptionTier tier, Instant subscriptionExpiresAt, boolean activePaidMembership, int configuredSlots, int tierSlotCap) {}
     public record AdminChangeRequest(@NotNull SubscriptionTier tier, Instant expiresAt, String reason) {}
 }
 

@@ -1,13 +1,14 @@
-﻿import { useEffect, useState, type ReactNode } from 'react'
+﻿import { type ReactNode } from 'react'
 import { Link } from 'react-router-dom'
+import { ThemeToggle } from '@/components/ThemeToggle'
 import './auth.css'
 
-export function AuthLayout({ children }: { children: ReactNode }) {
-  const [dark, setDark] = useState(() => localStorage.getItem('chulsooya-auth-theme') === 'dark')
-  useEffect(() => { localStorage.setItem('chulsooya-auth-theme', dark ? 'dark' : 'light') }, [dark])
-  return <main className={dark ? "auth-page auth-dark" : "auth-page"}><div className="auth-frame">
-    <Link to="/" className="auth-brand" aria-label="Chulsoo-ya home">{"\uCCA0\uC218\uC57C"}</Link>
+const MAIN_LOGO_URL = 'https://gvsnsnjfvtogvlyvmlkt.supabase.co/storage/v1/object/public/event-assets/brand/chulsooya-main-logo-check-outline.webp'
+
+export function AuthLayout({ children, variant = 'login' }: { children: ReactNode; variant?: 'login' | 'signup' }) {
+  return <main className={`auth-page auth-page-${variant}`}><div className="auth-frame">
+    <Link to="/" className="auth-brand" aria-label="철수야 메인으로 이동"><img src={MAIN_LOGO_URL} alt="철수야" /></Link>
     <section className="card auth-card">{children}</section>
-    <button type="button" className="auth-theme-toggle" onClick={() => setDark((value) => !value)}>{dark ? "\u2600\uFE0F \uB77C\uC774\uD2B8 \uBAA8\uB4DC\uB85C \uC804\uD658" : "\u263D \uB2E4\uD06C \uBAA8\uB4DC\uB85C \uC804\uD658"}</button>
+    <div className="auth-theme-toggle"><ThemeToggle /></div>
   </div></main>
 }

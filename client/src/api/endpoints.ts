@@ -1,7 +1,10 @@
 import type { SubscriptionProduct, SellerSubscriptionStatus, AdminSellerMembership, StoreSubscriptionHistory, SellerSubscriptionTier } from '../types/api'
 import { http, unwrap } from './client'
 import type {
-    AdminProduct,
+  AdminProduct,
+  AdminAccount,
+  AdminAccountListResponse,
+  AdminStatus,
   EventCampaign,
   EventAsset,
   AdminOverview,
@@ -17,7 +20,8 @@ import type {
   SupportInquiryStatus,
 
   AssignedOrder,
-  AuthMeResponse,
+    AuthenticatedUser,
+
   Cart,
     Category,
   AdminClaimDecision,
@@ -189,7 +193,7 @@ export const sellerApi = {
 /* ?筌뤾쑴理?*/
 
 export const authApi = {
-  me: () => unwrap<AuthMeResponse>(http.get('/auth/me')),
+  me: () => unwrap<AuthenticatedUser>(http.get('/auth/me')),
 }
 
 /* ?띠룇裕녻????ｌ뫒??*/
@@ -204,6 +208,10 @@ export const userApi = {
 /* ??㉱?洹먮봿????怨멸껀 */
 export const adminApi = {
   overview: () => unwrap<AdminOverview>(http.get('/admin/overview')),
+  myAccount: () => unwrap<AdminAccount>(http.get('/admin/account/me')),
+  updateMyAccountStatus: (status: AdminStatus) => unwrap<AdminAccount>(http.patch('/admin/account/me/status', { status })),
+  administratorAccounts: () => unwrap<AdminAccountListResponse>(http.get('/admin/account')),
+  inviteAdministrator: (payload: { email: string; name: string }) => unwrap<AdminAccount>(http.post('/admin/account/invite', payload)),
   listProducts: (params: { categoryCode?: string; keyword?: string; active?: boolean; page?: number; size?: number }) => unwrap<PageResponse<AdminProduct>>(http.get('/admin/products', { params })),
   createProduct: (payload: Omit<AdminProduct, 'id' | 'categoryName' | 'active'>) => unwrap<AdminProduct>(http.post('/admin/products', payload)),
   updateProduct: (id: number, payload: Omit<AdminProduct, 'id' | 'categoryName' | 'active'>) => unwrap<AdminProduct>(http.put('/admin/products/' + id, payload)),

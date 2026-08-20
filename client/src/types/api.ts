@@ -813,5 +813,23 @@ export type SubscriptionHistoryEvent = 'PURCHASED' | 'ADMIN_CHANGED' | 'EXPIRED'
 export interface SubscriptionProduct { id: number; name: string; tier: SellerSubscriptionTier; price: number; durationMonths: number; description: string | null; active: boolean; displayOrder: number }
 export interface StoreSubscriptionHistory { id: number; productId: number | null; previousTier: SellerSubscriptionTier; nextTier: SellerSubscriptionTier; previousExpiresAt: string | null; expiresAt: string | null; eventType: SubscriptionHistoryEvent; changedByUserId: number | null; reason: string | null; createdAt: string }
 export interface SellerSubscriptionStatus { storeId: number; storeName: string; tier: SellerSubscriptionTier; subscriptionExpiresAt: string | null; activePaidMembership: boolean; history: StoreSubscriptionHistory[] }
-export interface AdminSellerMembership { storeId: number; storeName: string; ownerEmail: string; tier: SellerSubscriptionTier; subscriptionExpiresAt: string | null; activePaidMembership: boolean; configuredSlots: number; tierSlotCap: number }
+export interface AdminSellerMembership { storeId: number; storeName: string; ownerEmail: string; districtName: string | null; handledItems: string | null; tier: SellerSubscriptionTier; subscriptionExpiresAt: string | null; activePaidMembership: boolean; configuredSlots: number; tierSlotCap: number }
 
+
+export type AdminLevel = 'NONE' | 'HIGHEST' | 'STANDARD'
+export type AdminStatus = 'WORKING' | 'AWAY' | 'OFFLINE'
+
+export interface AdminAccount {
+  id: number
+  email: string
+  name: string
+  roleLabel: '최고 관리자' | '일반 관리자'
+  statusLabel: '근무 중' | '자리 비움' | '업무 종료'
+  level: AdminLevel
+  status: AdminStatus
+  statusUpdatedAt: string | null
+}
+
+export interface AdminAccountListResponse {
+  accounts: AdminAccount[]
+}

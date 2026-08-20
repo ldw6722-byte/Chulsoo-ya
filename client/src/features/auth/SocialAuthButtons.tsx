@@ -1,14 +1,23 @@
 ﻿import { useState } from 'react'
 import { AuthConfigurationError, supabaseAuth } from '@/lib/supabase'
+import { clearAuthSessionPolicy, startAuthSession } from '@/lib/auth-session'
+
 type Provider = 'google' | 'kakao'
-type Props = { action: 'login' | 'signup'; disabled?: boolean; onError: (message: string | null) => void; nextPath?: string }
-export function SocialAuthButtons({ disabled = false, onError, nextPath }: Props) {
+type Props = { action: 'login' | 'signup'; disabled?: boolean; onError: (message: string | null) => void; nextPath?: string; remember?: boolean }
+
+export function SocialAuthButtons({ disabled = false, onError, nextPath, remember = false }: Props) {
+
   const [pending, setPending] = useState<Provider | null>(null)
   const start = async (provider: Provider) => {
     if (disabled || pending) return
     setPending(provider); onError(null)
-    try { const result = await supabaseAuth.signInWithProvider(provider, nextPath); if (result.error) onError(result.error.message) }
-    catch (error) { onError(error instanceof AuthConfigurationError ? error.message : "Social login could not be started.") }
+        try {
+      startAuthSession(remember)
+      const result = await supabaseAuth.signInWithProvider(provider, nextPath)
+      if (result.error) { clearAuthSessionPolicy(); onError(result.error.message) }
+    }
+
+    catch (error) { clearAuthSessionPolicy(); onError(error instanceof AuthConfigurationError ? error.message : "Social login could not be started.") }
     finally { setPending(null) }
   }
   return <div className="auth-provider-grid">

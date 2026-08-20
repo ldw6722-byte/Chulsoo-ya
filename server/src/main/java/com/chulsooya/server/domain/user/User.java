@@ -41,6 +41,16 @@ public class User {
     @Column(nullable = false, length = 20)
     private UserRole role;
 
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 20)
+    private AdminLevel adminLevel = AdminLevel.NONE;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 20)
+    private AdminStatus adminStatus = AdminStatus.OFFLINE;
+
+    private Instant adminStatusUpdatedAt;
+
     @Column(nullable = false)
     private Instant createdAt = Instant.now();
 
@@ -72,12 +82,39 @@ public class User {
     }
 
     /** 관리자만 소비자·판매자 역할을 전환한다. ADMIN 승격은 별도 운영 절차로 제한한다. */
-    /** 환경 설정으로 지정된 초기 슈퍼어드민에만 사용하는 부트스트랩 경로다. */
     public void grantAdministratorForBootstrap() {
-        this.role = UserRole.ADMIN;
+        grantHighestAdministratorForBootstrap();
     }
+
+    /** 환경 설정으로 지정된 최초 최고 관리자에만 사용하는 부트스트랩 경로다. */
+    public void grantHighestAdministratorForBootstrap() {
+        this.role = UserRole.ADMIN;
+        this.adminLevel = AdminLevel.HIGHEST;
+        updateAdministratorStatus(AdminStatus.WORKING);
+    }
+
+    /** 최고 관리자 초대로 생성되는 일반 관리자 권한이다. */
+    public void grantStandardAdministrator() {
+        this.role = UserRole.ADMIN;
+        this.adminLevel = AdminLevel.STANDARD;
+        updateAdministratorStatus(AdminStatus.OFFLINE);
+    }
+
+    public boolean isHighestAdministrator() {
+        return role == UserRole.ADMIN && adminLevel == AdminLevel.HIGHEST;
+    }
+
+    public void updateAdministratorStatus(AdminStatus status) {
+        if (role != UserRole.ADMIN) throw new IllegalArgumentException("관리자 계정만 운영 상태를 변경할 수 있습니다.");
+        this.adminStatus = status;
+        this.adminStatusUpdatedAt = Instant.now();
+    }
+
     public void changeRole(UserRole role) {
         if (role == UserRole.ADMIN) throw new IllegalArgumentException("관리자 역할은 이 경로에서 변경할 수 없습니다.");
         this.role = role;
+        this.adminLevel = AdminLevel.NONE;
+        this.adminStatus = AdminStatus.OFFLINE;
+        this.adminStatusUpdatedAt = null;
     }
 }

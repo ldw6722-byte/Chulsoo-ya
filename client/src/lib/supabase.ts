@@ -1,4 +1,5 @@
 import { createClient, type AuthError, type Provider, type Session, type User } from '@supabase/supabase-js'
+import { supabaseSessionStorage } from './auth-session'
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL?.trim() ?? ''
 const supabasePublishableKey = import.meta.env.VITE_SUPABASE_ANON_KEY?.trim() ?? ''
@@ -16,8 +17,10 @@ export const supabase = createClient(
       // ?몄뀡??蹂듦뎄?????덈뒗 implicit flow瑜??ъ슜?쒕떎.
       flowType: 'implicit',
       autoRefreshToken: true,
-      persistSession: true,
+            persistSession: true,
+      storage: supabaseSessionStorage,
       detectSessionInUrl: true,
+
     },
   },
 )
@@ -97,9 +100,9 @@ export const supabaseAuth = {
     })
   },
 
-  signOut: async () => {
+  signOut: async (scope: "global" | "local" = "global") => {
     if (!isSupabaseConfigured) return { error: null as AuthError | null }
-    return supabase.auth.signOut()
+    return supabase.auth.signOut({ scope })
   },
 
   onAuthStateChange: (callback: (event: string, session: Session | null) => void) =>

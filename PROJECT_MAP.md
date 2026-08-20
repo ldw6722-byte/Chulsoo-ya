@@ -279,3 +279,50 @@ V26 마이그레이션은 seller_applications에 통장사본 object key·conten
 | `client/.env.example` | `VITE_KAKAO_JAVASCRIPT_KEY` 공개 환경변수 이름 예시. 실제 키는 Git 제외 `client/.env.local`에만 저장 |
 
 > 카카오 로그인 비밀값은 프론트엔드 파일에 저장하지 않고 Supabase Authentication의 Kakao Provider 설정에서 관리한다. 카카오 지도 JavaScript 키는 도메인 제한을 적용한 공개 키만 클라이언트 환경변수로 사용한다.
+
+
+## Supabase Free 기반 로그인 유지·비활동 로그아웃 (2026-08-20)
+
+| 파일 | 역할 |
+| :--- | :--- |
+| `client/src/lib/auth-session.ts` | 기본 30분·로그인 유지 7일 정책, Supabase 인증 저장소 선택, 활동 만료 시각·스냅샷 관리 |
+| `client/src/lib/supabase.ts` | 위 인증 저장소를 Supabase 클라이언트에 연결하고 global/local 로그아웃 범위를 제공 |
+| `client/src/app/AuthProvider.tsx` | 사용자 활동 감지, 비활동 만료 시 로컬 세션·개발용 신원 정리와 로그인 화면 복귀 |
+| `client/src/features/auth/LoginPage.tsx` | 기본 미선택 로그인 상태 유지 체크박스와 이메일 로그인 정책 시작 |
+| `client/src/features/auth/SocialAuthButtons.tsx` | Google·Kakao OAuth 시작 전 로그인 유지 정책 기록 |
+
+> Supabase Free에서는 서버 측 `Inactivity timeout`과 `Time-box user sessions`를 설정할 수 없다. 현재 정책은 브라우저 저장소·프론트엔드 활동 타이머 기준이며, Pro 전환 시 서버 측 제한을 추가한다.
+
+
+## 정중앙 인증 화면 디자인 (2026-08-20)
+
+| 파일 | 역할 |
+| :--- | :--- |
+| `client/src/features/auth/AuthLayout.tsx` | 로그인·회원가입 공통 정중앙 인증 셸과 가입 전용 반응형 변형 클래스 |
+| `client/src/features/auth/auth.css` | 밝은 격자 배경, 중앙 카드, 소셜 버튼·입력 필드·다크 모드·낮은 높이 가입 화면 스타일 |
+| `client/src/features/auth/LoginPage.tsx` | 로그인 상태 유지 개인 기기 안내와 한글 오류·로딩 문구 |
+| `client/src/features/auth/SignupPage.tsx` | 가입 전용 인증 셸과 한글 검증·이메일 인증 안내 |
+
+
+## 관리자 계정·권한·운영 상태
+
+| 위치 | 역할 |
+| --- | --- |
+| `server/src/main/resources/db/supabase/V35__admin_levels_and_status.sql` | 최고 관리자·일반 관리자 등급과 운영 상태 컬럼의 비파괴 마이그레이션 |
+| `server/src/main/java/com/chulsooya/server/domain/admin/AdminAccountService.java` | 최고 관리자 전용 일반 관리자 초대·목록과 본인 운영 상태 변경 권한 경계 |
+| `server/src/main/java/com/chulsooya/server/domain/admin/AdminAccountController.java` | `/api/admin/account/**` REST 계약 |
+| `server/src/main/java/com/chulsooya/server/domain/admin/SupabaseAdminInvitationClient.java` | 서버 환경변수 기반 Supabase 일반 관리자 이메일 초대 |
+| `server/src/main/java/com/chulsooya/server/support/SuperAdminBootstrapRunner.java` | 로컬 환경 설정 이메일의 최초 최고 관리자 자동 승격 |
+| `client/src/features/admin/AdminAccountMenu.tsx` | 상단 접속 관리자 정보·운영 상태·최고 관리자 계정 설정 모달 |
+| `client/src/api/endpoints.ts` | `adminApi`의 관리자 계정 조회·상태 변경·초대 Axios 호출 |
+| `client/src/types/api.ts` | 관리자 계정·등급·운영 상태 API 타입 |
+
+## 판매자 멤버십 탐색·정렬 구조 (2026-08-20)
+
+| 경로 | 역할 |
+| :--- | :--- |
+| `client/src/features/admin/SubscriptionManagementPanel.tsx` | 판매점·이메일·지역·취급 품목 통합 검색, 지역·카테고리 필터, 프리미엄→골드→실버 및 역순 정렬, 행 아래 등급 히스토리 토글 UI |
+| `client/src/types/api.ts` | `AdminSellerMembership`의 `districtName`, `handledItems` REST 계약 타입 |
+| `server/src/main/java/com/chulsooya/server/domain/subscription/SubscriptionDtos.java` | 관리자 판매자 멤버십 응답에 지역·취급 품목 필드 추가 |
+| `server/src/main/java/com/chulsooya/server/domain/subscription/AdminSubscriptionService.java` | `Store`의 지역·취급 품목을 관리자 멤버십 응답으로 매핑 |
+

@@ -44,7 +44,7 @@ public class AdminSubscriptionService {
 
     @Transactional(readOnly = true)
     public List<HistoryResponse> history(Long storeId) { if (!stores.existsById(storeId)) throw new DomainException(ErrorCode.NOT_FOUND, "판매점을 찾을 수 없습니다."); return history.findTop100ByStoreIdOrderByCreatedAtDesc(storeId).stream().map(HistoryResponse::from).toList(); }
-    private AdminMembershipResponse toMembership(Store store, Instant now) { return new AdminMembershipResponse(store.getId(), store.getName(), store.getOwner().getEmail(), store.getTier(), store.getSubscriptionExpiresAt(), store.hasActivePaidMembership(now), store.getConfiguredSlots(), store.getTierSlotCap()); }
+    private AdminMembershipResponse toMembership(Store store, Instant now) { return new AdminMembershipResponse(store.getId(), store.getName(), store.getOwner().getEmail(), store.getDistrictName(), store.getHandledItems(), store.getTier(), store.getSubscriptionExpiresAt(), store.hasActivePaidMembership(now), store.getConfiguredSlots(), store.getTierSlotCap()); }
     private void validateProduct(ProductRequest request) { if (request.tier() == SubscriptionTier.SILVER) throw new DomainException(ErrorCode.VALIDATION_FAILED, "실버는 무료 기본 등급이라 구독 상품으로 만들 수 없습니다."); }
 }
 
