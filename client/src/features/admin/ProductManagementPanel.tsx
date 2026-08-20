@@ -1,3 +1,4 @@
+import { notify } from '@/lib/notify'
 import { Fragment, useCallback, useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { adminApi, catalogApi } from '@/api/endpoints'
@@ -84,17 +85,17 @@ export function ProductManagementPanel() {
   const clearCategory = () => { setMajorCode(''); setMiddleCode(''); setMinorCode(''); setCategoryCode('') }
   const closeForm = () => { setEditing(null); setDraft(emptyDraft); setOptionDrafts([]); setIsFormOpen(false) }
   const openCreate = () => {
-    if (!categoryCode) { setError('새 상품을 등록할 소분류 또는 중분류를 선택해 주세요.'); return }
+    if (!categoryCode) { const message = '새 상품을 등록할 소분류 또는 중분류를 선택해 주세요.'; setError(message); notify(message, 'error'); return }
     setEditing(null); setDraft(emptyDraft); setOptionDrafts([emptyOption()]); setError(''); setIsFormOpen(true)
   }
   const openEdit = async (product: AdminProduct) => {
     setEditing(product); setDraft(toDraft(product)); setOptionDrafts([emptyOption(String(product.price))]); setError(''); setIsFormOpen(true)
     try { const tiers = await adminApi.priceTiers(product.id); const active = tiers.filter(tier => tier.active !== false).map(tier => ({ id: tier.id, label: tier.label, salePrice: String(tier.salePrice) })); setOptionDrafts(active.length ? active : [emptyOption(String(product.price))]) }
-    catch (cause) { setError(errorText('상품 옵션을 불러오지 못했습니다.', cause)) }
+    catch (cause) { const message = errorText('상품 옵션을 불러오지 못했습니다.', cause); setError(message); notify(message, 'error') }
   }
   const save = async () => {
-    if (!draft.name.trim() || !draft.price || Number(draft.price) < 0) { setError('상품명과 기본 판매 가격을 확인해 주세요.'); return }
-    if (!optionDrafts.length || optionDrafts.some(item => !item.label.trim() || !item.salePrice || Number(item.salePrice) < 0)) { setError('브랜드·규격별 판매 옵션을 확인해 주세요.'); return }
+    if (!draft.name.trim() || !draft.price || Number(draft.price) < 0) { const message = '상품명과 기본 판매 가격을 확인해 주세요.'; setError(message); notify(message, 'error'); return }
+    if (!optionDrafts.length || optionDrafts.some(item => !item.label.trim() || !item.salePrice || Number(item.salePrice) < 0)) { const message = '브랜드·규격별 판매 옵션을 확인해 주세요.'; setError(message); notify(message, 'error'); return }
     setIsSaving(true)
     try {
       const saved = editing ? await adminApi.updateProduct(editing.id, toPayload(draft, editing)) : await adminApi.createProduct(toPayload(draft, undefined, categoryCode))
@@ -105,11 +106,11 @@ export function ProductManagementPanel() {
         const target = draft.selectPromotion && index === 0 ? { ...option, salePrice: String(promotionPrice(draft)) } : option
         return target.id === undefined ? adminApi.createPriceTier(saved.id, toTierPayload(target, index)) : adminApi.updatePriceTier(target.id, toTierPayload(target, index))
       }))
-      closeForm(); await load(); setHighlightedId(saved.id); window.setTimeout(() => setHighlightedId(null), 60_000); window.setTimeout(() => document.getElementById(`admin-product-row-${saved.id}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' }), 0)
-    } catch (cause) { setError(errorText('상품을 저장하지 못했습니다.', cause)) }
+      notify(editing ? '상품 정보를 수정했습니다.' : '새 상품을 등록했습니다.'); closeForm(); await load(); setHighlightedId(saved.id); window.setTimeout(() => setHighlightedId(null), 60_000); window.setTimeout(() => document.getElementById(`admin-product-row-${saved.id}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' }), 0)
+    } catch (cause) { const message = errorText('상품을 저장하지 못했습니다.', cause); setError(message); notify(message, 'error') }
     finally { setIsSaving(false) }
   }
-  const toggle = async (product: AdminProduct) => { try { await adminApi.setProductActive(product.id, !product.active); await load() } catch (cause) { setError(errorText('상품 상태를 변경하지 못했습니다.', cause)) } }
+  const toggle = async (product: AdminProduct) => { try { await adminApi.setProductActive(product.id, !product.active); await load(); notify(product.active ? '상품을 비활성화했습니다.' : '상품을 활성화했습니다.') } catch (cause) { const message = errorText('상품 상태를 변경하지 못했습니다.', cause); setError(message); notify(message, 'error') } }
   const loadMore = async () => { if (isLoadingMore || currentPage + 1 >= totalPages) return; setIsLoadingMore(true); try { await load(currentPage + 1, true) } finally { setIsLoadingMore(false) } }
 
   const editor = <div className='rounded-2xl border border-brand-200 bg-brand-50 p-4'>

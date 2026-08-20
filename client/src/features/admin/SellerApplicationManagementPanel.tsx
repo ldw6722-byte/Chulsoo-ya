@@ -1,4 +1,5 @@
 import { Fragment, useState } from 'react'
+import { notify } from '@/lib/notify'
 import { adminSellerApplicationApi } from '@/api/endpoints'
 import { ErrorView, LoadingView } from '@/components/StateViews'
 import { useAsync } from '@/hooks/useAsync'
@@ -142,7 +143,7 @@ function ApplicationTable({ applications, busyId, pending, emptyText, dateLabel,
 export function SellerApplicationManagementPanel() {
   const applications = useAsync<AdminSellerApplication[]>(() => adminSellerApplicationApi.list(), [])
   const [busyId, setBusyId] = useState<number | null>(null)
-  const [message, setMessage] = useState('')
+
   const [documents, setDocuments] = useState<AdminSellerApplicationDocuments | null>(null)
   const [selected, setSelected] = useState<AdminSellerApplication | null>(null)
   const [loadingDocuments, setLoadingDocuments] = useState(false)
@@ -166,7 +167,7 @@ export function SellerApplicationManagementPanel() {
     try {
       setDocuments(await adminSellerApplicationApi.documents(application.id))
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : '증빙 문서를 불러오지 못했습니다.')
+      notify(error instanceof Error ? error.message : '증빙 문서를 불러오지 못했습니다.', 'error')
     } finally {
       setLoadingDocuments(false)
     }
@@ -174,18 +175,18 @@ export function SellerApplicationManagementPanel() {
 
   const approve = async (application: AdminSellerApplication) => {
     if (!application.certificateSubmitted || !application.bankAccountCopySubmitted) {
-      setMessage('사업자등록증과 통장사본이 모두 제출된 신청만 승인할 수 있습니다.')
+      notify('사업자등록증과 통장사본이 모두 제출된 신청만 승인할 수 있습니다.', 'error')
       return
     }
     setBusyId(application.id)
-    setMessage('')
+
     try {
       await adminSellerApplicationApi.approve(application.id)
       closeDetails()
-      setMessage(application.storeName + ' 신청을 승인했습니다. 완료 히스토리에서 다시 확인할 수 있습니다.')
+      notify(application.storeName + ' 신청을 승인했습니다. 완료 히스토리에서 다시 확인할 수 있습니다.')
       await applications.reload()
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : '승인 처리에 실패했습니다.')
+      notify(error instanceof Error ? error.message : '승인 처리에 실패했습니다.', 'error')
     } finally {
       setBusyId(null)
     }
@@ -195,14 +196,14 @@ export function SellerApplicationManagementPanel() {
     const reason = window.prompt('반려 사유를 입력해 주세요.')?.trim()
     if (!reason) return
     setBusyId(application.id)
-    setMessage('')
+
     try {
       await adminSellerApplicationApi.reject(application.id, reason)
       closeDetails()
-      setMessage(application.storeName + ' 신청을 반려했습니다. 완료 히스토리에서 다시 확인할 수 있습니다.')
+      notify(application.storeName + ' 신청을 반려했습니다. 완료 히스토리에서 다시 확인할 수 있습니다.')
       await applications.reload()
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : '반려 처리에 실패했습니다.')
+      notify(error instanceof Error ? error.message : '반려 처리에 실패했습니다.', 'error')
     } finally {
       setBusyId(null)
     }
@@ -226,7 +227,7 @@ export function SellerApplicationManagementPanel() {
         <div className="mt-1 flex flex-wrap items-center gap-3"><h2 className="text-xl font-black text-slate-900">심사 대기 신청</h2><span className="rounded-full bg-brand-50 px-2.5 py-1 text-xs font-black text-brand-700">{pendingApplications.length}건</span></div>
         <p className="mt-2 text-sm text-slate-500">접수 시각 기준으로 먼저 신청한 판매자부터 나열됩니다. 전체 정보·문서는 선택한 신청 항목 바로 아래에 열립니다.</p>
       </div>
-      {message ? <p role="status" className="mx-5 mt-4 rounded-xl bg-slate-50 px-4 py-3 text-sm text-slate-700">{message}</p> : null}
+
       <ApplicationTable applications={pendingApplications} busyId={busyId} pending emptyText="현재 심사 대기 중인 판매자 신청이 없습니다." dateLabel="심사 대기" selected={selected} documents={documents} loadingDocuments={loadingDocuments} onToggle={(application) => void toggleDetails(application)} onClose={closeDetails} onApprove={(application) => void approve(application)} onReject={(application) => void reject(application)} />
     </section>
 

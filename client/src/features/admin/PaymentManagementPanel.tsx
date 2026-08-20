@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { notify } from '@/lib/notify'
 import { adminPaymentApi, orderApi } from '@/api/endpoints'
 import { ApiError } from '@/api/client'
 import { ErrorView } from '@/components/StateViews'
@@ -28,7 +29,7 @@ export function PaymentManagementPanel() {
   const [loading, setLoading] = useState(false)
   const [settlementLoading, setSettlementLoading] = useState(true)
   const [error, setError] = useState<ApiError | null>(null)
-  const [message, setMessage] = useState('')
+
 
   const loadSettlements = async () => {
     setSettlementLoading(true)
@@ -45,27 +46,27 @@ export function PaymentManagementPanel() {
 
   const lookup = async (target = orderId) => {
     const id = Number(target)
-    if (!Number.isInteger(id) || id <= 0) { setMessage('조회할 주문 번호를 입력해 주세요.'); return }
-    setLoading(true); setMessage(''); setError(null)
+    if (!Number.isInteger(id) || id <= 0) { notify('조회할 주문 번호를 입력해 주세요.', 'error'); return }
+    setLoading(true); setError(null)
     try {
       const next = await orderApi.payment(id)
-      setOrderId(String(id)); setPayment(next); setAmount(String(next.remainingAmount))
-    } catch (cause) { setPayment(null); setError(cause instanceof ApiError ? cause : new ApiError('UNKNOWN', '결제 정보를 불러오지 못했습니다.', 500)) } finally { setLoading(false) }
+      setOrderId(String(id)); setPayment(next); setAmount(String(next.remainingAmount)); notify(`주문 #${id} 결제 정보를 조회했습니다.`)
+    } catch (cause) { const error = cause instanceof ApiError ? cause : new ApiError('UNKNOWN', '결제 정보를 불러오지 못했습니다.', 500); setPayment(null); setError(error); notify(error.message, 'error') } finally { setLoading(false) }
   }
 
   const refund = async () => {
     if (!payment) return
     const refundAmount = Number(amount)
-    if (!Number.isInteger(refundAmount) || refundAmount <= 0 || refundAmount > payment.remainingAmount) { setMessage('환불 금액은 남은 결제 금액 범위에서 입력해 주세요.'); return }
-    if (!reason.trim()) { setMessage('환불 사유를 입력해 주세요.'); return }
-    setLoading(true); setMessage(''); setError(null)
+    if (!Number.isInteger(refundAmount) || refundAmount <= 0 || refundAmount > payment.remainingAmount) { notify('환불 금액은 남은 결제 금액 범위에서 입력해 주세요.', 'error'); return }
+    if (!reason.trim()) { notify('환불 사유를 입력해 주세요.', 'error'); return }
+    setLoading(true); setError(null)
     try {
       const key = typeof crypto !== 'undefined' && 'randomUUID' in crypto ? crypto.randomUUID() : `admin-refund-${payment.paymentId}-${Date.now()}`
       const next = await adminPaymentApi.refund(payment.paymentId, { amount: refundAmount, reason: reason.trim(), idempotencyKey: key })
       setPayment(next); setAmount(String(next.remainingAmount)); setReason('')
-      setMessage('개발용 환불 처리가 완료되었습니다. 결제 잔액·정산 금액·감사 이력이 갱신되었습니다.')
+      notify('환불 처리가 완료되었습니다. 결제 잔액·정산 금액·감사 이력이 갱신되었습니다.')
       await loadSettlements()
-    } catch (cause) { setError(cause instanceof ApiError ? cause : new ApiError('UNKNOWN', '환불 처리에 실패했습니다.', 500)) } finally { setLoading(false) }
+    } catch (cause) { const error = cause instanceof ApiError ? cause : new ApiError('UNKNOWN', '환불 처리에 실패했습니다.', 500); setError(error); notify(error.message, 'error') } finally { setLoading(false) }
   }
 
   return <section className="space-y-5">
@@ -89,7 +90,7 @@ export function PaymentManagementPanel() {
     <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-700 dark:bg-slate-900">
       <p className="text-xs font-black tracking-wider text-brand-600">PAYMENT OPERATIONS</p><h3 className="mt-1 text-lg font-black text-slate-900 dark:text-white">결제 · 환불 운영</h3><p className="mt-2 text-sm leading-6 text-slate-500 dark:text-slate-300">주문 번호로 결제 기록을 조회한 뒤 개발용 전액 또는 부분 환불을 처리합니다. 환불 금액은 같은 주문의 판매자 정산 예정액에도 즉시 반영됩니다.</p>
       <div className="mt-5 flex flex-wrap gap-2"><input value={orderId} onChange={(event) => setOrderId(event.target.value)} inputMode="numeric" placeholder="주문 번호" className="h-11 w-40 rounded-xl border border-slate-300 bg-white px-3 text-sm text-slate-900 dark:border-slate-600 dark:bg-slate-800 dark:text-white" /><button type="button" disabled={loading} onClick={() => void lookup()} className="rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm font-bold text-slate-900 disabled:opacity-50 dark:border-slate-600 dark:bg-slate-800 dark:text-white">결제 조회</button></div>
-      {message ? <p role="status" className="mt-4 rounded-xl bg-emerald-50 px-4 py-3 text-sm text-emerald-800 dark:bg-emerald-950 dark:text-emerald-200">{message}</p> : null}{error ? <div className="mt-4"><ErrorView error={error} onRetry={payment ? () => void lookup() : () => void loadSettlements()} /></div> : null}
+      {error ? <div className="mt-4"><ErrorView error={error} onRetry={payment ? () => void lookup() : () => void loadSettlements()} /></div> : null}
       {payment ? <div className="mt-6 space-y-5 border-t border-slate-100 pt-5 dark:border-slate-800"><div className="grid gap-3 sm:grid-cols-3"><article className="rounded-xl bg-slate-50 p-4 dark:bg-slate-800"><p className="text-xs font-bold text-slate-500">결제 상태</p><p className="mt-1 font-black text-slate-900 dark:text-white">{paymentStatusLabel(payment.paymentStatus)}</p></article><article className="rounded-xl bg-slate-50 p-4 dark:bg-slate-800"><p className="text-xs font-bold text-slate-500">총 결제 금액</p><p className="mt-1 font-black text-slate-900 dark:text-white">{won(payment.amount)}</p></article><article className="rounded-xl bg-slate-50 p-4 dark:bg-slate-800"><p className="text-xs font-bold text-slate-500">환불 가능 잔액</p><p className="mt-1 font-black text-slate-900 dark:text-white">{won(payment.remainingAmount)}</p></article></div>{['PAID', 'PARTIAL_REFUNDED'].includes(payment.paymentStatus) ? <div className="grid gap-3 rounded-xl border border-slate-200 p-4 dark:border-slate-700 sm:grid-cols-[1fr_2fr_auto]"><input type="number" min="1" max={payment.remainingAmount} value={amount} onChange={(event) => setAmount(event.target.value)} className="h-11 rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-900 dark:border-slate-600 dark:bg-slate-800 dark:text-white" /><input value={reason} maxLength={500} onChange={(event) => setReason(event.target.value)} placeholder="환불 사유" className="h-11 rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-900 dark:border-slate-600 dark:bg-slate-800 dark:text-white" /><button type="button" disabled={loading} onClick={() => void refund()} className="rounded-lg bg-rose-600 px-5 py-2.5 text-sm font-black text-white disabled:opacity-50">{loading ? '처리 중' : '환불 처리'}</button></div> : <p className="rounded-xl bg-slate-50 p-4 text-sm text-slate-500 dark:bg-slate-800">현재 결제 상태에서는 추가 환불을 처리할 수 없습니다.</p>}<div><h4 className="text-sm font-black text-slate-900 dark:text-white">환불 감사 이력</h4>{payment.refunds.length ? <div className="mt-3 overflow-x-auto"><table className="w-full min-w-150 text-left text-sm"><thead className="bg-slate-50 text-xs text-slate-500 dark:bg-slate-800"><tr><th className="px-3 py-2">유형</th><th className="px-3 py-2">금액</th><th className="px-3 py-2">사유</th><th className="px-3 py-2">처리 상태</th></tr></thead><tbody className="divide-y divide-slate-100 dark:divide-slate-800">{payment.refunds.map((refund) => <tr key={refund.id} className="text-slate-700 dark:text-slate-200"><td className="px-3 py-3">{refund.refundType === 'CANCEL' ? '결제 취소' : '환불'}</td><td className="px-3 py-3">{won(refund.amount)}</td><td className="px-3 py-3">{refund.reason}</td><td className="px-3 py-3">{refund.status === 'SUCCEEDED' ? '완료' : refund.status === 'FAILED' ? '실패' : '처리 중'}</td></tr>)}</tbody></table></div> : <p className="mt-3 text-sm text-slate-500">환불 이력이 없습니다.</p>}</div></div> : null}
     </section>
   </section>

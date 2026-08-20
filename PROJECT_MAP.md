@@ -264,3 +264,18 @@ V26 마이그레이션은 seller_applications에 통장사본 object key·conten
 - 관리자 행사·이벤트 관리의 아이콘 선택은 5열 대형 카드에서 8~12열, 높이 44~48px의 컴팩트 그리드로 축소했다. 미리보기의 아이콘은 더 크게 표시한다.
 - 프론트엔드 lint, TypeScript 빌드, Vite production build를 통과했다. 대표 테마·아이콘 Storage URL은 HTTP 200으로 확인했다.
 
+
+## 카카오 로그인·주소·지도 연동 (2026-08-19)
+
+| 경로 | 역할 |
+| :--- | :--- |
+| `client/src/lib/supabase.ts` | Supabase OAuth의 `kakao` 공급자 시작 및 `/auth/callback` 복귀 처리 |
+| `client/src/features/auth/SocialAuthButtons.tsx` | 카카오 로그인 시작 버튼 |
+| `client/src/lib/kakao.ts` | 카카오 우편번호·지도 SDK 지연 로드, 주소 선택값 정규화, 주소 좌표 지도 렌더링 |
+| `client/src/components/address/KakaoAddressTools.tsx` | 재사용 가능한 카카오 주소 찾기 버튼과 선택 주소 지도 미리보기 |
+| `client/src/features/my/MemberProfilePage.tsx` | 회원 기본 배송지의 카카오 주소 선택·지도 확인 |
+| `client/src/features/my/AddressManagementPanel.tsx` | 추가 배송지 CRUD의 카카오 주소 선택·지도 확인 |
+| `client/src/features/checkout/CheckoutPage.tsx` | 주문 요청 중 카카오 주소 선택 후 기존 지역 매칭 검증으로 연결 |
+| `client/.env.example` | `VITE_KAKAO_JAVASCRIPT_KEY` 공개 환경변수 이름 예시. 실제 키는 Git 제외 `client/.env.local`에만 저장 |
+
+> 카카오 로그인 비밀값은 프론트엔드 파일에 저장하지 않고 Supabase Authentication의 Kakao Provider 설정에서 관리한다. 카카오 지도 JavaScript 키는 도메인 제한을 적용한 공개 키만 클라이언트 환경변수로 사용한다.

@@ -713,3 +713,44 @@ V26 마이그레이션은 seller_applications에 통장사본 object key·conten
 - 회귀 테스트: 관리자 답변이 문의 작성자의 `INQUIRY_ANSWERED` 미확인 알림으로 저장되는 테스트와 새 주문 제안 알림 테스트를 추가했다.
 - 검증: 백엔드 전체 테스트 통과, 프론트엔드 `npm run lint && npx tsc -b && npm run build` 통과, 최신 JAR 재시작 후 공개 API HTTP 200 확인.
 
+
+## Supabase public RLS 보안 보정 (2026-08-19)
+
+- Supabase Security Advisor 경고를 점검한 결과, public 스키마의 테이블 38개에서 RLS가 비활성화되어 있었고 `anon`·`authenticated` 역할에 CRUD 권한이 부여되어 있었다.
+- 각 테이블에 RLS를 활성화하고 `anon`·`authenticated`의 테이블 직접 권한과 시퀀스 권한을 회수했다. 향후 테이블·시퀀스에 대한 기본 권한도 회수했다.
+- 검증: public 테이블 38개 기준 `RLS_DISABLED=0`, `ANON_GRANTED=0`, `AUTHENTICATED_GRANTED=0`; anon Supabase REST의 `users` 직접 조회는 HTTP 401, Spring Boot 공개 판매점 API는 HTTP 200을 확인했다.
+- Spring Boot 서버는 테이블 소유자 JDBC 역할로 REST API를 통해서만 DB에 접근하므로 기존 앱 기능 경로는 유지된다.
+- Supabase Session Pooler에서 긴 DDL 배치가 대기하는 문제를 피하기 위해 실제 RLS 적용은 테이블별 짧은 연결로 완료했다. V34는 적용 완료 상태를 Flyway 이력에 기록한다.
+
+## 관리자 CRUD 공통 상단 알림 통합 (2026-08-19)
+
+| 범위 | 적용 내용 | 상태 |
+| :--- | :--- | :--- |
+| 행사·이벤트 | 행사 등록·수정·활성화·삭제, 자산 업로드·수정·이미지 교체·삭제·행사 적용의 성공·실패 안내를 공통 상단 토스트로 통일 | 완료 |
+| 상품·카테고리 | 상품 등록·수정, 옵션 저장, 활성화·비활성화와 입력 검증 오류를 공통 상단 토스트로 통일 | 완료 |
+| 판매자 신청 심사 | 증빙 문서 조회 오류, 승인·반려 및 승인 조건 검증을 공통 상단 토스트로 통일 | 완료 |
+| 판매자 운영·주문 매칭 | 판매점 CRUD, 후기·대댓글·관리자 메모 관리, 슬롯 강제 조정의 성공·실패 안내를 공통 상단 토스트로 통일 | 완료 |
+| 구독·쿠폰·정산·환불 | 구독상품 CRUD·판매자 등급 변경, 쿠폰 정책·회원 발행, 결제 조회·환불 처리의 성공·실패 안내를 공통 상단 토스트로 통일 | 완료 |
+| 고객 문의·알림 | 문의 상태 변경과 답변 등록·고객 알림 발송의 성공·실패 안내를 공통 상단 토스트로 통일 | 완료 |
+| 기존 적용 탭 | 회원 관리의 판매자 해지 처리와 개발 결제 승인 알림은 기존 공통 상단 토스트 구현을 유지 | 확인 완료 |
+
+### 이번 검증
+
+| 검증 | 결과 |
+| :--- | :--- |
+| 관리자 탭 정적 점검 | 현재 연결된 관리자 패널 12개에서 로컬 `message`·`notice` 상태 0건, 공통 `notify` 호출 확인 |
+| 브라우저 확인 | 빈 행사 등록 저장 시 화면 상단 중앙에 오류 토스트 표시 확인. 데이터 변경 없음 |
+| `cd client && npm run lint` | 통과, 경고·오류 0건 |
+| `cd client && npx tsc -b` | 통과 |
+| `cd client && npm run build` | 통과 |
+
+
+## 2026-08-19 — 카카오 로그인·주소·지도 연동
+
+- Kakao Developers에 개인 개발자 앱 `철수야`를 생성하고 카카오 로그인 사용 설정을 활성화했다.
+- REST API 키 설정에 Supabase OAuth 콜백 `https://gvsnsnjfvtogvlyvmlkt.supabase.co/auth/v1/callback`을 등록하고 Client Secret을 활성화했다.
+- Supabase Authentication의 Kakao Provider를 활성화하고 카카오 REST API 키·Client Secret을 저장했다. 이메일 미제공 계정 허용은 기존 회원 식별 규칙을 위해 OFF로 유지한다.
+- 카카오 지도 JavaScript 키에는 `http://localhost:5173` 도메인을 등록했다. 실제 키는 Git 제외 `client/.env.local`에만 저장하고 `VITE_KAKAO_JAVASCRIPT_KEY`로 로드한다.
+- `client/src/lib/kakao.ts`와 `components/address/KakaoAddressTools.tsx`를 추가했다. 카카오 우편번호 선택 후 서울시 구·도로명 주소를 기존 배송지 DTO에 맞게 채우고, 기본·추가 배송지 및 체크아웃에서 지도 미리보기를 표시한다.
+- 주문 요청의 카카오 주소 선택은 기존 `regionApi.resolve`를 계속 호출하므로, 판매자 매칭 구 판정은 기존 서버 권위를 유지한다.
+- 검증: `npm run lint`, `npx tsc -b`, `npm run build` 통과. 로그인 화면에서 카카오 로그인 시작 버튼 노출 확인.

@@ -50,7 +50,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setIsLoading(true)
     try {
       const session = await supabaseAuth.getSession()
-      void applySession(session)
+      await applySession(session)
     } finally { setIsLoading(false) }
   }, [applySession])
 

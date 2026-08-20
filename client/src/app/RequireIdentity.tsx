@@ -1,6 +1,8 @@
 import { useEffect } from 'react'
 import type { ReactNode } from 'react'
+import { useAuth } from './useAuth'
 import { useIdentity } from './useIdentity'
+
 import { EmptyView, LoadingView } from '@/components/StateViews'
 import type { UserRole } from '@/types/api'
 
@@ -25,6 +27,8 @@ export function RequireIdentity({
   children: ReactNode
 }) {
   const { identity, setIdentity } = useIdentity()
+  const { user, isLoading } = useAuth()
+  const effectiveIdentity = identity ?? (user ? { userId: user.id, role: user.role, name: user.name } : null)
   const useDevelopmentAdmin = import.meta.env.DEV && roles.length === 1 && roles[0] === 'ADMIN'
 
   useEffect(() => {
@@ -39,7 +43,12 @@ export function RequireIdentity({
     )
   }
 
-  if (!identity) {
+    if (isLoading && !effectiveIdentity) {
+    return <div className="min-h-screen bg-slate-50 px-4 py-16"><LoadingView label="로그인 정보를 확인하는 중입니다" /></div>
+  }
+
+  if (!effectiveIdentity) {
+
     return (
       <div className="page">
         <EmptyView
@@ -50,7 +59,8 @@ export function RequireIdentity({
     )
   }
 
-  if (!roles.includes(identity.role)) {
+    if (!roles.includes(effectiveIdentity.role)) {
+
     return (
       <div className="page">
         <EmptyView

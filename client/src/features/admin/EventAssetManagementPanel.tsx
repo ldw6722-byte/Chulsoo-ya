@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
+import { notify } from '@/lib/notify'
 import { adminApi } from '@/api/endpoints'
 import { ApiError } from '@/api/client'
 import type { EventAsset, EventCampaign } from '@/types/api'
@@ -22,7 +23,7 @@ export function EventAssetManagementPanel() {
   const [file, setFile] = useState<File | null>(null)
   const [editing, setEditing] = useState<EditState>(null)
   const [selectedCampaignId, setSelectedCampaignId] = useState('')
-  const [message, setMessage] = useState('')
+
   const [saving, setSaving] = useState(false)
 
   const load = useCallback(async () => {
@@ -32,7 +33,7 @@ export function EventAssetManagementPanel() {
       setCampaigns(nextCampaigns)
       setSelectedCampaignId(current => current || (nextCampaigns[0] ? String(nextCampaigns[0].id) : ''))
     } catch (error) {
-      setMessage(errorText(error))
+      notify(errorText(error), 'error')
     }
   }, [])
 
@@ -42,11 +43,11 @@ export function EventAssetManagementPanel() {
 
   const upload = async () => {
     if (!name.trim() || !file) {
-      setMessage('자산 이름과 이미지 파일을 입력해 주세요.')
+      notify('자산 이름과 이미지 파일을 입력해 주세요.', 'error')
       return
     }
     setSaving(true)
-    setMessage('')
+
     try {
       const created = await adminApi.uploadEventAsset({
         type,
@@ -59,18 +60,18 @@ export function EventAssetManagementPanel() {
       setName('')
       setSortOrder('0')
       setFile(null)
-      setMessage('Storage에 저장했고, 행사 적용 목록에 바로 추가했습니다.')
+      notify('이미지를 저장하고 행사 적용 목록에 추가했습니다.')
     } catch (error) {
-      setMessage(errorText(error))
+      notify(errorText(error), 'error')
     } finally {
       setSaving(false)
     }
   }
 
   const saveAsset = async () => {
-    if (!editing || !editing.name.trim()) return
+    if (!editing || !editing.name.trim()) { notify('자산 이름을 입력해 주세요.', 'error'); return }
     setSaving(true)
-    setMessage('')
+
     try {
       const updated = await adminApi.updateEventAsset(editing.id, {
         name: editing.name.trim(),
@@ -79,9 +80,9 @@ export function EventAssetManagementPanel() {
       })
       setAssets(current => current.map(asset => (asset.id === updated.id ? updated : asset)))
       setEditing(null)
-      setMessage('자산 정보를 저장했습니다.')
+      notify('자산 정보를 저장했습니다.')
     } catch (error) {
-      setMessage(errorText(error))
+      notify(errorText(error), 'error')
     } finally {
       setSaving(false)
     }
@@ -90,13 +91,13 @@ export function EventAssetManagementPanel() {
   const replaceFile = async (asset: EventAsset, nextFile: File | undefined) => {
     if (!nextFile) return
     setSaving(true)
-    setMessage('')
+
     try {
       const updated = await adminApi.replaceEventAssetFile(asset.id, nextFile)
       setAssets(current => current.map(value => (value.id === updated.id ? updated : value)))
-      setMessage('이미지를 교체하고 Storage URL을 갱신했습니다.')
+      notify('이미지를 교체했습니다.')
     } catch (error) {
-      setMessage(errorText(error))
+      notify(errorText(error), 'error')
     } finally {
       setSaving(false)
     }
@@ -105,13 +106,13 @@ export function EventAssetManagementPanel() {
   const remove = async (asset: EventAsset) => {
     if (!window.confirm(`“${asset.name}” 자산을 삭제할까요? 행사에 적용 중인 자산은 삭제할 수 없습니다.`)) return
     setSaving(true)
-    setMessage('')
+
     try {
       await adminApi.deleteEventAsset(asset.id)
       setAssets(current => current.filter(value => value.id !== asset.id))
-      setMessage('Storage와 자산 목록에서 삭제했습니다.')
+      notify('자산을 삭제했습니다.')
     } catch (error) {
-      setMessage(errorText(error))
+      notify(errorText(error), 'error')
     } finally {
       setSaving(false)
     }
@@ -120,11 +121,11 @@ export function EventAssetManagementPanel() {
   const apply = async (asset: EventAsset) => {
     const campaign = campaigns.find(value => value.id === Number(selectedCampaignId))
     if (!campaign) {
-      setMessage('적용할 행사를 선택해 주세요.')
+      notify('적용할 행사를 선택해 주세요.', 'error')
       return
     }
     setSaving(true)
-    setMessage('')
+
     try {
       const updated = await adminApi.updateEventCampaign(campaign.id, {
         name: campaign.name,
@@ -140,9 +141,9 @@ export function EventAssetManagementPanel() {
         heroEnabled: campaign.heroEnabled,
       })
       setCampaigns(current => current.map(value => (value.id === updated.id ? updated : value)))
-      setMessage(`${label(asset)}을 “${updated.name}” 행사에 적용했습니다.`)
+      notify(`${label(asset)}을 “${updated.name}” 행사에 적용했습니다.`)
     } catch (error) {
-      setMessage(errorText(error))
+      notify(errorText(error), 'error')
     } finally {
       setSaving(false)
     }
@@ -164,7 +165,7 @@ export function EventAssetManagementPanel() {
         <p className="mt-1 text-sm text-slate-600">관리자 제작 이미지와 AI 생성 이미지 파일을 업로드하면 Storage에 저장되고, 아래 행사 적용 목록에 즉시 활성화됩니다.</p>
       </div>
 
-      {message ? <p role="status" className="mt-4 rounded-xl bg-white px-3 py-2 text-sm font-bold text-violet-700">{message}</p> : null}
+
 
       <div className="mt-5 grid gap-4 rounded-2xl border border-violet-200 bg-white p-4 lg:grid-cols-[1fr_auto]">
         <div className="grid gap-3 sm:grid-cols-2">
