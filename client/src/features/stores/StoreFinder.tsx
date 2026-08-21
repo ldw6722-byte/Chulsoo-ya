@@ -5,7 +5,10 @@ import { ErrorView, LoadingView } from '@/components/StateViews'
 import { useAsync } from '@/hooks/useAsync'
 import type { StoreDirectoryItem } from '@/types/api'
 
+const OPERATING_STATUS_LABEL = { OPEN: '영업중', PREPARING: '준비중', CLOSED: '영업종료', HOLIDAY: '휴무' } as const
+
 function Stars({ rating }: { rating: number }) {
+
   return <span aria-label={`별점 ${rating.toFixed(1)}점`} className="font-bold text-amber-500">★ {rating.toFixed(1)}</span>
 }
 
@@ -27,8 +30,8 @@ function StoreCard({ store }: { store: StoreDirectoryItem }) {
         {store.customerNoticeText ? <p className="mt-2 line-clamp-2 text-xs leading-5 text-slate-500">{store.customerNoticeText}</p> : null}
         <div className="mt-4 flex flex-wrap gap-1.5">
           {store.customerBadgeText ? <span className="rounded-full bg-brand-50 px-2 py-1 text-[11px] font-bold text-brand-700">{store.customerBadgeText}</span> : null}
-          {store.receivingOrders ? <span className="rounded-full bg-emerald-50 px-2 py-1 text-[11px] font-bold text-emerald-700">{"\uC8FC\uBB38 \uC811\uC218 \uC911"}</span> : <span className="rounded-full bg-slate-100 px-2 py-1 text-[11px] font-bold text-slate-600">{"\uC8FC\uBB38 \uC900\uBE44 \uC911"}</span>}
-          
+          <span className={store.operatingStatus === 'OPEN' ? 'rounded-full bg-emerald-50 px-2 py-1 text-[11px] font-bold text-emerald-700' : 'rounded-full bg-slate-100 px-2 py-1 text-[11px] font-bold text-slate-600'}>{OPERATING_STATUS_LABEL[store.operatingStatus]}</span>
+
         </div>
       </div>
     </Link>

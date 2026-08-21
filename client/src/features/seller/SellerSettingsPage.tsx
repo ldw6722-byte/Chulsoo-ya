@@ -1,14 +1,40 @@
 import { sellerApi } from '@/api/endpoints'
+import { useState } from 'react'
 import { useAsync } from '@/hooks/useAsync'
 import { EmptyView, ErrorView, LoadingView } from '@/components/StateViews'
 import { formatDateTime, tierLabel } from '@/components/format'
 import { SlotControlBar } from './SlotControlBar'
+import { notify } from '@/lib/notify'
 import type { SellerPenalty, SellerStore, SlotLog } from '@/types/api'
 
 const CHANGED_BY_LABEL: Record<string, string> = {
   SELLER: '판매자',
   ADMIN: '관리자',
   SYSTEM: '시스템',
+}
+
+const OPERATING_STATUS_LABEL = { OPEN: '영업중', PREPARING: '준비중', CLOSED: '영업종료', HOLIDAY: '휴무' } as const
+const WEEK_DAYS = [['MONDAY', '월'], ['TUESDAY', '화'], ['WEDNESDAY', '수'], ['THURSDAY', '목'], ['FRIDAY', '금'], ['SATURDAY', '토'], ['SUNDAY', '일']] as const
+
+function StoreOperationsCard({ store, onSaved }: { store: SellerStore; onSaved: () => void }) {
+  const [directions, setDirections] = useState(store.directions ?? '')
+  const [openTime, setOpenTime] = useState(store.businessOpenTime.slice(0, 5))
+  const [closeTime, setCloseTime] = useState(store.businessCloseTime.slice(0, 5))
+  const [closedDays, setClosedDays] = useState<string[]>(store.weeklyClosedDays)
+  const [temporaryClosed, setTemporaryClosed] = useState(store.temporaryClosed)
+  const [saving, setSaving] = useState(false)
+  const toggleClosedDay = (day: string) => setClosedDays(previous => previous.includes(day) ? previous.filter(value => value !== day) : [...previous, day])
+  const save = async () => {
+    setSaving(true)
+    try {
+      await sellerApi.updateOperations({ directions, businessOpenTime: openTime, businessCloseTime: closeTime, weeklyClosedDays: closedDays, temporaryClosed })
+      notify('판매점 운영 정보를 저장했습니다.')
+      onSaved()
+    } catch (error) {
+      notify(error instanceof Error ? error.message : '판매점 운영 정보를 저장하지 못했습니다.', 'error')
+    } finally { setSaving(false) }
+  }
+  return <section className="card stack" style={{ padding: 'var(--sp-4)' }}><div><h2 className="section-title" style={{ fontSize: 'var(--fs-base)' }}>판매점 운영 정보</h2><p className="subtle">고객에게는 서버 시간으로 계산한 <strong>{OPERATING_STATUS_LABEL[store.operatingStatus]}</strong> 상태만 표시됩니다. 주문 수신·슬롯 설정은 변경하지 않습니다.</p></div><label className="stack"><span className="font-bold">찾아오시는 길</span><textarea value={directions} onChange={event => setDirections(event.target.value)} maxLength={500} placeholder="예: 강동구청역 2번 출구에서 도보 3분" className="min-h-24 rounded-xl border border-slate-300 bg-white p-3 text-sm dark:border-slate-700 dark:bg-slate-800" /></label><div className="grid gap-3 sm:grid-cols-2"><label className="stack"><span className="font-bold">영업 시작</span><input type="time" value={openTime} onChange={event => setOpenTime(event.target.value)} className="h-11 rounded-xl border border-slate-300 bg-white px-3 dark:border-slate-700 dark:bg-slate-800" /></label><label className="stack"><span className="font-bold">영업 종료</span><input type="time" value={closeTime} onChange={event => setCloseTime(event.target.value)} className="h-11 rounded-xl border border-slate-300 bg-white px-3 dark:border-slate-700 dark:bg-slate-800" /></label></div><fieldset className="stack"><legend className="font-bold">정기 휴무</legend><div className="flex flex-wrap gap-2">{WEEK_DAYS.map(([day, label]) => <label key={day} className="rounded-lg border border-slate-300 px-3 py-2 text-sm dark:border-slate-700"><input type="checkbox" checked={closedDays.includes(day)} onChange={() => toggleClosedDay(day)} className="mr-2" />{label}</label>)}</div></fieldset><label className="inline-flex items-center gap-2 font-bold"><input type="checkbox" checked={temporaryClosed} onChange={event => setTemporaryClosed(event.target.checked)} />임시 휴무</label><button type="button" disabled={saving} onClick={() => void save()} className="w-fit rounded-xl bg-slate-900 px-4 py-2.5 text-sm font-bold text-white disabled:opacity-50">{saving ? '저장 중...' : '운영 정보 저장'}</button></section>
 }
 
 const REASON_LABEL: Record<string, string> = {
@@ -54,6 +80,8 @@ export function SellerSettingsPage() {
           logs.reload()
         }}
       />
+
+      <StoreOperationsCard store={sellerStore} onSaved={store.reload} />
 
       <section className="card stack" style={{ padding: 'var(--sp-4)' }}>
         <h2 className="section-title" style={{ fontSize: 'var(--fs-base)' }}>

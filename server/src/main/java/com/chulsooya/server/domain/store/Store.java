@@ -1,6 +1,13 @@
 package com.chulsooya.server.domain.store;
 
+import java.time.DayOfWeek;
 import java.time.Instant;
+import java.time.LocalTime;
+import java.time.ZoneId;
+import java.util.Arrays;
+import java.util.Set;
+import java.util.stream.Collectors;
+
 import com.chulsooya.server.common.DomainException;
 import com.chulsooya.server.common.ErrorCode;
 import com.chulsooya.server.domain.user.User;
@@ -66,10 +73,23 @@ public class Store {
     private boolean directoryVisible = true;
     @Column(length = 60)
     private String customerBadgeText;
-    @Column(length = 200)
+        @Column(length = 200)
     private String customerNoticeText;
+    /** 회원 기본 주소와 분리된 판매점 전용 고객 안내다. */
+    @Column(length = 500)
+    private String directions;
+    @Column(nullable = false)
+    private LocalTime businessOpenTime = LocalTime.of(9, 0);
+    @Column(nullable = false)
+    private LocalTime businessCloseTime = LocalTime.of(18, 0);
+    /** DayOfWeek enum name을 쉼표로 보관한다. */
+    @Column(length = 40)
+    private String weeklyClosedDays = "";
+    @Column(nullable = false)
+    private boolean temporaryClosed = false;
     @Column(nullable = false)
     private int configuredSlots = 3;
+
     @Column(nullable = false)
     private int reservedSlots = 0;
     @Column(nullable = false)
@@ -116,13 +136,43 @@ public class Store {
         this.verified = verified;
         this.receivingOrders = receivingOrders;
     }
-    public void changeCustomerDisplaySettings(String badgeText, String noticeText, boolean directoryVisible) {
+        public void changeCustomerDisplaySettings(String badgeText, String noticeText, boolean directoryVisible) {
         this.customerBadgeText = badgeText == null || badgeText.isBlank() ? null : badgeText.trim();
         this.customerNoticeText = noticeText == null || noticeText.isBlank() ? null : noticeText.trim();
         this.directoryVisible = directoryVisible;
     }
 
+    public void changeBusinessOperations(String directions, LocalTime openTime, LocalTime closeTime,
+            Set<DayOfWeek> closedDays, boolean temporaryClosed) {
+        if (openTime == null || closeTime == null || !openTime.isBefore(closeTime)) {
+            throw new DomainException(ErrorCode.VALIDATION_FAILED, "영업 시작 시간은 종료 시간보다 빨라야 합니다.");
+        }
+        this.directions = directions == null || directions.isBlank() ? null : directions.trim();
+        this.businessOpenTime = openTime;
+        this.businessCloseTime = closeTime;
+        this.weeklyClosedDays = (closedDays == null ? Set.<DayOfWeek>of() : closedDays).stream()
+                .sorted().map(DayOfWeek::name).collect(Collectors.joining(","));
+        this.temporaryClosed = temporaryClosed;
+    }
+
+    public Set<DayOfWeek> weeklyClosedDaySet() {
+        if (weeklyClosedDays == null || weeklyClosedDays.isBlank()) return Set.of();
+        return Arrays.stream(weeklyClosedDays.split(",")).filter(value -> !value.isBlank())
+                .map(DayOfWeek::valueOf).collect(Collectors.toUnmodifiableSet());
+    }
+
+    /** 고객 노출 상태는 서버의 한국 표준시로만 계산하며 주문 수신·슬롯과 분리한다. */
+    public StoreOperatingStatus operatingStatus(Instant now) {
+        var local = now.atZone(ZoneId.of("Asia/Seoul"));
+        if (temporaryClosed || weeklyClosedDaySet().contains(local.getDayOfWeek())) return StoreOperatingStatus.HOLIDAY;
+        LocalTime current = local.toLocalTime();
+        if (current.isBefore(businessOpenTime)) return StoreOperatingStatus.PREPARING;
+        if (current.isBefore(businessCloseTime)) return StoreOperatingStatus.OPEN;
+        return StoreOperatingStatus.CLOSED;
+    }
+
     public void changeConfiguredSlots(int next) {
+
         if (next < 0 || next > getTierSlotCap()) {
             throw new DomainException(ErrorCode.SLOT_CAP_EXCEEDED, "설정 가능한 슬롯 범위는 0 ~ %d 입니다.".formatted(getTierSlotCap()));
         }

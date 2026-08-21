@@ -30,7 +30,7 @@ export function RequireIdentity({
   children: ReactNode
 }) {
   const { identity, setIdentity } = useIdentity()
-  const { user, isLoading } = useAuth()
+  const { user, isLoading, error, refresh } = useAuth()
   const location = useLocation()
   const authenticatedIdentity = user ? { userId: user.id, role: user.role, name: user.name } : null
   const effectiveIdentity = isSupabaseConfigured ? authenticatedIdentity : (identity ?? authenticatedIdentity)
@@ -50,6 +50,18 @@ export function RequireIdentity({
 
   if (isLoading) {
     return <div className="min-h-screen bg-slate-50 px-4 py-16"><LoadingView label="로그인 정보를 확인하는 중입니다" /></div>
+  }
+
+  if (error && !effectiveIdentity) {
+    return (
+      <div className="page">
+        <EmptyView
+          title="회원 권한을 확인하지 못했습니다"
+          description="연결이 안정된 뒤 다시 시도해 주세요. 역할이 일반회원으로 변경된 것은 아닙니다."
+          action={<button type="button" className="btn btn-primary" onClick={() => { void refresh() }}>다시 시도</button>}
+        />
+      </div>
+    )
   }
 
   if (!effectiveIdentity) {

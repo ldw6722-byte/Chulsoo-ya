@@ -1,4 +1,5 @@
-﻿import { useState, type FormEvent } from 'react'
+﻿import { useEffect, useState, type FormEvent } from 'react'
+
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { AuthLayout } from './AuthLayout'
 import { SocialAuthButtons } from './SocialAuthButtons'
@@ -12,23 +13,34 @@ function EyeIcon({ closed }: { closed: boolean }) { return <svg viewBox="0 0 24 
 export function LoginPage() {
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
-  const { refresh } = useAuth()
+    const { refresh, user } = useAuth()
+
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
-  const [showPassword, setShowPassword] = useState(false)
-    const [remember, setRemember] = useState(false)
+    const [showPassword, setShowPassword] = useState(false)
+  const [remember, setRemember] = useState(false)
+  const [pendingRedirect, setPendingRedirect] = useState(false)
 
   const requested = searchParams.get('next')
-  const redirectPath = requested?.startsWith('/') && !requested.startsWith('//') ? requested : '/' 
+  const redirectPath = requested?.startsWith('/') && !requested.startsWith('//') ? requested : '/'
+
+  useEffect(() => {
+    if (!pendingRedirect || !user) return
+    setPendingRedirect(false)
+    navigate(redirectPath, { replace: true })
+  }, [navigate, pendingRedirect, redirectPath, user])
+ 
   const submit = async (event: FormEvent) => {
     event.preventDefault(); setError(null); setLoading(true)
     try {
       startAuthSession(remember)
       const { error: signInError } = await supabaseAuth.signInWithEmail(email.trim(), password)
       if (signInError) { clearAuthSessionPolicy(); setError(signInError.message); return }
-      await refresh(); navigate(redirectPath, { replace: true })
+      const authenticatedUser = await refresh()
+      if (!authenticatedUser) { setError("회원 권한을 확인하지 못했습니다. 잠시 후 다시 시도해 주세요."); return }
+      setPendingRedirect(true)
 
     } catch (error) { clearAuthSessionPolicy(); setError(error instanceof AuthConfigurationError ? error.message : "로그인에 실패했습니다. 다시 시도해 주세요.") }
 

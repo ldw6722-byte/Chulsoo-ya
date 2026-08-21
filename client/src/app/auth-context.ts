@@ -6,7 +6,7 @@ export interface AuthContextValue {
   user: AuthenticatedUser | null
   isLoading: boolean
   error: string | null
-  refresh: () => Promise<void>
+  refresh: () => Promise<AuthenticatedUser | null>
   signOut: () => Promise<void>
 }
 

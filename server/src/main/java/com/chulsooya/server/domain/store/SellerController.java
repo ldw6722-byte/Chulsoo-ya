@@ -24,6 +24,9 @@ import com.chulsooya.server.domain.store.SellerDtos.PenaltyHistoryResponse;
 import com.chulsooya.server.domain.store.SellerDtos.SlotLogResponse;
 import com.chulsooya.server.domain.store.SellerDtos.StoreResponse;
 import com.chulsooya.server.domain.store.SellerDtos.UpdateSlotsRequest;
+import com.chulsooya.server.domain.store.SellerDtos.UpdateStoreOperationsRequest;
+import com.chulsooya.server.domain.user.FeaturePermission;
+import com.chulsooya.server.domain.user.FeaturePermissionService;
 import com.chulsooya.server.support.CurrentUser;
 
 import jakarta.validation.Valid;
@@ -35,11 +38,14 @@ public class SellerController {
 	private final SellerService sellerService;
 	private final BidService bidService;
 	private final OrderService orderService;
+    private final FeaturePermissionService featurePermissions;
 
-	public SellerController(SellerService sellerService, BidService bidService, OrderService orderService) {
+	public SellerController(SellerService sellerService, BidService bidService, OrderService orderService,
+            FeaturePermissionService featurePermissions) {
 		this.sellerService = sellerService;
 		this.bidService = bidService;
 		this.orderService = orderService;
+        this.featurePermissions = featurePermissions;
 	}
 
 	@GetMapping("/store")
@@ -47,6 +53,14 @@ public class SellerController {
 		requireSeller(user);
 		return ApiResponse.of(sellerService.myStore(user.userId()));
 	}
+
+    @PatchMapping("/store/operations")
+    public ApiResponse<StoreResponse> updateOperations(CurrentUser user,
+            @Valid @RequestBody UpdateStoreOperationsRequest request) {
+        requireSeller(user);
+        featurePermissions.require(user, FeaturePermission.SELLER_STORE_OPERATIONS);
+        return ApiResponse.of(sellerService.updateOperations(user.userId(), request));
+    }
 
 	@PatchMapping("/store/slots")
 	public ApiResponse<StoreResponse> updateSlots(CurrentUser user, @Valid @RequestBody UpdateSlotsRequest request) {

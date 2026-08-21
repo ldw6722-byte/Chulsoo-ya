@@ -3,16 +3,21 @@ package com.chulsooya.server.domain.store;
 import static com.chulsooya.server.domain.store.StoreDirectoryDtos.*;
 
 import java.time.Instant;
+import java.time.LocalTime;
 import java.util.Comparator;
+
 import java.util.List;
 import java.util.Locale;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import com.chulsooya.server.common.DomainException;
 import com.chulsooya.server.common.ErrorCode;
+import com.chulsooya.server.domain.user.FeaturePermission;
+import com.chulsooya.server.domain.user.FeaturePermissionService;
 import com.chulsooya.server.domain.user.User;
 import com.chulsooya.server.domain.user.UserRepository;
 import com.chulsooya.server.domain.user.UserRole;
+
 import com.chulsooya.server.support.CurrentUser;
 
 @Service
@@ -20,10 +25,12 @@ import com.chulsooya.server.support.CurrentUser;
 public class StoreDirectoryService {
     private final StoreRepository stores;
     private final UserRepository users;
+    private final FeaturePermissionService featurePermissions;
 
-    public StoreDirectoryService(StoreRepository stores, UserRepository users) {
+    public StoreDirectoryService(StoreRepository stores, UserRepository users, FeaturePermissionService featurePermissions) {
         this.stores = stores;
         this.users = users;
+        this.featurePermissions = featurePermissions;
     }
 
     public List<StoreResponse> find(String cityName, String districtName) {
@@ -45,8 +52,9 @@ public class StoreDirectoryService {
     }
 
     public List<StoreResponse> adminList(CurrentUser actor) {
-        requireAdmin(actor);
+                featurePermissions.require(actor, FeaturePermission.ADMIN_MANAGE_STORES);
         Instant now = Instant.now();
+
         List<Store> result = stores.findAll().stream().sorted(Comparator.comparing(Store::getCityName)
                 .thenComparing(Store::getDistrictName).thenComparing(Store::getName)).toList();
         return responses(result, now, true);
@@ -54,8 +62,9 @@ public class StoreDirectoryService {
 
     @Transactional
     public StoreResponse create(CurrentUser actor, CreateStoreRequest request) {
-        requireAdmin(actor);
+                featurePermissions.require(actor, FeaturePermission.ADMIN_MANAGE_STORES);
         String email = request.ownerEmail().trim().toLowerCase(Locale.ROOT);
+
         User owner = users.findByEmail(email)
                 .orElseGet(() -> users.save(new User(email, request.ownerName().trim(), request.phone().trim(), UserRole.SELLER)));
         if (owner.getRole() != UserRole.SELLER || stores.findByOwnerId(owner.getId()).isPresent()) {
@@ -65,25 +74,33 @@ public class StoreDirectoryService {
         store.changeDirectoryProfile(request.name(), request.cityName(), request.districtName(), guCode(request.districtName()), request.address(), request.phone(), request.imageUrl(), request.handledItems());
         // 후기 기반 별점은 StoreReviewService가 공개 후기 평균으로만 갱신한다.
         store.changeOperatingStatus(request.verified(), request.receivingOrders());
-        store.changeCustomerDisplaySettings(request.customerBadgeText(), request.customerNoticeText(), request.directoryVisible());
+                store.changeCustomerDisplaySettings(request.customerBadgeText(), request.customerNoticeText(), request.directoryVisible());
+        changeOperations(store, request.directions(), request.businessOpenTime(), request.businessCloseTime(),
+                request.weeklyClosedDays(), request.temporaryClosed());
         return response(stores.save(store), Instant.now(), true);
+
     }
 
     @Transactional
     public StoreResponse update(CurrentUser actor, Long storeId, UpdateStoreRequest request) {
-        requireAdmin(actor);
+                featurePermissions.require(actor, FeaturePermission.ADMIN_MANAGE_STORES);
         Store store = requireStore(storeId);
+
         store.changeDirectoryProfile(request.name(), request.cityName(), request.districtName(), guCode(request.districtName()), request.address(), request.phone(), request.imageUrl(), request.handledItems());
         // 후기 기반 별점은 StoreReviewService가 공개 후기 평균으로만 갱신한다.
         store.changeOperatingStatus(request.verified(), request.receivingOrders());
-        store.changeCustomerDisplaySettings(request.customerBadgeText(), request.customerNoticeText(), request.directoryVisible());
+                store.changeCustomerDisplaySettings(request.customerBadgeText(), request.customerNoticeText(), request.directoryVisible());
+        changeOperations(store, request.directions(), request.businessOpenTime(), request.businessCloseTime(),
+                request.weeklyClosedDays(), request.temporaryClosed());
         return response(store, Instant.now(), true);
+
     }
 
     @Transactional
     public void delete(CurrentUser actor, Long storeId) {
-        requireAdmin(actor);
+                featurePermissions.require(actor, FeaturePermission.ADMIN_MANAGE_STORES);
         stores.delete(requireStore(storeId));
+
     }
 
     private List<StoreResponse> responses(List<Store> stores, Instant now, boolean includeOwnerEmail) {
@@ -99,11 +116,15 @@ public class StoreDirectoryService {
         return stores.findById(id).orElseThrow(() -> new DomainException(ErrorCode.NOT_FOUND, "판매점을 찾을 수 없습니다."));
     }
 
-    private void requireAdmin(CurrentUser actor) {
-        if (!actor.isAdmin()) throw new DomainException(ErrorCode.FORBIDDEN, "관리자 권한이 필요합니다.");
+        private void changeOperations(Store store, String directions, LocalTime openTime, LocalTime closeTime,
+            java.util.Set<java.time.DayOfWeek> closedDays, boolean temporaryClosed) {
+        store.changeBusinessOperations(directions, openTime == null ? store.getBusinessOpenTime() : openTime,
+                closeTime == null ? store.getBusinessCloseTime() : closeTime,
+                closedDays == null ? store.weeklyClosedDaySet() : closedDays, temporaryClosed);
     }
 
     private String guCode(String districtName) {
+
         return "GU_" + Integer.toHexString(districtName.trim().hashCode() & 0xFFFF).toUpperCase();
     }
 }

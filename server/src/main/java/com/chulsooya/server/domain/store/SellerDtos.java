@@ -1,7 +1,10 @@
 package com.chulsooya.server.domain.store;
 
+import java.time.DayOfWeek;
 import java.time.Instant;
+import java.time.LocalTime;
 import java.util.List;
+import java.util.Set;
 
 import com.chulsooya.server.domain.order.FulfillmentMethod;
 import com.chulsooya.server.domain.order.OrderStatus;
@@ -28,13 +31,24 @@ public final class SellerDtos {
 			int availableSlots,
 			boolean receivingOrders,
 			boolean verified,
-			Instant restrictedUntil,
-			double trustScore,
-			Instant serverTime) {
+							Instant restrictedUntil,
+				double trustScore,
+				Instant serverTime,
+                String directions,
+                LocalTime businessOpenTime,
+                LocalTime businessCloseTime,
+                Set<DayOfWeek> weeklyClosedDays,
+                boolean temporaryClosed,
+                StoreOperatingStatus operatingStatus) {
+
 	}
 
 	public record UpdateSlotsRequest(@NotNull @Min(0) Integer configuredSlots, String reason) {
 	}
+
+    public record UpdateStoreOperationsRequest(String directions, @NotNull LocalTime businessOpenTime,
+            @NotNull LocalTime businessCloseTime, Set<DayOfWeek> weeklyClosedDays, boolean temporaryClosed) {
+    }
 
 	public record OfferItemLine(String productName, String specSummary, int quantity, String unit) {
 	}

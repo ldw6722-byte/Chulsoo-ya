@@ -104,6 +104,17 @@ public class User {
         return role == UserRole.ADMIN && adminLevel == AdminLevel.HIGHEST;
     }
 
+    /** 최고관리자만 일반관리자 인사 권한을 회수할 수 있다. */
+    public void revokeStandardAdministrator() {
+        if (role != UserRole.ADMIN || adminLevel != AdminLevel.STANDARD) {
+            throw new IllegalArgumentException("일반관리자 계정만 해지할 수 있습니다.");
+        }
+        this.role = UserRole.CONSUMER;
+        this.adminLevel = AdminLevel.NONE;
+        this.adminStatus = AdminStatus.OFFLINE;
+        this.adminStatusUpdatedAt = null;
+    }
+
     public void updateAdministratorStatus(AdminStatus status) {
         if (role != UserRole.ADMIN) throw new IllegalArgumentException("관리자 계정만 운영 상태를 변경할 수 있습니다.");
         this.adminStatus = status;

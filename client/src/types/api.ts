@@ -188,7 +188,10 @@ export interface RegionResolveResult {
   normalizedAddress: string
 }
 
+export type StoreOperatingStatus = 'OPEN' | 'PREPARING' | 'CLOSED' | 'HOLIDAY'
+
 export interface SellerStore {
+
   id: number
   name: string
   guCode: string
@@ -205,6 +208,20 @@ export interface SellerStore {
   restrictedUntil: string | null
   trustScore: number
   serverTime: string
+  directions: string | null
+  businessOpenTime: string
+  businessCloseTime: string
+  weeklyClosedDays: string[]
+  temporaryClosed: boolean
+  operatingStatus: StoreOperatingStatus
+}
+
+export interface UpdateStoreOperationsRequest {
+  directions: string
+  businessOpenTime: string
+  businessCloseTime: string
+  weeklyClosedDays: string[]
+  temporaryClosed: boolean
 }
 
 export interface OfferItemLine {
@@ -275,6 +292,7 @@ export interface AuthenticatedUser {
   email: string
   name: string
   role: UserRole
+  adminLevel: AdminLevel
 }
 
 export interface AuthMeResponse {
@@ -328,9 +346,16 @@ export interface StoreDirectoryItem {
   verified: boolean
   receivingOrders: boolean
   directoryVisible: boolean
-  customerBadgeText: string | null
+    customerBadgeText: string | null
   customerNoticeText: string | null
+  directions: string | null
+  businessOpenTime: string
+  businessCloseTime: string
+  weeklyClosedDays: string[]
+  temporaryClosed: boolean
+  operatingStatus: StoreOperatingStatus
   restricted: boolean
+
   availableSlots: number
   tier: SellerSubscriptionTier
   ownerEmail: string
@@ -355,11 +380,17 @@ export interface StoreCreateRequest {
   verified: boolean
   receivingOrders: boolean
   directoryVisible: boolean
-  customerBadgeText: string
+    customerBadgeText: string
   customerNoticeText: string
+  directions: string
+  businessOpenTime: string
+  businessCloseTime: string
+  weeklyClosedDays: string[]
+  temporaryClosed: boolean
 }
 
 export interface StoreUpdateRequest {
+
   name: string
   phone: string
   cityName: string
@@ -371,11 +402,17 @@ export interface StoreUpdateRequest {
   verified: boolean
   receivingOrders: boolean
   directoryVisible: boolean
-  customerBadgeText: string
+    customerBadgeText: string
   customerNoticeText: string
+  directions: string
+  businessOpenTime: string
+  businessCloseTime: string
+  weeklyClosedDays: string[]
+  temporaryClosed: boolean
 }
 
 export interface WorkflowTimelineEvent {
+
   type: string
   label: string
   occurredAt: string
@@ -517,16 +554,26 @@ export interface StoreDetail {
   eligibility: StoreReviewEligibility
 }
 
+export interface FeaturePermissionView {
+  code: string
+  label: string
+  group: 'CONSUMER' | 'SELLER' | 'ADMIN'
+  enabled: boolean
+}
+
 export interface AdminUser {
+
   id: number
   email: string
   name: string
   phone: string | null
-  role: UserRole
+    role: UserRole
+  adminLevel: 'HIGHEST' | 'STANDARD' | 'NONE'
   createdAt: string
 }
 
 export interface MemberProfile {
+
   id: number
   email: string
   name: string

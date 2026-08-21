@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.chulsooya.server.common.ApiResponse;
 import com.chulsooya.server.common.DomainException;
 import com.chulsooya.server.common.ErrorCode;
+import com.chulsooya.server.domain.user.AdminLevel;
 import com.chulsooya.server.domain.user.User;
 import com.chulsooya.server.domain.user.UserRole;
 
@@ -50,9 +51,9 @@ public class AuthController {
         return name instanceof String value ? value : null;
     }
 
-    public record AuthUserResponse(Long id, UUID supabaseUserId, String email, String name, UserRole role) {
+    public record AuthUserResponse(Long id, UUID supabaseUserId, String email, String name, UserRole role, AdminLevel adminLevel) {
         static AuthUserResponse from(User user) {
-            return new AuthUserResponse(user.getId(), user.getSupabaseUserId(), user.getEmail(), user.getName(), user.getRole());
+            return new AuthUserResponse(user.getId(), user.getSupabaseUserId(), user.getEmail(), user.getName(), user.getRole(), user.getAdminLevel());
         }
     }
 }

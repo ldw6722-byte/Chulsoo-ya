@@ -11,6 +11,7 @@ import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.stereotype.Component;
 import org.springframework.web.bind.support.WebDataBinderFactory;
 import org.springframework.web.context.request.NativeWebRequest;
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.web.method.support.HandlerMethodArgumentResolver;
 import org.springframework.web.method.support.ModelAndViewContainer;
 
@@ -47,6 +48,24 @@ public class CurrentUserResolver implements HandlerMethodArgumentResolver {
         String rawId = webRequest.getHeader(HEADER_USER_ID);
         if (parameter != null && parameter.getParameterAnnotation(Nullable.class) != null && (rawId == null || rawId.isBlank())) return null;
         return fromDevelopmentHeaders(webRequest);
+    }
+
+    /** 공통 인터셉터가 컨트롤러 인자 해석과 동일한 인증 규칙을 사용할 때 호출한다. */
+    public CurrentUser resolve(HttpServletRequest request) {
+        Jwt jwt = authenticatedJwt();
+        if (jwt != null) return fromSupabaseJwt(jwt);
+        String rawId = request.getHeader(HEADER_USER_ID);
+        if (rawId == null || rawId.isBlank()) {
+            throw new DomainException(ErrorCode.FORBIDDEN, "인증 정보가 없습니다.");
+        }
+        try {
+            Long userId = Long.valueOf(rawId.trim());
+            User user = users.findById(userId)
+                    .orElseThrow(() -> new DomainException(ErrorCode.FORBIDDEN, "개발 사용자 정보를 찾을 수 없습니다."));
+            return new CurrentUser(user.getId(), user.getRole());
+        } catch (IllegalArgumentException exception) {
+            throw new DomainException(ErrorCode.FORBIDDEN, "인증 정보 형식이 올바르지 않습니다.");
+        }
     }
 
     private CurrentUser fromSupabaseJwt(Jwt jwt) {

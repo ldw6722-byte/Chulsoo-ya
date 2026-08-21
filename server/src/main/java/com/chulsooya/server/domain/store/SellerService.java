@@ -82,6 +82,15 @@ public class SellerService {
 		return toResponse(store);
 	}
 
+    /** 회원 기본 주소와 분리된 판매점 운영 정보만 저장한다. */
+    @Transactional
+    public StoreResponse updateOperations(Long ownerId, SellerDtos.UpdateStoreOperationsRequest request) {
+        Store store = requireStoreByOwner(ownerId);
+        store.changeBusinessOperations(request.directions(), request.businessOpenTime(), request.businessCloseTime(),
+                request.weeklyClosedDays(), request.temporaryClosed());
+        return toResponse(store);
+    }
+
 	/** 원터치 바쁨 모드. 설정 슬롯을 0으로 만들고 주문 수신을 중지한다. */
 	@Transactional
 	public StoreResponse enterBusyMode(Long ownerId) {
@@ -200,9 +209,16 @@ public class SellerService {
 				store.getAvailableSlots(),
 				store.isReceivingOrders(),
 				store.isVerified(),
-				store.getRestrictedUntil(),
-				store.getTrustScore(),
-				clock.instant());
+									store.getRestrictedUntil(),
+					store.getTrustScore(),
+					clock.instant(),
+                    store.getDirections(),
+                    store.getBusinessOpenTime(),
+                    store.getBusinessCloseTime(),
+                    store.weeklyClosedDaySet(),
+                    store.isTemporaryClosed(),
+                    store.operatingStatus(clock.instant()));
+
 	}
 
 	private List<OfferItemLine> toLines(Order order) {

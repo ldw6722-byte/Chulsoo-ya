@@ -11,8 +11,10 @@ import type {
   AdminStoreActivity,
   AdminSupportInquiry,
   AdminWorkflowOrder,
-  AdminUser,
+    AdminUser,
+  FeaturePermissionView,
   MemberProfile,
+
   UpdateMemberProfileRequest,
   CustomerCenterData,
   SupportFaqItem,
@@ -57,8 +59,10 @@ import type {
   SellerPenalty,
 
   SellerOffer,
-  SellerStore,
+    SellerStore,
+  UpdateStoreOperationsRequest,
   SlotLog,
+
   StoreCreateRequest,
   StoreDirectoryItem,
   StoreRegionOption,
@@ -161,7 +165,10 @@ export const paymentMethodApi = {
 }
 
 export const sellerApi = {
-  store: () => unwrap<SellerStore>(http.get('/seller/store')),
+    store: () => unwrap<SellerStore>(http.get('/seller/store')),
+
+  updateOperations: (payload: UpdateStoreOperationsRequest) =>
+    unwrap<SellerStore>(http.patch('/seller/store/operations', payload)),
 
   updateSlots: (configuredSlots: number, reason?: string) =>
     unwrap<SellerStore>(http.patch('/seller/store/slots', { configuredSlots, reason })),
@@ -275,7 +282,11 @@ export const adminPaymentApi = {
 
 export const adminUserApi = {
   list: () => unwrap<AdminUser[]>(http.get('/admin/users')),
+  permissions: (userId: number) => unwrap<FeaturePermissionView[]>(http.get(`/admin/users/${userId}/permissions`)),
+  changePermission: (userId: number, permission: string, enabled: boolean) =>
+    unwrap<FeaturePermissionView>(http.patch(`/admin/users/${userId}/permissions/${permission}`, { enabled })),
   changeRole: (userId: number, role: 'CONSUMER' | 'SELLER') => unwrap<AdminUser>(http.patch(`/admin/users/${userId}/role`, { role })),
+  changeAdministrator: (userId: number, enabled: boolean) => unwrap<AdminUser>(http.patch(`/admin/users/${userId}/administrator`, { enabled })),
 }
 
 /* ???瑗????ル―??鸚???驪??嶺뚯빘鍮??鸚???㉱?洹먮봿????亦?*/
