@@ -56,7 +56,7 @@ export function OrderDetailPage() {
 
   return (
     <div className="page stack">
-      <div className="spread">
+      <div className="spread flex-wrap gap-2">
         <h1 className="section-title" style={{ fontSize: 'var(--fs-xl)', marginBottom: 0 }}>
           주문 상세
         </h1>
@@ -84,7 +84,7 @@ export function OrderDetailPage() {
         {notice ? <p role="status" className="subtle">{notice}</p> : null}
       </section>
 
-      {paymentVisible ? <section className="card stack" style={{ padding: 'var(--sp-4)' }}><h2 className="section-title" style={{ fontSize: 'var(--fs-base)' }}>결제 · 환불</h2>{payment.loading && !payment.data ? <p className="muted">결제 정보를 불러오는 중입니다…</p> : payment.error ? <ErrorView error={payment.error} onRetry={payment.reload} /> : payment.data ? <><div className="spread"><span className="muted">결제 상태</span><span>{payment.data.paymentStatus === 'CANCELLED' ? '결제 취소' : payment.data.paymentStatus === 'REFUNDED' ? '전액 환불' : payment.data.paymentStatus === 'PARTIAL_REFUNDED' ? '부분 환불' : '결제 완료'}</span></div><div className="spread"><span className="muted">환불 가능 잔액</span><strong className="tabular">{formatWon(payment.data.remainingAmount)}</strong></div>{payment.data.refunds.length ? <table className="table"><thead><tr><th scope="col">처리</th><th scope="col">금액</th><th scope="col">사유</th><th scope="col">시각</th></tr></thead><tbody>{payment.data.refunds.map(refund => <tr key={refund.id}><td>{refund.refundType === 'CANCEL' ? '결제 취소' : '환불'}</td><td className="tabular">{formatWon(refund.amount)}</td><td>{refund.reason}</td><td className="tabular">{refund.completedAt ? formatDateTime(refund.completedAt) : '처리 중'}</td></tr>)}</tbody></table> : <p className="muted">처리된 취소·환불 이력이 없습니다.</p>}</> : null}</section> : null}
+      {paymentVisible ? <section className="card stack" style={{ padding: 'var(--sp-4)' }}><h2 className="section-title" style={{ fontSize: 'var(--fs-base)' }}>결제 · 환불</h2>{payment.loading && !payment.data ? <p className="muted">결제 정보를 불러오는 중입니다…</p> : payment.error ? <ErrorView error={payment.error} onRetry={payment.reload} /> : payment.data ? <><div className="spread flex-wrap gap-2"><span className="muted">결제 상태</span><span>{payment.data.paymentStatus === 'CANCELLED' ? '결제 취소' : payment.data.paymentStatus === 'REFUNDED' ? '전액 환불' : payment.data.paymentStatus === 'PARTIAL_REFUNDED' ? '부분 환불' : '결제 완료'}</span></div><div className="spread flex-wrap gap-2"><span className="muted">환불 가능 잔액</span><strong className="tabular">{formatWon(payment.data.remainingAmount)}</strong></div>{payment.data.refunds.length ? <div className="overflow-x-auto"><table className="table min-w-[34rem]"><thead><tr><th scope="col">처리</th><th scope="col">금액</th><th scope="col">사유</th><th scope="col">시각</th></tr></thead><tbody>{payment.data.refunds.map(refund => <tr key={refund.id}><td>{refund.refundType === 'CANCEL' ? '결제 취소' : '환불'}</td><td className="tabular">{formatWon(refund.amount)}</td><td>{refund.reason}</td><td className="tabular">{refund.completedAt ? formatDateTime(refund.completedAt) : '처리 중'}</td></tr>)}</tbody></table></div> : <p className="muted">처리된 취소·환불 이력이 없습니다.</p>}</> : null}</section> : null}
 
       <section className="card stack" style={{ padding: 'var(--sp-4)' }}>
         <h2 className="section-title" style={{ fontSize: 'var(--fs-base)' }}>
@@ -94,7 +94,7 @@ export function OrderDetailPage() {
           {TIMELINE.map((step) => {
             const at = step.at(data)
             return (
-              <li key={step.status} className="spread">
+              <li key={step.status} className="spread flex-wrap gap-2">
                 <span className="row">
                   <span
                     aria-hidden="true"
@@ -120,7 +120,8 @@ export function OrderDetailPage() {
         <h2 className="section-title" style={{ fontSize: 'var(--fs-base)' }}>
           주문 품목
         </h2>
-        <table className="table">
+        <div className="overflow-x-auto">
+          <table className="table min-w-[28rem]">
           <thead>
             <tr>
               <th scope="col">상품</th>
@@ -148,17 +149,18 @@ export function OrderDetailPage() {
               </tr>
             ))}
           </tbody>
-        </table>
+          </table>
+        </div>
 
-        <div className="spread">
+        <div className="spread flex-wrap gap-2">
           <span className="muted">상품 금액</span>
           <span className="tabular">{formatWon(data.itemsAmount)}</span>
         </div>
-        <div className="spread">
+        <div className="spread flex-wrap gap-2">
           <span className="muted">배달비</span>
           <span className="tabular">{formatWon(data.deliveryFee)}</span>
         </div>
-        <div className="spread">
+        <div className="spread flex-wrap gap-2">
           <span style={{ fontWeight: 700 }}>총 금액</span>
           <span className="tabular" style={{ fontWeight: 700 }}>
             {formatWon(data.totalAmount)}
@@ -170,18 +172,18 @@ export function OrderDetailPage() {
         <h2 className="section-title" style={{ fontSize: 'var(--fs-base)' }}>
           배송 정보
         </h2>
-        <div className="spread">
+        <div className="spread flex-wrap gap-2">
           <span className="muted">이행 방식</span>
           <span>{data.fulfillmentMethod === 'DELIVERY' ? '배달' : '매장 픽업'}</span>
         </div>
-        <div className="spread">
+        <div className="spread flex-wrap gap-2">
           <span className="muted">주소</span>
           <span style={{ textAlign: 'right' }}>
             {data.address ?? '-'}
             {data.addressDetail ? ` ${data.addressDetail}` : ''}
           </span>
         </div>
-        <div className="spread">
+        <div className="spread flex-wrap gap-2">
           <span className="muted">배정 매장</span>
           <span>{data.winningStoreName ?? '미배정'}</span>
         </div>

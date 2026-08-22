@@ -21,6 +21,8 @@ import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
+import com.chulsooya.server.support.AdminAccessAuthenticationEntryPoint;
+
 /**
  * Supabase의 비대칭 JWT signing key(JWKS)를 이용하는 운영 보안 체인.
  * JWT secret을 서버에 복제하지 않아 키 회전·폐기를 지원한다.
@@ -31,11 +33,14 @@ public class SupabaseSecurityConfig {
 
     private final String supabaseUrl;
     private final List<String> allowedOrigins;
+    private final AdminAccessAuthenticationEntryPoint adminAccessAuthenticationEntryPoint;
 
     public SupabaseSecurityConfig(
             @Value("${app.supabase.url}") String supabaseUrl,
-            @Value("${app.cors.allowed-origins:http://localhost:5173}") String allowedOrigins) {
+            @Value("${app.cors.allowed-origins:http://localhost:5173}") String allowedOrigins,
+            AdminAccessAuthenticationEntryPoint adminAccessAuthenticationEntryPoint) {
         this.supabaseUrl = stripTrailingSlash(supabaseUrl);
+        this.adminAccessAuthenticationEntryPoint = adminAccessAuthenticationEntryPoint;
         this.allowedOrigins = Arrays.stream(allowedOrigins.split(","))
                 .map(String::trim)
                 .filter(origin -> !origin.isBlank())
@@ -50,9 +55,11 @@ public class SupabaseSecurityConfig {
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/categories/**", "/api/products/**", "/api/event-campaigns/**", "/api/regions/**", "/api/stores/**", "/api/support/faqs").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/categories/**", "/api/products/**", "/api/event-campaigns/**", "/api/regions/**", "/api/stores/**", "/api/support/faqs", "/api/support/notices", "/api/maintenance/status", "/api/notices/popup").permitAll()
                         .anyRequest().authenticated())
-                .oauth2ResourceServer(resourceServer -> resourceServer.jwt(Customizer.withDefaults()));
+                .oauth2ResourceServer(resourceServer -> resourceServer
+                        .authenticationEntryPoint(adminAccessAuthenticationEntryPoint)
+                        .jwt(Customizer.withDefaults()));
         return http.build();
     }
 

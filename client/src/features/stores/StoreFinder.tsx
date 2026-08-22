@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
-import { storeDirectoryApi } from '@/api/endpoints'
+import { regionApi, storeDirectoryApi } from '@/api/endpoints'
 import { ErrorView, LoadingView } from '@/components/StateViews'
 import { useAsync } from '@/hooks/useAsync'
 import type { StoreDirectoryItem } from '@/types/api'
@@ -41,10 +41,10 @@ function StoreCard({ store }: { store: StoreDirectoryItem }) {
 export function StoreFinder({ compact = false }: { compact?: boolean }) {
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
-  const [city, setCity] = useState(() => searchParams.get("city") ?? "\uC11C\uC6B8\uD2B9\uBCC4\uC2DC")
+  const [city, setCity] = useState(() => searchParams.get("city") ?? '')
   const [district, setDistrict] = useState(() => searchParams.get('district') ?? '')
-  const regions = useAsync(() => storeDirectoryApi.regions(), [])
-  const stores = useAsync(() => storeDirectoryApi.list({ city, district: district || undefined }), [city, district])
+  const regions = useAsync(() => regionApi.list(), [])
+  const stores = useAsync(() => storeDirectoryApi.list({ city: city || undefined, district: district || undefined }), [city, district])
   const cities = useMemo(() => Array.from(new Set((regions.data ?? []).map(region => region.cityName))), [regions.data])
   const districts = useMemo(() => (regions.data ?? []).filter(region => region.cityName === city).map(region => region.districtName), [regions.data, city])
   const list = compact ? (stores.data ?? []).slice(0, 3) : (stores.data ?? [])

@@ -16,6 +16,12 @@ type KakaoPostcodeData = {
   zonecode: string
 }
 
+export type KakaoPlaceSearchResult = {
+  name: string
+  roadAddress: string
+  address: string
+}
+
 type KakaoMaps = {
   load: (callback: () => void) => void
   Map: new (container: HTMLElement, options: { center: unknown; level: number }) => unknown
@@ -24,6 +30,9 @@ type KakaoMaps = {
   services: {
     Geocoder: new () => {
       addressSearch: (address: string, callback: (result: Array<{ x: string; y: string }>, status: string) => void) => void
+    }
+    Places: new () => {
+      keywordSearch: (keyword: string, callback: (result: Array<{ place_name: string; road_address_name: string; address_name: string }>, status: string) => void) => void
     }
     Status: { OK: string }
   }
@@ -89,6 +98,26 @@ export function loadKakaoMaps(): Promise<KakaoMaps> {
     maps.load(() => resolve(maps))
   }))
   return mapsLoader
+}
+
+export async function searchKakaoPlaces(keyword: string): Promise<KakaoPlaceSearchResult[]> {
+  if (!keyword.trim()) return []
+  const maps = await loadKakaoMaps()
+  return new Promise<KakaoPlaceSearchResult[]>((resolve) => {
+    const places = new maps.services.Places()
+    places.keywordSearch(keyword.trim(), (result, status) => {
+      if (status !== maps.services.Status.OK) { resolve([]); return }
+      resolve(result.map((place) => ({ name: place.place_name, roadAddress: place.road_address_name, address: place.address_name })))
+    })
+  })
+}
+
+export function toKakaoPostcodeAddressFromPlace(place: KakaoPlaceSearchResult): KakaoPostcodeAddress {
+  const address = (place.roadAddress || place.address).trim()
+  const parts = address.split(/\s+/)
+  const cityName = parts[0] === '서울' ? '서울특별시' : parts[0] ?? ''
+  const districtName = parts.find((part) => part.endsWith('구')) ?? ''
+  return { address, roadAddress: place.roadAddress || address, jibunAddress: place.address, cityName, districtName, zonecode: '' }
 }
 
 export async function renderKakaoAddressMap(container: HTMLElement, address: string) {

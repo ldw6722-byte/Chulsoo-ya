@@ -38,7 +38,7 @@ export function CatalogPage() {
   const products = useAsync<PageResponse<Product>>(() => catalogApi.products({ categoryCode: categoryCode || undefined, keyword: keyword || undefined, eventCampaignId, page, size: PAGE_SIZE, sort }), [categoryCode, keyword, page, sort])
 
   function updateParams(patch: Record<string, string | null>) { const next = new URLSearchParams(searchParams); Object.entries(patch).forEach(([key, value]) => { if (value) next.set(key, value); else next.delete(key) }); if (!Object.hasOwn(patch, 'page')) next.delete('page'); setSearchParams(next) }
-  async function addToCart(product: Product) { setAddingId(product.id); setNotice(null); try { await cartApi.addItem(product.id, 1); setNotice(`${product.name}을 장바구니에 담았습니다.`) } catch (error) { setNotice(error instanceof ApiError ? error.message : '장바구니에 담지 못했습니다.') } finally { setAddingId(null) } }
+  async function addToCart(product: Product) { setAddingId(product.id); setNotice(null); try { await cartApi.addItem(product.id, 1); window.dispatchEvent(new Event('chulsooya:cart-updated')); setNotice(`${product.name}을 장바구니에 담았습니다.`) } catch (error) { setNotice(error instanceof ApiError ? error.message : '장바구니에 담지 못했습니다.') } finally { setAddingId(null) } }
 
   const path = categoryCode ? findPath(tree.data ?? [], categoryCode) ?? [] : []
   const roots = tree.data ?? []

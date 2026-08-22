@@ -72,7 +72,6 @@ public class FeaturePermissionService {
     @Transactional
     public void revokeAdministratorPermissions(Long actorUserId, User target) {
         permissions.findByUserIdOrderByPermissionCodeAsc(target.getId()).stream()
-                .filter(stored -> stored.getPermissionCode().getGroup() == FeaturePermission.PermissionGroup.ADMIN)
                 .filter(UserFeaturePermission::isEnabled)
                 .forEach(stored -> {
                     stored.change(false, actorUserId);
@@ -113,8 +112,7 @@ public class FeaturePermissionService {
             case CONSUMER -> permission.getGroup() == FeaturePermission.PermissionGroup.CONSUMER;
             case SELLER -> permission.getGroup() == FeaturePermission.PermissionGroup.CONSUMER
                     || permission.getGroup() == FeaturePermission.PermissionGroup.SELLER;
-            case ADMIN -> !target.isHighestAdministrator()
-                    && permission.getGroup() == FeaturePermission.PermissionGroup.ADMIN;
+            case ADMIN -> !target.isHighestAdministrator();
         };
     }
 

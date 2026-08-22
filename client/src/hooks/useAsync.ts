@@ -16,7 +16,7 @@ export interface AsyncState<T> {
 export function useAsync<T>(
   fetcher: () => Promise<T>,
   deps: unknown[],
-  options?: { pollMs?: number; enabled?: boolean },
+  options?: { pollMs?: number; enabled?: boolean; stopPollingOnError?: boolean },
 ): AsyncState<T> {
   const [data, setData] = useState<T | null>(null)
   const [loading, setLoading] = useState(true)
@@ -61,10 +61,10 @@ export function useAsync<T>(
 
   useEffect(() => {
     const pollMs = options?.pollMs
-    if (!pollMs || !enabled) return
+    if (!pollMs || !enabled || (options?.stopPollingOnError && error)) return
     const timer = window.setInterval(() => setTick((t) => t + 1), pollMs)
     return () => window.clearInterval(timer)
-  }, [options?.pollMs, enabled])
+  }, [options?.pollMs, options?.stopPollingOnError, enabled, error])
 
   const reload = useCallback(() => setTick((t) => t + 1), [])
 

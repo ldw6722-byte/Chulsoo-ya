@@ -6,6 +6,8 @@
 
 Chulsoo-ya is an O2O marketplace for consumers, business purchasers, public-sector purchasers, and local hardware stores. Consumers select items from a centrally managed catalog and submit a location-based order request. Eligible stores in the same administrative district (`gu_code`) receive a controlled real-time offer, and one store accepts responsibility for fulfilling the assigned order unit through delivery or pickup.
 
+> **Implementation status:** This document describes the product contract. The current implementation, release blockers, and prioritized backlog are maintained in [`docs/CURRENT_IMPLEMENTATION_AND_BACKLOG.md`](docs/CURRENT_IMPLEMENTATION_AND_BACKLOG.md). The Korean specification in [`README.ko.md`](README.ko.md) is the product source of truth.
+
 ---
 
 ## 1. Product Rules That Govern Every Implementation

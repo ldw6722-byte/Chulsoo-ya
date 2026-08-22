@@ -31,7 +31,7 @@ export function AuthCallbackPage() {
     <div className="stack">
       <h1 className="auth-heading">로그인을 완료하지 못했습니다.</h1>
       <p className="field-error" role="alert">{failureMessage}</p>
-      <Link to="/auth/login" className="btn btn-primary btn-block">로그인으로 돌아가기</Link>
+      <Link to={`/auth/login?next=${encodeURIComponent(redirectPath)}`} className="btn btn-primary btn-block">로그인으로 돌아가기</Link>
     </div>
   ) : (
     <div className="stack" style={{ textAlign: "center", padding: "var(--sp-4) 0" }} role="status">

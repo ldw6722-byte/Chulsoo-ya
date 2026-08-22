@@ -5,11 +5,14 @@ import { LoadingView } from '@/components/StateViews'
 import { useIdentity } from '@/app/useIdentity'
 import { useAuth } from '@/app/useAuth'
 import { useAsync } from '@/hooks/useAsync'
+import { CustomerNoticeBoard } from './CustomerNoticeBoard'
+
 import type { CustomerCenterData, OrderSummary, SupportFaqItem } from '@/types/api'
 
-type SupportTab = 'inquiry' | 'faq' | 'voice' | 'returns'
+type SupportTab = 'notice' | 'inquiry' | 'faq' | 'voice' | 'returns'
 
 const TABS: Array<{ id: SupportTab; label: string }> = [
+  { id: 'notice', label: '공지사항' },
   { id: 'inquiry', label: '문의내역' },
   { id: 'faq', label: '자주 묻는 질문' },
   { id: 'voice', label: '고객의 소리' },
@@ -32,7 +35,8 @@ function tabFromHash(hash: string): SupportTab {
   if (hash === '#faq') return 'faq'
   if (hash === '#voice') return 'voice'
   if (hash === '#returns' || hash === '#guide') return 'returns'
-  return 'inquiry'
+  if (hash === '#inquiry') return 'inquiry'
+  return 'notice'
 }
 
 function FaqRows({ faqs, query, onQueryChange }: { faqs: SupportFaqItem[]; query: string; onQueryChange: (value: string) => void }) {
@@ -93,10 +97,10 @@ export function CustomerSupportPage() {
   const center = useAsync<CustomerCenterData>(() => supportApi.center(), [user?.id, identity?.userId], { enabled: isAuthenticated && !isLoading })
   const recentOrders = useAsync<OrderSummary[]>(() => orderApi.list(), [user?.id, identity?.userId], { enabled: isAuthenticated && !isLoading })
   useEffect(() => { setTab(tabFromHash(location.hash)) }, [location.hash])
-  const openTab = (next: SupportTab) => { setTab(next); window.history.replaceState(null, '', next === 'faq' ? '#faq' : next === 'voice' ? '#voice' : next === 'returns' ? '#returns' : '/support') }
+  const openTab = (next: SupportTab) => { setTab(next); window.history.replaceState(null, '', next === 'notice' ? '/support' : next === 'faq' ? '#faq' : next === 'voice' ? '#voice' : next === 'returns' ? '#returns' : '#inquiry') }
   if (faq.loading && !faq.data) return <div className="page"><LoadingView label="고객센터를 준비하는 중입니다" /></div>
 
   return <main className="mx-auto max-w-6xl px-4 py-8 md:py-12"><section className="overflow-hidden rounded-2xl border border-brand-200 bg-brand-500"><div className="flex flex-wrap items-center gap-4 px-6 py-5 text-white md:px-8"><h1 className="mr-4 text-2xl font-black">고객센터</h1><label className="flex h-10 min-w-64 flex-1 items-center gap-2 rounded-lg bg-white px-3 text-slate-700"><input value={faqQuery} placeholder="자주 묻는 질문 검색" onChange={(event) => { setFaqQuery(event.target.value); setTab('faq'); window.history.replaceState(null, '', '#faq') }} className="min-w-0 flex-1 bg-transparent text-sm outline-none placeholder:text-slate-400" /><span className="text-brand-600">⌕</span></label></div></section><nav className="flex overflow-x-auto border-b border-slate-200 bg-white px-2"><div className="flex min-w-max gap-1">{TABS.map((item) => <button key={item.id} type="button" onClick={() => openTab(item.id)} className={`border-b-2 px-4 py-4 text-sm font-bold transition ${tab === item.id ? 'border-brand-600 text-brand-700' : 'border-transparent text-slate-600 hover:text-slate-900'}`}>{item.label}</button>)}</div></nav>
 
-    <section className="mt-8">{tab === 'faq' ? <FaqRows faqs={faq.data ?? FALLBACK_FAQS} query={faqQuery} onQueryChange={setFaqQuery} /> : null}{tab === 'returns' ? <ReturnGuide /> : null}{tab === 'inquiry' ? <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_18rem]"><section className="rounded-2xl border border-slate-200 bg-white p-6"><p className="text-xs font-black tracking-wider text-brand-600">ONE TO ONE</p><h2 className="mt-1 text-2xl font-black text-slate-900">고객센터 문의</h2><p className="mt-3 text-sm leading-6 text-slate-600">주문·결제·판매점·서비스 이용과 관련해 도움이 필요하면 문의를 남겨 주세요.</p><div className="mt-6"><InquiryForm category="ONE_TO_ONE" onSubmitted={center.reload} /></div><InquiryHistory center={center.data ?? null} /></section><RecentOrderProducts orders={recentOrders.data ?? []} loading={recentOrders.loading} failed={Boolean(recentOrders.error)} /></div> : null}{tab === 'voice' ? <section className="mx-auto max-w-3xl"><div className="rounded-2xl border border-slate-200 bg-white p-7 md:p-10"><p className="text-xs font-black tracking-wider text-brand-600">YOUR VOICE</p><h2 className="mt-2 text-3xl font-black tracking-tight text-slate-900">철수야의 중심은 항상 <span className="text-brand-600">고객님</span>입니다.</h2><p className="mt-5 text-sm leading-7 text-slate-600">서비스를 이용하면서 불편했던 점, 개선이 필요한 점을 들려주세요. 고객님의 의견은 판매점 매칭과 주문 경험을 더 좋게 만드는 데 사용됩니다.</p><div className="mt-7"><InquiryForm category="VOICE" onSubmitted={center.reload} /></div></div></section> : null}</section></main>
+    <section className="mt-8">{tab === 'notice' ? <CustomerNoticeBoard /> : null}{tab === 'faq' ? <FaqRows faqs={faq.data ?? FALLBACK_FAQS} query={faqQuery} onQueryChange={setFaqQuery} /> : null}{tab === 'returns' ? <ReturnGuide /> : null}{tab === 'inquiry' ? <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_18rem]"><section className="rounded-2xl border border-slate-200 bg-white p-6"><p className="text-xs font-black tracking-wider text-brand-600">ONE TO ONE</p><h2 className="mt-1 text-2xl font-black text-slate-900">고객센터 문의</h2><p className="mt-3 text-sm leading-6 text-slate-600">주문·결제·판매점·서비스 이용과 관련해 도움이 필요하면 문의를 남겨 주세요.</p><div className="mt-6"><InquiryForm category="ONE_TO_ONE" onSubmitted={center.reload} /></div><InquiryHistory center={center.data ?? null} /></section><RecentOrderProducts orders={recentOrders.data ?? []} loading={recentOrders.loading} failed={Boolean(recentOrders.error)} /></div> : null}{tab === 'voice' ? <section className="mx-auto max-w-3xl"><div className="rounded-2xl border border-slate-200 bg-white p-7 md:p-10"><p className="text-xs font-black tracking-wider text-brand-600">YOUR VOICE</p><h2 className="mt-2 text-3xl font-black tracking-tight text-slate-900">철수야의 중심은 항상 <span className="text-brand-600">고객님</span>입니다.</h2><p className="mt-5 text-sm leading-7 text-slate-600">서비스를 이용하면서 불편했던 점, 개선이 필요한 점을 들려주세요. 고객님의 의견은 판매점 매칭과 주문 경험을 더 좋게 만드는 데 사용됩니다.</p><div className="mt-7"><InquiryForm category="VOICE" onSubmitted={center.reload} /></div></div></section> : null}</section></main>
 }

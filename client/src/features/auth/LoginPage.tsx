@@ -25,6 +25,7 @@ export function LoginPage() {
 
   const requested = searchParams.get('next')
   const redirectPath = requested?.startsWith('/') && !requested.startsWith('//') ? requested : '/'
+  const passwordResetComplete = searchParams.get('reset') === 'done'
 
   useEffect(() => {
     if (!pendingRedirect || !user) return
@@ -52,11 +53,13 @@ export function LoginPage() {
         <SocialAuthButtons action="login" disabled={loading || !isSupabaseConfigured} onError={setError} nextPath={redirectPath} remember={remember} />
 
     <div className="auth-divider"><span>{"\uB610\uB294 \uC774\uBA54\uC77C\uB85C \uB85C\uADF8\uC778"}</span></div>
+        {passwordResetComplete ? <p className="auth-success" role="status">비밀번호가 변경되었습니다. 새 비밀번호로 로그인해 주세요.</p> : null}
     {error ? <p className="field-error" role="alert">{error}</p> : null}
+
     <form className="auth-form" onSubmit={submit}>
       <div className="field"><label htmlFor="login-email">{"\uC774\uBA54\uC77C"}</label><input id="login-email" className="input" type="email" value={email} onChange={(event) => setEmail(event.target.value)} autoComplete="email" placeholder="example@email.com" required /></div>
       <div className="field"><label htmlFor="login-password">{"\uBE44\uBC00\uBC88\uD638"}</label><div className="auth-password-field"><input id="login-password" className="input" type={showPassword ? "text" : "password"} value={password} onChange={(event) => setPassword(event.target.value)} autoComplete="current-password" placeholder={"\uBE44\uBC00\uBC88\uD638\uC744 \uC785\uB825\uD558\uC138\uC694"} required /><button className="auth-password-toggle" type="button" onClick={() => setShowPassword((visible) => !visible)}><EyeIcon closed={!showPassword} /></button></div></div>
-            <div className="flex items-center justify-between text-sm"><label className="auth-remember"><input type="checkbox" checked={remember} onChange={(event) => setRemember(event.target.checked)} /><span>{"\uB85C\uADF8\uC778 \uC0C1\uD0DC \uC720\uC9C0"} <em>{"(\uB2E4\uB978 \uD658\uACBD\uC5D0\uC11C \uCCB4\uD06C \uC8FC\uC758)"}</em></span><span className="auth-help" tabIndex={0} aria-label="로그인 상태 유지 안내"><span aria-hidden="true">?</span><span className="auth-help-tooltip" role="tooltip">체크하면 7일 동안 이 환경에서 로그인 상태가 유지됩니다.</span></span></label><Link to="/support" className="auth-inline-link">{"\uBE44\uBC00\uBC88\uD638 \uCC3E\uAE30"}</Link></div>
+            <div className="flex items-center justify-between text-sm"><label className="auth-remember"><input type="checkbox" checked={remember} onChange={(event) => setRemember(event.target.checked)} /><span>{"\uB85C\uADF8\uC778 \uC0C1\uD0DC \uC720\uC9C0"} <em>{"(\uAC1C\uC778 \uAE30\uAE30\uC5D0\uC11C\uB9CC \uC0AC\uC6A9\uD574 \uC8FC\uC138\uC694)"}</em></span><span className="auth-help" tabIndex={0} aria-label="로그인 상태 유지 안내"><span aria-hidden="true">?</span><span className="auth-help-tooltip" role="tooltip">선택하면 최대 7일 동안 로그인 상태가 유지됩니다. 공용 PC에서는 선택하지 마세요.</span></span></label><Link to={`/auth/forgot-password?next=${encodeURIComponent(redirectPath)}`} className="auth-inline-link">{"\uBE44\uBC00\uBC88\uD638 \uCC3E\uAE30"}</Link></div>
 
       <button className="btn btn-primary btn-block" type="submit" disabled={loading || !isSupabaseConfigured}>{loading ? "로그인 중..." : "\uB85C\uADF8\uC778"}</button>
     </form>

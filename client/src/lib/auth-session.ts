@@ -20,8 +20,10 @@ export interface AuthSnapshot {
   name: string
 }
 
-function storageFor(mode: AuthPolicyMode): Storage {
-  return mode === "remember" ? localStorage : sessionStorage
+function storageFor(_mode: AuthPolicyMode): Storage {
+  // Supabase 세션은 새 탭의 /admin 직접 진입에서도 복원돼야 한다.
+  // 30분·7일 차이는 저장 위치가 아니라 expiresAt 정책으로 계속 판정한다.
+  return localStorage
 }
 
 function storedMode(): AuthPolicyMode | null {

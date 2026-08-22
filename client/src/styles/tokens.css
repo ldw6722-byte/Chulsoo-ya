@@ -27,6 +27,19 @@
   --c-info: #6d5bd0;
   --c-info-weak: #f0edfb;
 
+  /* 상호작용·상태 표면: 관리자·판매자 화면이 같은 대비 규칙을 사용한다. */
+  --c-interactive-hover: #f5f3ff;
+  --c-interactive-selected: #eef2ff;
+  --c-interactive-ring: #818cf8;
+  --c-status-info-surface: #eef2ff;
+  --c-status-success-surface: #e8f6ef;
+  --c-status-warning-surface: #fdf2e3;
+  --c-status-danger-surface: #fceceb;
+  --c-status-info-text: #3730a3;
+  --c-status-success-text: #16794d;
+  --c-status-warning-text: #a24a08;
+  --c-status-danger-text: #b42318;
+
   /* 타이포 */
   --font-sans: 'Pretendard', -apple-system, BlinkMacSystemFont, 'Apple SD Gothic Neo',
     'Malgun Gothic', 'Segoe UI', Roboto, sans-serif;
@@ -77,6 +90,17 @@
   --c-text: #e2e8f0;
   --c-text-muted: #94a3b8;
   --c-text-subtle: #64748b;
+  --c-interactive-hover: #1e1b4b;
+  --c-interactive-selected: #312e81;
+  --c-interactive-ring: #818cf8;
+  --c-status-info-surface: #2e1065;
+  --c-status-success-surface: #022c22;
+  --c-status-warning-surface: #451a03;
+  --c-status-danger-surface: #4c0519;
+  --c-status-info-text: #c7d2fe;
+  --c-status-success-text: #6ee7b7;
+  --c-status-warning-text: #fcd34d;
+  --c-status-danger-text: #fda4af;
   --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
   --shadow-md: 0 4px 14px rgba(0, 0, 0, 0.38);
   --shadow-lg: 0 12px 32px rgba(0, 0, 0, 0.48);

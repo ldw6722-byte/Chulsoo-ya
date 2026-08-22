@@ -1,5 +1,5 @@
 import { useEffect } from 'react'
-import { Navigate, useLocation } from 'react-router-dom'
+import { Link, Navigate, useLocation } from 'react-router-dom'
 
 import type { ReactNode } from 'react'
 import { useAuth } from './useAuth'
@@ -25,9 +25,11 @@ const DEVELOPMENT_ADMIN = { userId: 2, role: 'ADMIN' as const, name: '운영자'
 export function RequireIdentity({
   roles,
   children,
+  fallbackPath,
 }: {
   roles: UserRole[]
   children: ReactNode
+  fallbackPath?: string
 }) {
   const { identity, setIdentity } = useIdentity()
   const { user, isLoading, error, refresh } = useAuth()
@@ -65,17 +67,19 @@ export function RequireIdentity({
   }
 
   if (!effectiveIdentity) {
-    const next = location.pathname + location.search
+    const next = location.pathname + location.search + location.hash
     return <Navigate to={`/auth/login?next=${encodeURIComponent(next)}`} replace />
   }
 
-    if (!roles.includes(effectiveIdentity.role)) {
+  if (!roles.includes(effectiveIdentity.role)) {
+    if (fallbackPath) return <Navigate to={fallbackPath} replace />
 
     return (
       <div className="page">
         <EmptyView
           title="접근 권한이 없습니다"
           description={`이 화면은 ${roles.map((role) => ROLE_LABEL[role]).join(' 또는 ')} 계정으로만 이용할 수 있습니다.`}
+          action={<Link to="/" className="guide-cta-primary">메인으로 이동</Link>}
         />
       </div>
     )

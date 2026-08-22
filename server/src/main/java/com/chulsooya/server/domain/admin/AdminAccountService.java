@@ -14,6 +14,7 @@ import com.chulsooya.server.domain.user.AdminStatus;
 import com.chulsooya.server.domain.user.User;
 import com.chulsooya.server.domain.user.UserRepository;
 import com.chulsooya.server.domain.user.UserRole;
+import com.chulsooya.server.domain.support.BusinessNotificationService;
 import com.chulsooya.server.support.CurrentUser;
 
 @Service
@@ -21,10 +22,13 @@ import com.chulsooya.server.support.CurrentUser;
 public class AdminAccountService {
     private final UserRepository users;
     private final SupabaseAdminInvitationClient invitations;
+    private final BusinessNotificationService notifications;
 
-    public AdminAccountService(UserRepository users, SupabaseAdminInvitationClient invitations) {
+    public AdminAccountService(UserRepository users, SupabaseAdminInvitationClient invitations,
+            BusinessNotificationService notifications) {
         this.users = users;
         this.invitations = invitations;
+        this.notifications = notifications;
     }
 
     public AdminAccountDtos.AccountResponse me(CurrentUser currentUser) {
@@ -36,7 +40,10 @@ public class AdminAccountService {
         if (request == null || request.status() == null) throw new DomainException(ErrorCode.VALIDATION_FAILED, "운영 상태를 선택해 주세요.");
         User account = requireAdministrator(currentUser);
         account.updateAdministratorStatus(request.status());
-        return response(users.save(account));
+        User saved = users.save(account);
+        notifications.notifyHighestAdmins("ADMIN_STATUS_CHANGED", "관리자 운영 상태가 변경되었습니다",
+                saved.getName() + " 관리자의 상태가 " + statusLabel(saved.getAdminStatus()) + "으로 변경되었습니다.", "/admin");
+        return response(saved);
     }
 
     public AdminAccountDtos.AccountListResponse list(CurrentUser currentUser) {
@@ -63,6 +70,8 @@ public class AdminAccountService {
         account.grantStandardAdministrator();
         users.save(account);
         invitations.invite(email, account.getName());
+        notifications.notifyHighestAdmins("ADMIN_ACCOUNT_CREATED", "일반 관리자 계정을 추가했습니다",
+                account.getName() + " 관리자 계정을 확인해 주세요.", "/admin");
         return response(account);
     }
 

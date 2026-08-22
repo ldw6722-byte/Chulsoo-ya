@@ -14,15 +14,21 @@ import jakarta.validation.constraints.Size;
 import com.chulsooya.server.common.ApiResponse;
 import com.chulsooya.server.common.DomainException;
 import com.chulsooya.server.common.ErrorCode;
+import com.chulsooya.server.domain.store.StoreRepository;
 import com.chulsooya.server.support.CurrentUser;
 
 @RestController
 @RequestMapping("/api/users")
 public class UserController {
     private final UserRepository userRepository;
+    private final StoreRepository storeRepository;
+    private final FeaturePermissionService featurePermissions;
 
-    public UserController(UserRepository userRepository) {
+    public UserController(UserRepository userRepository, StoreRepository storeRepository,
+            FeaturePermissionService featurePermissions) {
         this.userRepository = userRepository;
+        this.storeRepository = storeRepository;
+        this.featurePermissions = featurePermissions;
     }
 
     /** 개발용 계정 목록. 운영 화면은 관리자 전용 /api/admin/users를 사용한다. */
@@ -33,7 +39,13 @@ public class UserController {
 
     @GetMapping("/me")
     public ApiResponse<MemberProfileResponse> mine(CurrentUser actor) {
-        return ApiResponse.of(MemberProfileResponse.from(owned(actor)));
+        User user = owned(actor);
+        return ApiResponse.of(MemberProfileResponse.from(user, storeRepository.findByOwnerId(user.getId()).isPresent()));
+    }
+
+    @GetMapping("/me/feature-permissions")
+    public ApiResponse<List<FeaturePermissionService.PermissionView>> myFeaturePermissions(CurrentUser actor) {
+        return ApiResponse.of(featurePermissions.list(actor, actor.userId()));
     }
 
     @PatchMapping("/me")
@@ -42,7 +54,7 @@ public class UserController {
             @Valid @RequestBody UpdateMemberProfileRequest request) {
         User user = owned(actor);
         user.updateMemberProfile(request.name(), request.phone());
-        return ApiResponse.of(MemberProfileResponse.from(user));
+        return ApiResponse.of(MemberProfileResponse.from(user, storeRepository.findByOwnerId(user.getId()).isPresent()));
     }
 
     private User owned(CurrentUser actor) {
@@ -61,10 +73,11 @@ public class UserController {
             String name,
             String phone,
             UserRole role,
+            boolean sellerWorkflowActive,
             Instant createdAt) {
-        static MemberProfileResponse from(User user) {
+        static MemberProfileResponse from(User user, boolean sellerWorkflowActive) {
             return new MemberProfileResponse(user.getId(), user.getEmail(), user.getName(), user.getPhone(),
-                    user.getRole(), user.getCreatedAt());
+                    user.getRole(), sellerWorkflowActive, user.getCreatedAt());
         }
     }
 

@@ -9,18 +9,22 @@ import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
 
 import com.chulsooya.server.support.AdminFeaturePermissionInterceptor;
 import com.chulsooya.server.support.CurrentUserResolver;
+import com.chulsooya.server.support.MaintenanceModeInterceptor;
 
 @Configuration
 public class WebMvcConfig implements WebMvcConfigurer {
 
 	private final CurrentUserResolver currentUserResolver;
-	private final AdminFeaturePermissionInterceptor adminFeaturePermissionInterceptor;
+		private final AdminFeaturePermissionInterceptor adminFeaturePermissionInterceptor;
+		private final MaintenanceModeInterceptor maintenanceModeInterceptor;
 
-	public WebMvcConfig(CurrentUserResolver currentUserResolver,
-			AdminFeaturePermissionInterceptor adminFeaturePermissionInterceptor) {
-		this.currentUserResolver = currentUserResolver;
-		this.adminFeaturePermissionInterceptor = adminFeaturePermissionInterceptor;
-	}
+		public WebMvcConfig(CurrentUserResolver currentUserResolver,
+				AdminFeaturePermissionInterceptor adminFeaturePermissionInterceptor,
+				MaintenanceModeInterceptor maintenanceModeInterceptor) {
+			this.currentUserResolver = currentUserResolver;
+			this.adminFeaturePermissionInterceptor = adminFeaturePermissionInterceptor;
+			this.maintenanceModeInterceptor = maintenanceModeInterceptor;
+		}
 
 	@Override
 	public void addArgumentResolvers(List<HandlerMethodArgumentResolver> resolvers) {
@@ -29,6 +33,7 @@ public class WebMvcConfig implements WebMvcConfigurer {
 
 	@Override
 	public void addInterceptors(InterceptorRegistry registry) {
+		registry.addInterceptor(maintenanceModeInterceptor).addPathPatterns("/api/**");
 		registry.addInterceptor(adminFeaturePermissionInterceptor).addPathPatterns("/api/admin/**");
 	}
 }

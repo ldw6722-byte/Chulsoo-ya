@@ -20,6 +20,7 @@ import com.chulsooya.server.domain.user.AdminLevel;
 import com.chulsooya.server.domain.user.User;
 import com.chulsooya.server.domain.user.UserRepository;
 import com.chulsooya.server.domain.user.UserRole;
+import com.chulsooya.server.domain.support.BusinessNotificationService;
 import com.chulsooya.server.support.CurrentUser;
 
 @ExtendWith(MockitoExtension.class)
@@ -31,6 +32,9 @@ class AdminAccountServiceTest {
     @Mock
     private SupabaseAdminInvitationClient invitations;
 
+    @Mock
+    private BusinessNotificationService notifications;
+
     @Test
     void highestAdministratorCanInviteStandardAdministrator() {
         User highest = new User("highest@example.test", "최고 관리자", null, UserRole.ADMIN);
@@ -38,7 +42,7 @@ class AdminAccountServiceTest {
         when(users.findById(1L)).thenReturn(Optional.of(highest));
         when(users.findByEmail("operator@example.test")).thenReturn(Optional.empty());
 
-        AdminAccountService service = new AdminAccountService(users, invitations);
+        AdminAccountService service = new AdminAccountService(users, invitations, notifications);
         service.inviteStandardAdministrator(new CurrentUser(1L, UserRole.ADMIN),
                 new AdminAccountDtos.InviteRequest("operator@example.test", "운영 담당자"));
 
@@ -55,7 +59,7 @@ class AdminAccountServiceTest {
         standard.grantStandardAdministrator();
         when(users.findById(2L)).thenReturn(Optional.of(standard));
 
-        AdminAccountService service = new AdminAccountService(users, invitations);
+        AdminAccountService service = new AdminAccountService(users, invitations, notifications);
 
         assertThatThrownBy(() -> service.inviteStandardAdministrator(new CurrentUser(2L, UserRole.ADMIN),
                 new AdminAccountDtos.InviteRequest("next@example.test", "추가 운영자")))

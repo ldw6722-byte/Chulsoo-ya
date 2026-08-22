@@ -339,22 +339,40 @@ textarea {
 }
 
 
-/* 다크 변형이 없는 관리자 레거시 패널도 전역 테마와 같은 대비로 유지한다. */
-.dark .admin-theme .bg-white { background-color: #0f172a !important; }
-.dark .admin-theme .bg-slate-50 { background-color: #020617 !important; }
-.dark .admin-theme .bg-white\/95 { background-color: rgba(15, 23, 42, 0.95) !important; }
-.dark .admin-theme .border-slate-100,
-.dark .admin-theme .border-slate-200,
-.dark .admin-theme .border-slate-300 { border-color: #334155 !important; }
-.dark .admin-theme .text-slate-900,
-.dark .admin-theme .text-slate-800,
-.dark .admin-theme .text-slate-700 { color: #e2e8f0 !important; }
-.dark .admin-theme .text-slate-600,
-.dark .admin-theme .text-slate-500,
-.dark .admin-theme .text-slate-400 { color: #94a3b8 !important; }
-.dark .admin-theme input,
-.dark .admin-theme select,
-.dark .admin-theme textarea { background-color: #0f172a; color: #e2e8f0; border-color: #475569; }
+
+
+/* 상점 사용자 화면의 레거시 Tailwind 표면도 전역 테마와 같은 대비로 유지한다. */
+.dark .shop-theme .bg-white { background-color: #0f172a !important; }
+.dark .shop-theme .bg-white\/95 { background-color: rgba(15, 23, 42, 0.95) !important; }
+.dark .shop-theme .bg-slate-50 { background-color: #020617 !important; }
+.dark .shop-theme .bg-slate-100 { background-color: #1e293b !important; }
+.dark .shop-theme .bg-brand-50 { background-color: #1e1b4b !important; }
+.dark .shop-theme .bg-violet-50 { background-color: #2e1065 !important; }
+.dark .shop-theme .bg-emerald-50 { background-color: #022c22 !important; }
+.dark .shop-theme .bg-amber-50 { background-color: #451a03 !important; }
+.dark .shop-theme .bg-red-50 { background-color: #450a0a !important; }
+.dark .shop-theme .border-slate-100,
+.dark .shop-theme .border-slate-200,
+.dark .shop-theme .border-slate-300 { border-color: #334155 !important; }
+.dark .shop-theme .border-brand-100,
+.dark .shop-theme .border-brand-200 { border-color: #3730a3 !important; }
+.dark .shop-theme .text-slate-950,
+.dark .shop-theme .text-slate-900,
+.dark .shop-theme .text-slate-800,
+.dark .shop-theme .text-slate-700 { color: #e2e8f0 !important; }
+.dark .shop-theme .text-slate-600,
+.dark .shop-theme .text-slate-500,
+.dark .shop-theme .text-slate-400 { color: #94a3b8 !important; }
+.dark .shop-theme .text-brand-600,
+.dark .shop-theme .text-brand-700,
+.dark .shop-theme .text-brand-800,
+.dark .shop-theme .text-brand-900 { color: #a5b4fc !important; }
+.dark .shop-theme .text-emerald-700 { color: #6ee7b7 !important; }
+.dark .shop-theme .text-amber-700 { color: #fcd34d !important; }
+.dark .shop-theme .text-red-700 { color: #fca5a5 !important; }
+.dark .shop-theme input,
+.dark .shop-theme select,
+.dark .shop-theme textarea { background-color: #0f172a; color: #e2e8f0; border-color: #475569; }
 
 /* 전 도메인 공통 밝은·어두운 화면 토글 스위치 */
 .theme-switch {
@@ -437,3 +455,229 @@ textarea {
   content: '☾';
   font-size: 15px;
 }
+
+/* 카테고리 메가메뉴는 밝은 모드 호버 유틸이 다크 전역 표면 규칙을 침범하지 않도록 별도 제어한다. */
+.dark .shop-theme .category-mega-menu .category-hover-item:hover {
+  background-color: #1e1b4b !important;
+  color: #c7d2fe !important;
+  box-shadow: 0 0 0 1px #3730a3 inset;
+}
+
+/* 원본 로고의 흰 배경은 다크 헤더에서 회청색 카드 표면과 자연스럽게 섞는다. */
+.dark .shop-theme .shop-logo-card {
+  background-color: #e2e8f0 !important;
+  border-color: #64748b !important;
+}
+
+.dark .shop-theme .shop-logo-image {
+  mix-blend-mode: multiply;
+}
+
+/* 행사 자산 편집: 테마·아이콘 미리보기와 자산 카드의 회색 잔존 표면을 다크 브랜드 팔레트로 정리한다. */
+.dark .admin-theme .event-asset-studio {
+  background-color: #0f172a !important;
+  border-color: #4338ca !important;
+}
+
+.dark .admin-theme .event-asset-studio .text-violet-600 { color: #a5b4fc !important; }
+.dark .admin-theme .event-asset-upload,
+.dark .admin-theme .event-asset-library,
+.dark .admin-theme .event-asset-card { background-color: #0f172a !important; }
+.dark .admin-theme .event-asset-upload,
+.dark .admin-theme .event-asset-library { border-color: #334155 !important; }
+.dark .admin-theme .event-asset-card { border-color: #334155 !important; }
+.dark .admin-theme .event-asset-card:hover {
+  border-color: #3730a3 !important;
+  box-shadow: 0 0 0 1px #3730a3 inset;
+}
+.dark .admin-theme .event-asset-preview {
+  background-color: #1e293b !important;
+  border-bottom: 1px solid #334155;
+}
+.dark .admin-theme .event-asset-studio input[type='file']::file-selector-button {
+  background-color: #312e81;
+  color: #c7d2fe;
+}
+
+/* 메인 팝업: 초록·연두·퍼플 그라데이션이 외곽을 따라 순환하는 주목 프레임 */
+@keyframes popup-attention-border-flow {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+.popup-attention-frame {
+  background-image: linear-gradient(120deg, #16a34a, #a3e635, #8b5cf6, #4f46e5, #16a34a);
+  background-size: 320% 320%;
+  animation: popup-attention-border-flow 5.5s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .popup-attention-frame {
+    animation: none;
+    background-position: 50% 50%;
+  }
+}
+
+.popup-attention-button {
+  min-width: 116px;
+  min-height: 54px;
+  padding-inline: 14px;
+  border: 4px solid rgba(255, 255, 255, 0.86);
+  border-radius: 11px;
+  background-image: linear-gradient(120deg, #16a34a, #a3e635, #8b5cf6, #4f46e5, #16a34a);
+  background-size: 320% 320%;
+  box-shadow: 0 5px 0 #14532d, 0 0 0 2px #052e16, 0 0 0 5px rgba(163, 230, 53, 0.32), inset 0 3px 0 rgba(255, 255, 255, 0.5), inset 0 -3px 0 rgba(20, 83, 45, 0.22), 0 10px 18px rgba(20, 83, 45, 0.28);
+  letter-spacing: 0.08em;
+  text-shadow: 0 1px 1px rgba(15, 23, 42, 0.38);
+  animation: popup-attention-border-flow 5.5s ease-in-out infinite;
+  transition: transform 0.15s ease, filter 0.15s ease, box-shadow 0.15s ease;
+}
+
+.popup-attention-button:hover {
+  filter: saturate(1.18) brightness(1.08);
+  transform: translateY(-1px);
+}
+
+.popup-attention-button:active {
+  box-shadow: 0 2px 0 #14532d, 0 0 0 2px #052e16, 0 0 0 5px rgba(163, 230, 53, 0.3), inset 0 3px 0 rgba(255, 255, 255, 0.34), inset 0 -3px 0 rgba(20, 83, 45, 0.28), 0 5px 10px rgba(20, 83, 45, 0.2);
+  transform: translateY(3px);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .popup-attention-button {
+    animation: none;
+    background-position: 50% 50%;
+  }
+}
+
+
+/* 공용 안내 페이지 CTA: 평면 보라 버튼 회귀를 막기 위한 기본·보조 액션 기준 */
+.guide-cta-primary,
+.guide-cta-secondary {
+  display: inline-flex;
+  min-height: 48px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0.8rem;
+  padding: 0.75rem 1.1rem;
+  font-size: 0.875rem;
+  font-weight: 800;
+  line-height: 1;
+  transition: transform 0.15s ease, box-shadow 0.15s ease, filter 0.15s ease, background-color 0.15s ease;
+}
+
+.guide-cta-primary {
+  border: 2px solid rgba(255, 255, 255, 0.82);
+  background-image: linear-gradient(120deg, #16a34a, #a3e635, #8b5cf6, #4f46e5, #16a34a);
+  background-size: 280% 280%;
+  color: #ffffff;
+  box-shadow: 0 4px 0 #14532d, 0 0 0 2px #052e16, 0 8px 16px rgba(20, 83, 45, 0.24), inset 0 2px 0 rgba(255, 255, 255, 0.38), inset 0 -2px 0 rgba(20, 83, 45, 0.25);
+  text-shadow: 0 1px 1px rgba(15, 23, 42, 0.35);
+  animation: popup-attention-border-flow 5.5s ease-in-out infinite;
+}
+
+.guide-cta-primary:hover {
+  filter: saturate(1.14) brightness(1.06);
+  transform: translateY(-1px);
+}
+
+.guide-cta-primary:active {
+  box-shadow: 0 2px 0 #14532d, 0 0 0 2px #052e16, 0 4px 8px rgba(20, 83, 45, 0.2), inset 0 2px 0 rgba(255, 255, 255, 0.28), inset 0 -2px 0 rgba(20, 83, 45, 0.3);
+  transform: translateY(2px);
+}
+
+.guide-cta-secondary {
+  border: 1px solid #c7d2fe;
+  background: linear-gradient(145deg, #ffffff, #eef2ff);
+  color: #3730a3;
+  box-shadow: 0 2px 0 #c7d2fe, 0 6px 12px rgba(67, 56, 202, 0.1), inset 0 1px 0 #ffffff;
+}
+
+.guide-cta-secondary:hover {
+  border-color: #818cf8;
+  background: linear-gradient(145deg, #f8fafc, #e0e7ff);
+  transform: translateY(-1px);
+}
+
+.guide-cta-secondary:active {
+  box-shadow: 0 1px 0 #c7d2fe, 0 3px 6px rgba(67, 56, 202, 0.12), inset 0 1px 0 #e0e7ff;
+  transform: translateY(1px);
+}
+
+.dark .guide-cta-secondary {
+  border-color: #4f46e5;
+  background: linear-gradient(145deg, #172554, #1e1b4b);
+  color: #c7d2fe;
+  box-shadow: 0 2px 0 #312e81, 0 6px 12px rgba(15, 23, 42, 0.45), inset 0 1px 0 rgba(199, 210, 254, 0.18);
+}
+
+.dark .guide-cta-secondary:hover {
+  border-color: #818cf8;
+  background: linear-gradient(145deg, #1e3a8a, #312e81);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .guide-cta-primary {
+    animation: none;
+    background-position: 50% 50%;
+  }
+}
+
+
+/* 관리자 레거시 Tailwind 유틸의 단일 테마 브리지: 개별 패널은 의미만 선언한다. */
+.dark .admin-theme .bg-white,
+.dark .admin-theme .bg-white\/95 { background-color: var(--c-surface); }
+.dark .admin-theme .bg-slate-50,
+.dark .admin-theme .bg-slate-50\/80 { background-color: var(--c-bg); }
+.dark .admin-theme .bg-slate-100 { background-color: var(--c-surface-muted); }
+.dark .admin-theme .bg-brand-50,
+.dark .admin-theme .bg-brand-50\/30,
+.dark .admin-theme .bg-brand-50\/40,
+.dark .admin-theme .bg-brand-50\/50,
+.dark .admin-theme .bg-brand-50\/60,
+.dark .admin-theme .bg-brand-50\/70,
+.dark .admin-theme .bg-violet-50 { background-color: var(--c-status-info-surface); }
+.dark .admin-theme .bg-emerald-50 { background-color: var(--c-status-success-surface); }
+.dark .admin-theme .bg-amber-50 { background-color: var(--c-status-warning-surface); }
+.dark .admin-theme .bg-rose-50,
+.dark .admin-theme .bg-red-50 { background-color: var(--c-status-danger-surface); }
+.dark .admin-theme .border-slate-100,
+.dark .admin-theme .border-slate-200,
+.dark .admin-theme .border-slate-300 { border-color: var(--c-border); }
+.dark .admin-theme .border-brand-100,
+.dark .admin-theme .border-brand-200 { border-color: var(--c-interactive-ring); }
+.dark .admin-theme .border-amber-200 { border-color: var(--c-warning); }
+.dark .admin-theme .border-rose-200,
+.dark .admin-theme .border-red-200 { border-color: var(--c-danger); }
+.dark .admin-theme .divide-slate-100 > :not(:last-child) { border-color: var(--c-border); }
+.dark .admin-theme .text-slate-950,
+.dark .admin-theme .text-slate-900,
+.dark .admin-theme .text-slate-800,
+.dark .admin-theme .text-slate-700 { color: var(--c-text); }
+.dark .admin-theme .text-slate-600,
+.dark .admin-theme .text-slate-500,
+.dark .admin-theme .text-slate-400 { color: var(--c-text-muted); }
+.dark .admin-theme .text-brand-600,
+.dark .admin-theme .text-brand-700,
+.dark .admin-theme .text-brand-800 { color: var(--c-status-info-text); }
+.dark .admin-theme .text-emerald-700,
+.dark .admin-theme .text-emerald-800 { color: var(--c-status-success-text); }
+.dark .admin-theme .text-amber-700,
+.dark .admin-theme .text-amber-800 { color: var(--c-status-warning-text); }
+.dark .admin-theme .text-rose-700,
+.dark .admin-theme .text-rose-800,
+.dark .admin-theme .text-red-700 { color: var(--c-status-danger-text); }
+.dark .admin-theme .ring-brand-200 { --tw-ring-color: var(--c-interactive-ring); }
+.dark .admin-theme .hover\:bg-slate-50:hover,
+.dark .admin-theme .hover\:bg-slate-100:hover,
+.dark .admin-theme .hover\:bg-brand-50:hover,
+.dark .admin-theme .hover\:bg-slate-50\/70:hover { background-color: var(--c-interactive-hover); }
+.dark .admin-theme .hover\:text-slate-900:hover,
+.dark .admin-theme .hover\:text-brand-700:hover,
+.dark .admin-theme .hover\:text-brand-800:hover { color: var(--c-status-info-text); }
+.dark .admin-theme input,
+.dark .admin-theme select,
+.dark .admin-theme textarea { background-color: var(--c-surface); color: var(--c-text); border-color: var(--c-border-strong); }
+.dark .admin-theme .placeholder\:text-slate-400::placeholder { color: var(--c-text-subtle); }
+.dark .admin-theme .focus\:border-brand-400:focus { border-color: var(--c-interactive-ring); }

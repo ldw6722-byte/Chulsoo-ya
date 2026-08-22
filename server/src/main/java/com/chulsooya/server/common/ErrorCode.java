@@ -9,6 +9,7 @@ public enum ErrorCode {
 	NOT_FOUND(HttpStatus.NOT_FOUND, "대상을 찾을 수 없습니다."),
 	FORBIDDEN(HttpStatus.FORBIDDEN, "권한이 없습니다."),
 	INTERNAL_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "서버 오류가 발생했습니다."),
+	MAINTENANCE_ACTIVE(HttpStatus.SERVICE_UNAVAILABLE, "서비스 점검 중입니다. 잠시 후 다시 이용해 주세요."),
 
 	// 장바구니
 	CART_EMPTY(HttpStatus.BAD_REQUEST, "장바구니가 비어 있습니다."),

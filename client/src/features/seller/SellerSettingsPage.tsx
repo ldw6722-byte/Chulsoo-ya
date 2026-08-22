@@ -40,11 +40,12 @@ function StoreOperationsCard({ store, onSaved }: { store: SellerStore; onSaved: 
 const REASON_LABEL: Record<string, string> = {
   MANUAL_INCREASE: '수동 증가',
   MANUAL_DECREASE: '수동 감소',
-  BUSY_MODE: '바쁨 모드',
+  BUSY_MODE: '주문 거절',
   RESUME: '수신 재개',
 }
 
 export function SellerSettingsPage() {
+  const [logsExpanded, setLogsExpanded] = useState(false)
   const store = useAsync<SellerStore>(() => sellerApi.store(), [])
   const logs = useAsync<SlotLog[]>(() => sellerApi.slotLogs(), [])
   const penalties = useAsync<SellerPenalty[]>(() => sellerApi.penalties(), [])
@@ -117,9 +118,7 @@ export function SellerSettingsPage() {
       {activePenalty ? <section className="card stack" style={{ padding: 'var(--sp-4)', borderColor: 'var(--c-danger)' }}><h2 className="section-title" style={{ fontSize: 'var(--fs-base)' }}>주문 응찰 제한</h2><p className="subtle">{activePenalty.reason}</p><p className="tabular">제한 해제 예정: {activePenalty.restrictionUntil ? formatDateTime(activePenalty.restrictionUntil) : '-'}</p><p className="subtle">신뢰 점수 {activePenalty.trustScoreDelta}점이 반영되었습니다. 제한 중에는 새 주문 제안을 받을 수 없습니다.</p></section> : null}
 
       <section className="card stack" style={{ padding: 'var(--sp-4)' }}>
-        <h2 className="section-title" style={{ fontSize: 'var(--fs-base)' }}>
-          가용량 변경 이력
-        </h2>
+        <div className="spread"><div><h2 className="section-title" style={{ marginBottom: 'var(--sp-1)', fontSize: 'var(--fs-base)' }}>가용량 변경 이력</h2><p className="subtle">{logsExpanded ? '전체 변경 이력을 표시합니다.' : '최근 3건만 표시합니다.'}</p></div>{(logs.data?.length ?? 0) > 3 ? <button type="button" onClick={() => setLogsExpanded(previous => !previous)} className="btn btn-sm" aria-expanded={logsExpanded}>{logsExpanded ? '이력 접기' : `이력 펼치기 (${logs.data?.length ?? 0})`}</button> : null}</div>
         {logs.loading && !logs.data ? (
           <p className="muted">이력을 불러오는 중입니다…</p>
         ) : logs.error ? (
@@ -137,12 +136,10 @@ export function SellerSettingsPage() {
               </tr>
             </thead>
             <tbody>
-              {(logs.data ?? []).map((log) => (
+              {(logsExpanded ? logs.data ?? [] : (logs.data ?? []).slice(0, 3)).map((log) => (
                 <tr key={log.id}>
                   <td className="tabular">{formatDateTime(log.createdAt)}</td>
-                  <td className="tabular">
-                    {log.oldConfiguredSlots} → {log.newConfiguredSlots}
-                  </td>
+                  <td className="tabular">{log.oldConfiguredSlots} → {log.newConfiguredSlots}</td>
                   <td>{CHANGED_BY_LABEL[log.changedBy] ?? log.changedBy}</td>
                   <td>{log.reason ? (REASON_LABEL[log.reason] ?? log.reason) : '-'}</td>
                 </tr>

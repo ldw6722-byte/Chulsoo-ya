@@ -43,4 +43,7 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
 			  and o.guCode = :guCode
 			""")
 	List<Order> findWaitingMatchByGuCode(@Param("guCode") String guCode);
+
+	@Query("select count(item) > 0 from Order order join order.items item where item.productId = :productId")
+	boolean existsItemByProductId(@Param("productId") Long productId);
 }

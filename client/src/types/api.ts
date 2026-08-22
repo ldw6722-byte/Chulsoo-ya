@@ -33,6 +33,30 @@ export interface ApiErrorBody {
   }
 }
 
+export type MaintenancePhase = 'NORMAL' | 'PREPARING' | 'MAINTENANCE'
+
+export interface MaintenanceNotice {
+  id: number
+  title: string
+  content: string
+  active: boolean
+  popupEnabled: boolean
+  displayStartAt: string | null
+  displayEndAt: string | null
+  activatedAt: string | null
+  updatedAt: string
+}
+
+export interface MaintenanceStatus {
+  enabled: boolean
+  phase: MaintenancePhase
+  plannedStartAt: string | null
+  plannedEndAt: string | null
+  updatedAt: string
+  updatedByName: string | null
+  notice: MaintenanceNotice | null
+}
+
 export interface PageResponse<T> {
   items: T[]
   page: number
@@ -94,6 +118,7 @@ export interface CartItem {
   specSummary: string | null
   unit: string | null
   imageUrl: string | null
+  active: boolean
   optionHash: string
   priceTierId: number
   priceTierLabel: string
@@ -185,7 +210,16 @@ export interface CreateOrderRequest {
 export interface RegionResolveResult {
   guCode: string
   guName: string
+  cityName: string
+  districtName: string
   normalizedAddress: string
+}
+
+export interface ServiceRegionOption {
+  code: string
+  cityName: string
+  districtName: string
+  displayName: string
 }
 
 export type StoreOperatingStatus = 'OPEN' | 'PREPARING' | 'CLOSED' | 'HOLIDAY'
@@ -497,7 +531,7 @@ export interface CustomerNotification {
   title: string
   content: string
   targetPath: string | null
-  readAt: string | null
+  readAt?: string | null
   createdAt: string
 }
 
@@ -505,6 +539,51 @@ export interface CustomerCenterData {
   faqs: SupportFaqItem[]
   inquiries: SupportInquiry[]
   notifications: CustomerNotification[]
+}
+
+export type CustomerNoticeSource = 'GENERAL' | 'MAINTENANCE'
+
+export interface CustomerNotice {
+  id: number
+  source: CustomerNoticeSource
+  title: string
+  content: string
+  active: boolean
+  displayStartAt: string | null
+  displayEndAt: string | null
+  activatedAt: string | null
+  updatedAt: string
+}
+
+export interface CustomerNoticeRequest {
+  title: string
+  content: string
+  displayStartAt: string | null
+  displayEndAt: string | null
+}
+
+export interface AdminSecurityAuditItem {
+  id: number
+  email: string | null
+  ipAddress: string
+  httpMethod: string
+  requestPath: string
+  denialType: 'UNAUTHENTICATED' | 'FORBIDDEN_ROLE' | 'FORBIDDEN_FEATURE' | string
+  userAgent: string | null
+  createdAt: string
+}
+
+export interface AdminSecurityAlertItem {
+  id: number
+  alertType: 'RAPID_REPEAT' | 'DISTRIBUTED_IP' | 'PATH_SCAN' | string
+  targetKey: string
+  summary: string
+  alertedAt: string
+}
+
+export interface AdminSecurityAuditResponse {
+  logs: AdminSecurityAuditItem[]
+  alerts: AdminSecurityAlertItem[]
 }
 
 export interface AdminSupportInquiry extends SupportInquiry {
@@ -579,6 +658,7 @@ export interface MemberProfile {
   name: string
   phone: string | null
   role: UserRole
+  sellerWorkflowActive: boolean
   createdAt: string
 }
 
@@ -605,13 +685,14 @@ export interface SubmitSellerApplicationRequest {
 export interface SellerApplication {
   id: number
   storeName: string
-  cityName: string
-  districtName: string
-  address: string
-  phone: string
+  cityName: string | null
+  districtName: string | null
+  address: string | null
+  phone: string | null
   handledItems: string[]
   status: SellerApplicationStatus
   ntsStatus: NtsVerificationStatus
+  internalAdminApplication: boolean
   certificateSubmitted: boolean
   bankAccountCopySubmitted: boolean
   submittedAt: string
@@ -625,7 +706,7 @@ export interface AdminSellerApplication extends SellerApplication {
   applicantEmail: string
   applicantPhone: string
   representativeName: string
-  businessRegistrationNumber: string
+  businessRegistrationNumber: string | null
   businessRegistrationNumberMasked: string
   businessOpenedOn: string | null
   ntsMessage: string | null
@@ -857,9 +938,13 @@ export interface SellerDeactivationRequest { id: number; sellerUserId: number; s
 
 export type SellerSubscriptionTier = 'PREMIUM' | 'GOLD' | 'SILVER'
 export type SubscriptionHistoryEvent = 'PURCHASED' | 'ADMIN_CHANGED' | 'EXPIRED'
+export type SubscriptionPaymentRequestStatus = 'PENDING' | 'APPROVED' | 'REJECTED'
 export interface SubscriptionProduct { id: number; name: string; tier: SellerSubscriptionTier; price: number; durationMonths: number; description: string | null; active: boolean; displayOrder: number }
 export interface StoreSubscriptionHistory { id: number; productId: number | null; previousTier: SellerSubscriptionTier; nextTier: SellerSubscriptionTier; previousExpiresAt: string | null; expiresAt: string | null; eventType: SubscriptionHistoryEvent; changedByUserId: number | null; reason: string | null; createdAt: string }
-export interface SellerSubscriptionStatus { storeId: number; storeName: string; tier: SellerSubscriptionTier; subscriptionExpiresAt: string | null; activePaidMembership: boolean; history: StoreSubscriptionHistory[] }
+export interface SubscriptionTierPolicy { tier: SellerSubscriptionTier; slotCap: number; dispatchDelaySeconds: number }
+export interface SubscriptionPaymentRequest { id: number; storeId: number; storeName: string; productId: number; productName: string; tier: SellerSubscriptionTier; amount: number; durationMonths: number; status: SubscriptionPaymentRequestStatus; requestedAt: string; reviewedAt: string | null; reviewedByUserId: number | null; rejectionReason: string | null }
+export interface SellerSubscriptionStatus { storeId: number; storeName: string; tier: SellerSubscriptionTier; subscriptionExpiresAt: string | null; activePaidMembership: boolean; tierPolicies: SubscriptionTierPolicy[]; pendingPaymentRequest: SubscriptionPaymentRequest | null; history: StoreSubscriptionHistory[] }
+
 export interface AdminSellerMembership { storeId: number; storeName: string; ownerEmail: string; districtName: string | null; handledItems: string | null; tier: SellerSubscriptionTier; subscriptionExpiresAt: string | null; activePaidMembership: boolean; configuredSlots: number; tierSlotCap: number }
 
 
@@ -879,4 +964,21 @@ export interface AdminAccount {
 
 export interface AdminAccountListResponse {
   accounts: AdminAccount[]
+}
+
+export interface PopupNotice {
+  id: number
+  title: string
+  content: string
+  active: boolean
+  displayStartAt: string | null
+  displayEndAt: string | null
+  updatedAt: string
+}
+
+export interface PopupNoticeRequest {
+  title: string
+  content: string
+  displayStartAt: string | null
+  displayEndAt: string | null
 }

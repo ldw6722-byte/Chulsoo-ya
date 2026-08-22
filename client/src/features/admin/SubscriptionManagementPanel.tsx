@@ -5,7 +5,7 @@ import type { AdminSellerMembership, SellerSubscriptionTier, StoreSubscriptionHi
 
 const LABEL: Record<string, string> = {
   PREMIUM: '프리미엄', GOLD: '골드', SILVER: '실버',
-  PURCHASED: '결제 자동 승인', ADMIN_CHANGED: '관리자 조절', EXPIRED: '기간 만료',
+  PURCHASED: '구독결제 승인', ADMIN_CHANGED: '관리자 조절', EXPIRED: '기간 만료',
 }
 const TIER_WEIGHT: Record<SellerSubscriptionTier, number> = { PREMIUM: 3, GOLD: 2, SILVER: 1 }
 const empty = { name: '', tier: 'GOLD' as SellerSubscriptionTier, price: 0, durationMonths: 1, description: '', active: true, displayOrder: 0 }
@@ -133,13 +133,17 @@ export default function SubscriptionManagementPanel() {
     <section className="card p-5">
       <p className="text-xs font-black text-violet-700">SUBSCRIPTION PRODUCT CRUD</p>
       <h2 className="mt-1 text-xl font-black">구독상품 관리</h2>
+      <p className="mt-2 text-sm leading-6 text-slate-600 dark:text-slate-300">여기서 등록·수정한 상품은 <strong>판매자 구독 페이지의 플랜 카드</strong>에 즉시 반영됩니다. 판매자가 결제 요청을 보내면 별도 <strong>구독결제 승인</strong> 탭에서 승인할 때만 판매점의 등급·최대 슬롯·만료일이 DB에 적용됩니다.</p>
+      <div className="mt-4 grid gap-3 rounded-2xl border border-slate-200 bg-slate-50 p-4 text-xs leading-5 text-slate-600 dark:border-slate-700 dark:bg-slate-800/70 dark:text-slate-300 md:grid-cols-4"><p><strong className="text-slate-900 dark:text-white">상품명</strong><br />판매자 카드의 플랜 제목입니다.</p><p><strong className="text-slate-900 dark:text-white">등급</strong><br />골드·프리미엄의 슬롯·주문 공개 정책을 적용합니다.</p><p><strong className="text-slate-900 dark:text-white">가격·기간</strong><br />결제 요청 금액과 승인 뒤 적용 기간입니다.</p><p><strong className="text-slate-900 dark:text-white">판매 상태·순서</strong><br />판매 중인 상품만 카드에 노출하며 숫자가 작을수록 먼저 보입니다.</p></div>
       <div className="mt-4 grid gap-3 md:grid-cols-3">
-        <input value={form.name} onChange={event => setForm({ ...form, name: event.target.value })} placeholder="상품명" className="input" />
-        <select value={form.tier} onChange={event => setForm({ ...form, tier: event.target.value as SellerSubscriptionTier })} className="input"><option value="GOLD">골드</option><option value="PREMIUM">프리미엄</option></select>
-        <input type="number" min="0" value={form.price} onChange={event => setForm({ ...form, price: Number(event.target.value) })} placeholder="가격" className="input" />
-        <input type="number" min="1" value={form.durationMonths} onChange={event => setForm({ ...form, durationMonths: Number(event.target.value) })} placeholder="개월" className="input" />
-        <input value={form.description} onChange={event => setForm({ ...form, description: event.target.value })} placeholder="상품 설명" className="input" />
-        <button type="button" onClick={() => void saveProduct()} className="rounded-xl bg-slate-900 px-4 py-3 text-sm font-black text-white">{editingProduct ? '상품 수정 저장' : '상품 등록'}</button>
+        <label className="text-sm font-bold text-slate-700 dark:text-slate-200">상품명<input value={form.name} onChange={event => setForm({ ...form, name: event.target.value })} placeholder="예) 골드 운영 플랜" className="input mt-1" /></label>
+        <label className="text-sm font-bold text-slate-700 dark:text-slate-200">적용 등급<select value={form.tier} onChange={event => setForm({ ...form, tier: event.target.value as SellerSubscriptionTier })} className="input mt-1"><option value="GOLD">골드</option><option value="PREMIUM">프리미엄</option></select></label>
+        <label className="text-sm font-bold text-slate-700 dark:text-slate-200">결제 요청 금액<input type="number" min="0" value={form.price} onChange={event => setForm({ ...form, price: Number(event.target.value) })} placeholder="0" className="input mt-1" /></label>
+        <label className="text-sm font-bold text-slate-700 dark:text-slate-200">승인 후 적용 기간(개월)<input type="number" min="1" value={form.durationMonths} onChange={event => setForm({ ...form, durationMonths: Number(event.target.value) })} placeholder="1" className="input mt-1" /></label>
+        <label className="text-sm font-bold text-slate-700 dark:text-slate-200">판매자 카드 노출 순서<input type="number" min="0" value={form.displayOrder} onChange={event => setForm({ ...form, displayOrder: Number(event.target.value) })} placeholder="0" className="input mt-1" /></label>
+        <label className="flex min-h-11 items-center gap-3 rounded-xl border border-slate-300 bg-white px-4 text-sm font-bold text-slate-700 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-200"><input type="checkbox" checked={form.active} onChange={event => setForm({ ...form, active: event.target.checked })} />판매자 페이지에 판매 중으로 노출</label>
+        <label className="md:col-span-2 text-sm font-bold text-slate-700 dark:text-slate-200">플랜 설명<textarea value={form.description} onChange={event => setForm({ ...form, description: event.target.value })} placeholder="판매자가 카드에서 확인할 혜택과 운영 설명" className="input mt-1 min-h-24 py-3" /></label>
+        <div className="flex items-end"><button type="button" onClick={() => void saveProduct()} className="min-h-11 w-full rounded-xl bg-slate-900 px-4 py-3 text-sm font-black text-white hover:bg-slate-700 dark:bg-white dark:text-slate-950 dark:hover:bg-slate-200">{editingProduct ? '상품 수정 저장' : '상품 등록'}</button></div>
       </div>
       <div className="mt-5 overflow-x-auto">
         <table className="table"><thead><tr><th>상품</th><th>등급</th><th>가격</th><th>기간</th><th>판매 상태</th><th>관리</th></tr></thead><tbody>

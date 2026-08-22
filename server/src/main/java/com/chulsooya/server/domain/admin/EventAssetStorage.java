@@ -2,6 +2,8 @@ package com.chulsooya.server.domain.admin;
 
 import java.io.IOException;
 import java.util.UUID;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
@@ -14,6 +16,7 @@ import com.chulsooya.server.domain.catalog.EventAssetType;
 
 @Component
 public class EventAssetStorage {
+    private static final Logger log = LoggerFactory.getLogger(EventAssetStorage.class);
     private static final String BUCKET = "event-assets";
     private final String supabaseUrl;
     private final String secretKey;
@@ -34,6 +37,7 @@ public class EventAssetStorage {
                     .contentType(MediaType.parseMediaType(file.getContentType())).body(file.getBytes()).retrieve().toBodilessEntity();
             return key;
         } catch (IOException | RestClientException exception) {
+            log.warn("행사 자산 Storage 업로드 실패: type={}, file={}, reason={}", type, file.getOriginalFilename(), exception.getMessage());
             throw new DomainException(ErrorCode.INTERNAL_ERROR, "행사 자산 저장에 실패했습니다.");
         }
     }

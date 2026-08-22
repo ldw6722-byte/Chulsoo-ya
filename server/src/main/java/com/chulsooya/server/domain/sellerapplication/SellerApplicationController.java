@@ -34,6 +34,11 @@ public class SellerApplicationController {
         return ApiResponse.of(applications.submit(actor, request));
     }
 
+    @PostMapping("/internal-admin")
+    public ApiResponse<ApplicantResponse> submitInternalAdministratorApplication(CurrentUser actor) {
+        return ApiResponse.of(applications.submitInternalAdministratorApplication(actor));
+    }
+
     @GetMapping("/me")
     public ApiResponse<ApplicantResponse> mine(CurrentUser actor) {
         return ApiResponse.of(applications.mine(actor));

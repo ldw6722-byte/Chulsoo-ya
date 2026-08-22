@@ -1,4 +1,4 @@
-import type { SubscriptionProduct, SellerSubscriptionStatus, AdminSellerMembership, StoreSubscriptionHistory, SellerSubscriptionTier } from '../types/api'
+import type { SubscriptionProduct, SellerSubscriptionStatus, AdminSellerMembership, StoreSubscriptionHistory, SellerSubscriptionTier, SubscriptionPaymentRequest } from '../types/api'
 import { http, unwrap } from './client'
 import type {
   AdminProduct,
@@ -9,14 +9,23 @@ import type {
   EventAsset,
   AdminOverview,
   AdminStoreActivity,
-  AdminSupportInquiry,
+    AdminSupportInquiry,
+  AdminSecurityAuditResponse,
+
   AdminWorkflowOrder,
     AdminUser,
   FeaturePermissionView,
   MemberProfile,
+  MaintenanceStatus,
+  MaintenanceNotice,
+  MaintenancePhase,
+  PopupNotice,
+  PopupNoticeRequest,
 
   UpdateMemberProfileRequest,
   CustomerCenterData,
+  CustomerNotice,
+  CustomerNoticeRequest,
   SupportFaqItem,
   SupportInquiry,
   SupportInquiryStatus,
@@ -50,7 +59,9 @@ import type {
   PageResponse,
   Product,
   ProductPriceTier,
-  RegionResolveResult,
+    RegionResolveResult,
+  ServiceRegionOption,
+
   DeliveryAddress,
   DeliveryAddressRequest,
   PaymentMethod,
@@ -142,10 +153,9 @@ export const orderApi = {
 /* 嶺뚯솘???*/
 
 export const regionApi = {
+  list: () => unwrap<ServiceRegionOption[]>(http.get('/regions')),
   resolve: (address: string) =>
     unwrap<RegionResolveResult>(http.get('/regions/resolve', { params: { address } })),
-
-  samples: () => unwrap<string[]>(http.get('/regions/samples')),
 }
 
 /* ???瑗??*/
@@ -207,14 +217,28 @@ export const authApi = {
 
 export const userApi = {
   list: () => unwrap<DevUser[]>(http.get('/users')),
-  mine: () => unwrap<MemberProfile>(http.get('/users/me')),
+    mine: () => unwrap<MemberProfile>(http.get('/users/me')),
+  myFeaturePermissions: () => unwrap<FeaturePermissionView[]>(http.get('/users/me/feature-permissions')),
   updateMine: (payload: UpdateMemberProfileRequest) => unwrap<MemberProfile>(http.patch('/users/me', payload)),
 }
 
 
 /* ??㉱?洹먮봿????怨멸껀 */
+export const maintenanceApi = {
+  status: () => unwrap<MaintenanceStatus>(http.get('/maintenance/status')),
+}
+
 export const adminApi = {
-  overview: () => unwrap<AdminOverview>(http.get('/admin/overview')),
+    overview: () => unwrap<AdminOverview>(http.get('/admin/overview')),
+  maintenanceStatus: () => unwrap<MaintenanceStatus>(http.get('/maintenance/status')),
+  setMaintenanceMode: (phase: MaintenancePhase, plannedStartAt: string | null, plannedEndAt: string | null) => unwrap<MaintenanceStatus>(http.patch('/admin/maintenance', { phase, plannedStartAt, plannedEndAt })),
+  maintenanceNotices: () => unwrap<MaintenanceNotice[]>(http.get('/admin/maintenance/notices')),
+  createMaintenanceNotice: (payload: { title: string; content: string; popupEnabled: boolean; displayStartAt: string | null; displayEndAt: string | null }) => unwrap<MaintenanceNotice>(http.post('/admin/maintenance/notices', payload)),
+  updateMaintenanceNotice: (id: number, payload: { title: string; content: string; popupEnabled: boolean; displayStartAt: string | null; displayEndAt: string | null }) => unwrap<MaintenanceNotice>(http.patch('/admin/maintenance/notices/' + id, payload)),
+  setMaintenanceNoticeActive: (id: number, active: boolean, appendRegistrationTime = false) => unwrap<MaintenanceNotice>(http.patch('/admin/maintenance/notices/' + id + '/active', { active, appendRegistrationTime })),
+  deleteMaintenanceNotice: (id: number) => unwrap<void>(http.delete('/admin/maintenance/notices/' + id)),
+  securityAudits: () => unwrap<AdminSecurityAuditResponse>(http.get('/admin/security-audits')),
+
   myAccount: () => unwrap<AdminAccount>(http.get('/admin/account/me')),
   updateMyAccountStatus: (status: AdminStatus) => unwrap<AdminAccount>(http.patch('/admin/account/me/status', { status })),
   administratorAccounts: () => unwrap<AdminAccountListResponse>(http.get('/admin/account')),
@@ -223,15 +247,16 @@ export const adminApi = {
   createProduct: (payload: Omit<AdminProduct, 'id' | 'categoryName' | 'active'>) => unwrap<AdminProduct>(http.post('/admin/products', payload)),
   updateProduct: (id: number, payload: Omit<AdminProduct, 'id' | 'categoryName' | 'active'>) => unwrap<AdminProduct>(http.put('/admin/products/' + id, payload)),
   setProductActive: (id: number, active: boolean) => unwrap<AdminProduct>(http.patch('/admin/products/' + id + '/active', { active })),
+  deleteProduct: (id: number) => unwrap<void>(http.delete('/admin/products/' + id)),
   listEventCampaigns: () => unwrap<EventCampaign[]>(http.get('/admin/event-campaigns')),
   createEventCampaign: (payload: Omit<EventCampaign, 'id' | 'active'>) => unwrap<EventCampaign>(http.post('/admin/event-campaigns', payload)),
   updateEventCampaign: (id: number, payload: Omit<EventCampaign, 'id' | 'active'>) => unwrap<EventCampaign>(http.put('/admin/event-campaigns/' + id, payload)),
   setEventCampaignActive: (id: number, active: boolean) => unwrap<EventCampaign>(http.patch('/admin/event-campaigns/' + id + '/active', { active })),
   deleteEventCampaign: (id: number) => unwrap<void>(http.delete('/admin/event-campaigns/' + id)),
   listEventAssets: () => unwrap<EventAsset[]>(http.get('/admin/event-assets')),
-  uploadEventAsset: (payload: { type: 'THEME' | 'ICON'; name: string; sourceType: 'ADMIN_UPLOAD' | 'AI_GENERATED'; sortOrder: number; file: File }) => { const form = new FormData(); form.append('type', payload.type); form.append('name', payload.name); form.append('sourceType', payload.sourceType); form.append('sortOrder', String(payload.sortOrder)); form.append('file', payload.file); return unwrap<EventAsset>(http.post('/admin/event-assets', form)) },
+  uploadEventAsset: (payload: { type: 'THEME' | 'ICON'; name: string; sourceType: 'ADMIN_UPLOAD' | 'AI_GENERATED'; sortOrder: number; file: File }) => { const form = new FormData(); form.append('type', payload.type); form.append('name', payload.name); form.append('sourceType', payload.sourceType); form.append('sortOrder', String(payload.sortOrder)); form.append('file', payload.file); return unwrap<EventAsset>(http.postForm('/admin/event-assets', form)) },
   updateEventAsset: (id: number, payload: { name: string; sortOrder: number; active: boolean }) => unwrap<EventAsset>(http.patch('/admin/event-assets/' + id, payload)),
-  replaceEventAssetFile: (id: number, file: File) => { const form = new FormData(); form.append('file', file); return unwrap<EventAsset>(http.post('/admin/event-assets/' + id + '/file', form)) },
+  replaceEventAssetFile: (id: number, file: File) => { const form = new FormData(); form.append('file', file); return unwrap<EventAsset>(http.postForm('/admin/event-assets/' + id + '/file', form)) },
   deleteEventAsset: (id: number) => unwrap<void>(http.delete('/admin/event-assets/' + id)),
 
   priceTiers: (productId: number) => unwrap<ProductPriceTier[]>(http.get('/admin/products/' + productId + '/price-tiers')),
@@ -292,6 +317,7 @@ export const adminUserApi = {
 /* ???瑗????ル―??鸚???驪??嶺뚯빘鍮??鸚???㉱?洹먮봿????亦?*/
 export const sellerApplicationApi = {
   submit: (payload: SubmitSellerApplicationRequest) => unwrap<SellerApplication>(http.post('/seller-applications', payload)),
+  submitInternalAdministrator: () => unwrap<SellerApplication>(http.post('/seller-applications/internal-admin')),
   mine: () => unwrap<SellerApplication>(http.get('/seller-applications/me')),
   uploadCertificate: (applicationId: number, file: File) => {
     const form = new FormData()
@@ -366,9 +392,18 @@ export const storeReviewApi = {
 
 export const supportApi = {
   faqs: () => unwrap<SupportFaqItem[]>(http.get('/support/faqs')),
+  notices: () => unwrap<CustomerNotice[]>(http.get('/support/notices')),
   center: () => unwrap<CustomerCenterData>(http.get('/support/center')),
   createInquiry: (payload: { category: string; title: string; content: string }) => unwrap<SupportInquiry>(http.post('/support/inquiries', payload)),
   markNotificationRead: (notificationId: number) => unwrap<void>(http.post('/support/notifications/' + notificationId + '/read')),
+}
+
+export const adminCustomerNoticeApi = {
+  list: () => unwrap<CustomerNotice[]>(http.get('/admin/customer-notices')),
+  create: (payload: CustomerNoticeRequest) => unwrap<CustomerNotice>(http.post('/admin/customer-notices', payload)),
+  update: (id: number, payload: CustomerNoticeRequest) => unwrap<CustomerNotice>(http.put('/admin/customer-notices/' + id, payload)),
+  setActive: (id: number, active: boolean, appendRegistrationTime = false) => unwrap<CustomerNotice>(http.post('/admin/customer-notices/' + id + '/active', { active, appendRegistrationTime })),
+  remove: (id: number) => unwrap<void>(http.delete('/admin/customer-notices/' + id)),
 }
 
 export const adminSupportApi = {
@@ -380,8 +415,17 @@ export const adminSupportApi = {
 export const sellerSubscriptionApi = {
   products: () => unwrap<SubscriptionProduct[]>(http.get('/seller/subscription/products')),
   status: () => unwrap<SellerSubscriptionStatus>(http.get('/seller/subscription/status')),
-  purchase: (productId: number) => unwrap<SellerSubscriptionStatus>(http.post('/seller/subscription/purchase', { productId })),
+  requestPayment: (productId: number) => unwrap<SubscriptionPaymentRequest>(http.post('/seller/subscription/payment-requests', { productId })),
 }
+export const popupNoticeApi = {
+  active: () => unwrap<PopupNotice | null>(http.get('/notices/popup')),
+  list: () => unwrap<PopupNotice[]>(http.get('/admin/popup-notices')),
+  create: (payload: PopupNoticeRequest) => unwrap<PopupNotice>(http.post('/admin/popup-notices', payload)),
+  update: (id: number, payload: PopupNoticeRequest) => unwrap<PopupNotice>(http.put('/admin/popup-notices/' + id, payload)),
+  setActive: (id: number, active: boolean) => unwrap<PopupNotice>(http.post('/admin/popup-notices/' + id + '/active', { active })),
+  remove: (id: number) => unwrap<void>(http.delete('/admin/popup-notices/' + id)),
+}
+
 export const adminSubscriptionApi = {
   products: () => unwrap<SubscriptionProduct[]>(http.get('/admin/subscriptions/products')),
   createProduct: (payload: Omit<SubscriptionProduct, 'id'>) => unwrap<SubscriptionProduct>(http.post('/admin/subscriptions/products', payload)),
@@ -390,5 +434,9 @@ export const adminSubscriptionApi = {
   memberships: () => unwrap<AdminSellerMembership[]>(http.get('/admin/subscriptions/memberships')),
   changeMembership: (storeId: number, payload: { tier: SellerSubscriptionTier; expiresAt: string | null; reason?: string }) => unwrap<AdminSellerMembership>(http.post('/admin/subscriptions/stores/' + storeId + '/membership', payload)),
   history: (storeId: number) => unwrap<StoreSubscriptionHistory[]>(http.get('/admin/subscriptions/stores/' + storeId + '/history')),
+  pendingPaymentRequests: () => unwrap<SubscriptionPaymentRequest[]>(http.get('/admin/subscriptions/payment-requests/pending')),
+  paymentRequestHistory: () => unwrap<SubscriptionPaymentRequest[]>(http.get('/admin/subscriptions/payment-requests/history')),
+  approvePaymentRequest: (requestId: number) => unwrap<SubscriptionPaymentRequest>(http.post('/admin/subscriptions/payment-requests/' + requestId + '/approve')),
+  rejectPaymentRequest: (requestId: number, reason: string) => unwrap<SubscriptionPaymentRequest>(http.post('/admin/subscriptions/payment-requests/' + requestId + '/reject', { reason })),
 }
 

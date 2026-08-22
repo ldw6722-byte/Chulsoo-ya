@@ -1,7 +1,9 @@
 # 철수야 기능 갭 감사 기록
 
 갱신: 2026-08-13  
-기준: `README.ko.md`, 프로젝트 공유 기획·설계 문서 11종, 현재 React/Spring Boot/Supabase 마이그레이션 코드
+기준: 당시 `README.ko.md`, 프로젝트 공유 기획·설계 문서 11종, 당시 React/Spring Boot/Supabase 마이그레이션 코드
+
+> **보관 문서:** 이 문서는 V1~V6 중심의 2026-08-13 초기 갭 감사 기록이다. 판매자 신청·증빙, 환불·정산, 클레임 HOLD, 쿠폰, 관리자 운영, 카카오 연동, RLS, 판매점 운영 정보, 일반관리자 세부 권한 등은 이후 구현됐다. 현재 완료·보완·미구현 판단은 `CURRENT_IMPLEMENTATION_AND_BACKLOG.md`를 사용한다.
 
 ## 감사 결론
 

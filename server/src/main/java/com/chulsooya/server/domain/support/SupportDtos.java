@@ -18,6 +18,14 @@ public final class SupportDtos {
 
     public record ChangeInquiryStatusRequest(@NotNull SupportInquiryStatus status) {}
 
+    public record CustomerNoticeRequest(
+            @NotBlank @Size(max = 120) String title,
+            @NotBlank @Size(max = 3000) String content,
+            Instant displayStartAt,
+            Instant displayEndAt) {}
+
+    public record CustomerNoticeActiveRequest(@NotNull Boolean active, boolean appendRegistrationTime) {}
+
     public record InquiryResponse(
             Long id,
             String category,

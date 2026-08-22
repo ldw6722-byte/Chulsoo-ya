@@ -20,6 +20,7 @@ public enum FeaturePermission {
     ADMIN_VIEW_MATCHING(PermissionGroup.ADMIN, "주문 응찰 모니터링"),
     ADMIN_MANAGE_SETTLEMENTS(PermissionGroup.ADMIN, "정산·환불 관리"),
     ADMIN_MANAGE_SUPPORT(PermissionGroup.ADMIN, "고객 문의 관리"),
+    ADMIN_MANAGE_CUSTOMER_NOTICES(PermissionGroup.ADMIN, "고객센터 공지 관리"),
     ADMIN_APPROVE_DEVELOPMENT_PAYMENTS(PermissionGroup.ADMIN, "개발 결제 승인");
 
     private final PermissionGroup group;

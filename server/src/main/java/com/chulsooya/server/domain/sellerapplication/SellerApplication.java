@@ -41,24 +41,24 @@ public class SellerApplication {
     @Column(nullable = false, length = 100)
     private String representativeName;
 
-    @Column(nullable = false, length = 20)
+    @Column(length = 20)
     private String businessRegistrationNumber;
 
     private LocalDate businessOpenedOn;
 
-    @Column(nullable = false, length = 60)
+    @Column(length = 60)
     private String cityName;
 
-    @Column(nullable = false, length = 60)
+    @Column(length = 60)
     private String districtName;
 
-    @Column(nullable = false, length = 20)
+    @Column(length = 20)
     private String guCode;
 
-    @Column(nullable = false, length = 300)
+    @Column(length = 300)
     private String address;
 
-    @Column(nullable = false, length = 255)
+    @Column(length = 255)
     private String phone;
 
     @Column(length = 1000)
@@ -74,6 +74,10 @@ public class SellerApplication {
 
     @Column(length = 500)
     private String ntsMessage;
+
+    /** 내부 관리자 판매자 기능 검증용 신청은 사업자 정보·증빙을 요구하지 않는다. */
+    @Column(nullable = false)
+    private boolean internalAdminApplication = false;
 
     @Column(length = 500)
     private String certificateObjectKey;
@@ -117,6 +121,21 @@ public class SellerApplication {
         this.address = required(address);
         this.phone = required(phone);
         this.handledItems = handledItems == null || handledItems.isBlank() ? "철물,공구" : handledItems.trim();
+    }
+
+    public static SellerApplication internalAdministrator(User applicant) {
+        SellerApplication application = new SellerApplication();
+        application.applicant = applicant;
+        String applicantName = application.required(applicant.getName());
+        application.storeName = "내부 테스트 판매점 · " + applicantName;
+        application.representativeName = applicantName;
+        application.handledItems = "내부 운영 테스트";
+        application.internalAdminApplication = true;
+        return application;
+    }
+
+    public boolean requiresVerificationDocuments() {
+        return !internalAdminApplication;
     }
 
     public void setBusinessOpenedOn(LocalDate businessOpenedOn) {

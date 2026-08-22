@@ -1,17 +1,19 @@
 import { Link } from 'react-router-dom'
 import { sellerApi } from '@/api/endpoints'
 import { useAsync } from '@/hooks/useAsync'
-import { ErrorView, LoadingView } from '@/components/StateViews'
+import { EmptyView, ErrorView, LoadingView } from '@/components/StateViews'
 import { SlotControlBar } from './SlotControlBar'
 import { SellerReviewPanel } from './SellerReviewPanel'
 import type { AssignedOrder, SellerMetrics, SellerOffer, SellerStore } from '@/types/api'
 
 export function SellerDashboardPage() {
-  const store = useAsync<SellerStore>(() => sellerApi.store(), [], { pollMs: 5000 })
-  const offers = useAsync<SellerOffer[]>(() => sellerApi.offers(), [], { pollMs: 3000 })
-  const orders = useAsync<AssignedOrder[]>(() => sellerApi.assignedOrders(), [], { pollMs: 5000 })
-  const metrics = useAsync<SellerMetrics>(() => sellerApi.metrics(), [], { pollMs: 15000 })
+  const store = useAsync<SellerStore>(() => sellerApi.store(), [], { pollMs: 5000, stopPollingOnError: true })
+  const hasStore = Boolean(store.data)
+  const offers = useAsync<SellerOffer[]>(() => sellerApi.offers(), [], { pollMs: 3000, enabled: hasStore })
+  const orders = useAsync<AssignedOrder[]>(() => sellerApi.assignedOrders(), [], { pollMs: 5000, enabled: hasStore })
+  const metrics = useAsync<SellerMetrics>(() => sellerApi.metrics(), [], { pollMs: 15000, enabled: hasStore })
   if (store.loading && !store.data) return <div className="mx-auto max-w-7xl px-4 py-16"><LoadingView label="매장 정보를 불러오는 중입니다" /></div>
+  if (store.error?.status === 404 && !store.data) return <div className="mx-auto max-w-3xl px-4 py-16"><EmptyView title="등록된 판매점이 없습니다" description="판매자 신청을 접수한 뒤 승인되면 주문 제안과 슬롯 운영을 이용할 수 있습니다." action={<Link to="/seller/application" className="guide-cta-primary">판매자 신청 확인</Link>} /></div>
   if (store.error && !store.data) return <div className="mx-auto max-w-7xl px-4 py-16"><ErrorView error={store.error} onRetry={store.reload} /></div>
   if (!store.data) return null
 

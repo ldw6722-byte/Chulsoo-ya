@@ -32,6 +32,7 @@ class CustomerSupportServiceNotificationTest {
         CustomerSupportService service = new CustomerSupportService(inquiries, notifications, users, businessNotifications);
         when(inquiries.findById(7L)).thenReturn(Optional.of(inquiry));
         when(users.findById(41L)).thenReturn(Optional.of(new User("consumer@test.dev", "고객", "010", UserRole.CONSUMER)));
+        inquiry.startProcessing();
 
         service.reply(new CurrentUser(1L, UserRole.ADMIN), 7L, new ReplyInquiryRequest("내일 도착 예정입니다."));
 
@@ -40,6 +41,6 @@ class CustomerSupportServiceNotificationTest {
         assertThat(captured.getValue().getUserId()).isEqualTo(41L);
         assertThat(captured.getValue().getType()).isEqualTo("INQUIRY_ANSWERED");
         assertThat(captured.getValue().getReadAt()).isNull();
-        assertThat(captured.getValue().getTargetPath()).isEqualTo("/support");
+        assertThat(captured.getValue().getTargetPath()).isEqualTo("/support#inquiry");
     }
 }

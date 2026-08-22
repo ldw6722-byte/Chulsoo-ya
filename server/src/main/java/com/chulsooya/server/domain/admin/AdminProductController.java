@@ -22,11 +22,13 @@ import org.springframework.web.bind.annotation.RestController;
 import com.chulsooya.server.common.ApiResponse;
 import com.chulsooya.server.common.DomainException;
 import com.chulsooya.server.common.ErrorCode;
+import com.chulsooya.server.domain.cart.CartRepository;
 import com.chulsooya.server.domain.catalog.Category;
 import com.chulsooya.server.domain.catalog.CategoryRepository;
 import com.chulsooya.server.domain.catalog.EventCampaignRepository;
 import com.chulsooya.server.domain.catalog.Product;
 import com.chulsooya.server.domain.catalog.ProductRepository;
+import com.chulsooya.server.domain.order.OrderRepository;
 import com.chulsooya.server.support.CurrentUser;
 
 @Transactional
@@ -36,11 +38,15 @@ public class AdminProductController {
     private final ProductRepository products;
     private final CategoryRepository categories;
     private final EventCampaignRepository campaigns;
+    private final CartRepository carts;
+    private final OrderRepository orders;
 
-    public AdminProductController(ProductRepository products, CategoryRepository categories, EventCampaignRepository campaigns) {
+    public AdminProductController(ProductRepository products, CategoryRepository categories, EventCampaignRepository campaigns, CartRepository carts, OrderRepository orders) {
         this.products = products;
         this.categories = categories;
         this.campaigns = campaigns;
+        this.carts = carts;
+        this.orders = orders;
     }
 
     private void admin(CurrentUser user) {
@@ -145,8 +151,9 @@ public class AdminProductController {
     public ApiResponse<Void> remove(CurrentUser user, @PathVariable Long id) {
         admin(user);
         Product product = products.findById(id).orElseThrow(() -> new DomainException(ErrorCode.NOT_FOUND));
-        product.deactivate();
-        products.save(product);
+        if (orders.existsItemByProductId(id)) throw new DomainException(ErrorCode.INVALID_ORDER_STATUS, "주문 이력이 있는 상품은 삭제할 수 없습니다. 비활성화를 사용해 주세요.");
+        if (carts.existsItemByProductId(id)) throw new DomainException(ErrorCode.INVALID_ORDER_STATUS, "장바구니에 담긴 상품은 삭제할 수 없습니다. 비활성화를 사용해 주세요.");
+        products.delete(product);
         return ApiResponse.of(null);
     }
 

@@ -9,8 +9,9 @@ spring:
     default-property-inclusion: non_null
   servlet:
     multipart:
-      max-file-size: 5MB
-      max-request-size: 5MB
+      # 판매자 증빙 원본 최대 10MB와 multipart 오버헤드를 수용한다.
+      max-file-size: 12MB
+      max-request-size: 12MB
 
 server:
   port: 8080

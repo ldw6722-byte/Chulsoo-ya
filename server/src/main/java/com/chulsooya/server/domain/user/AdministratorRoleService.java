@@ -5,6 +5,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.chulsooya.server.common.DomainException;
 import com.chulsooya.server.common.ErrorCode;
+import com.chulsooya.server.domain.support.BusinessNotificationService;
 import com.chulsooya.server.support.CurrentUser;
 
 @Service
@@ -13,12 +14,14 @@ public class AdministratorRoleService {
     private final UserRepository users;
     private final FeaturePermissionService featurePermissions;
     private final AdministratorRoleAuditLogRepository audits;
+    private final BusinessNotificationService notifications;
 
     public AdministratorRoleService(UserRepository users, FeaturePermissionService featurePermissions,
-            AdministratorRoleAuditLogRepository audits) {
+            AdministratorRoleAuditLogRepository audits, BusinessNotificationService notifications) {
         this.users = users;
         this.featurePermissions = featurePermissions;
         this.audits = audits;
+        this.notifications = notifications;
     }
 
     public User changeStandardAdministrator(CurrentUser actor, Long targetUserId, boolean enabled) {
@@ -52,6 +55,8 @@ public class AdministratorRoleService {
         users.save(target);
         audits.save(new AdministratorRoleAuditLog(actor.userId(), target.getId(), action,
                 previousRole, previousLevel, target.getRole(), target.getAdminLevel()));
+        notifications.notifyHighestAdmins("ADMIN_ROLE_CHANGED", "일반 관리자 권한이 변경되었습니다",
+                target.getName() + " 계정의 일반 관리자 권한을 " + (enabled ? "부여" : "해지") + "했습니다.", "/admin?view=users");
         return target;
     }
 

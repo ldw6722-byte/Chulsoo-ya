@@ -3,6 +3,7 @@ import { notify } from '@/lib/notify'
 import { adminSellerApplicationApi } from '@/api/endpoints'
 import { ErrorView, LoadingView } from '@/components/StateViews'
 import { useAsync } from '@/hooks/useAsync'
+import { useAuth } from '@/app/useAuth'
 import type { AdminSellerApplication, AdminSellerApplicationDocuments, SellerVerificationDocument } from '@/types/api'
 
 const STATUS_LABEL: Record<AdminSellerApplication['status'], string> = {
@@ -102,9 +103,10 @@ type ApplicationTableProps = {
   onClose: () => void
   onApprove: (application: AdminSellerApplication) => void
   onReject: (application: AdminSellerApplication) => void
+  canForceApprove: boolean
 }
 
-function ApplicationTable({ applications, busyId, pending, emptyText, dateLabel, selected, documents, loadingDocuments, onToggle, onClose, onApprove, onReject }: ApplicationTableProps) {
+function ApplicationTable({ applications, busyId, pending, emptyText, dateLabel, selected, documents, loadingDocuments, onToggle, onClose, onApprove, onReject, canForceApprove }: ApplicationTableProps) {
   return <div className="overflow-x-auto">
     <table className="w-full min-w-270 text-left text-sm">
       <thead className="bg-slate-50 text-xs text-slate-500">
@@ -125,12 +127,12 @@ function ApplicationTable({ applications, busyId, pending, emptyText, dateLabel,
               <p className="font-black text-slate-800">{index + 1}</p>
               <p className="mt-1 whitespace-nowrap text-xs text-slate-500">{pending ? dateTime(application.submittedAt) : dateTime(application.reviewedAt)}</p>
             </td>
-            <td className="px-5 py-4"><p className="font-black text-slate-900">{application.storeName}</p><p className="mt-1 text-xs text-slate-500">{application.cityName} {application.districtName}</p></td>
+            <td className="px-5 py-4"><p className="font-black text-slate-900">{application.storeName}</p><p className="mt-1 text-xs text-slate-500">{application.internalAdminApplication ? '내부 관리자 테스트 신청' : `${application.cityName} ${application.districtName}`}</p></td>
             <td className="px-5 py-4"><p className="font-bold text-slate-800">{application.applicantName}</p><p className="mt-1 text-xs text-slate-500">{application.applicantEmail}</p></td>
             <td className="px-5 py-4 text-slate-600"><p>{application.representativeName}</p><p className="mt-1 text-xs">{application.businessRegistrationNumberMasked}</p></td>
-            <td className="px-5 py-4"><button type="button" onClick={() => onToggle(application)} className="rounded-lg border border-brand-200 bg-brand-50 px-3 py-2 text-xs font-bold text-brand-700">{selected?.id === application.id ? '정보·문서 접기' : '전체 정보·문서'}</button><p className="mt-2 text-xs text-slate-500">등록증 {application.certificateSubmitted ? '제출' : '미제출'} · 통장 {application.bankAccountCopySubmitted ? '제출' : '미제출'}</p></td>
+            <td className="px-5 py-4"><button type="button" onClick={() => onToggle(application)} className="rounded-lg border border-brand-200 bg-brand-50 px-3 py-2 text-xs font-bold text-brand-700">{selected?.id === application.id ? '정보·문서 접기' : '전체 정보·문서'}</button><p className="mt-2 text-xs text-slate-500">{application.internalAdminApplication ? '내부 테스트 · 증빙 면제' : `등록증 ${application.certificateSubmitted ? '제출' : '미제출'} · 통장 ${application.bankAccountCopySubmitted ? '제출' : '미제출'}`}</p></td>
             <td className="px-5 py-4"><StatusBadge status={application.status} /></td>
-            <td className="px-5 py-4 text-right">{pending ? <div className="flex justify-end gap-2"><button type="button" disabled={busyId === application.id || !application.certificateSubmitted || !application.bankAccountCopySubmitted} onClick={() => onApprove(application)} className="rounded-lg bg-brand-600 px-3 py-2 text-xs font-black text-white disabled:opacity-50">승인</button><button type="button" disabled={busyId === application.id} onClick={() => onReject(application)} className="rounded-lg border border-rose-200 px-3 py-2 text-xs font-black text-rose-700">반려</button></div> : <span className="text-xs font-bold text-slate-400">{dateLabel}</span>}</td>
+            <td className="px-5 py-4 text-right">{pending ? <div className="flex justify-end gap-2"><button type="button" disabled={busyId === application.id || (application.internalAdminApplication ? !canForceApprove : !application.certificateSubmitted || !application.bankAccountCopySubmitted)} onClick={() => onApprove(application)} className="rounded-lg bg-brand-600 px-3 py-2 text-xs font-black text-white disabled:opacity-50">{application.internalAdminApplication ? '강제 승인' : '승인'}</button><button type="button" disabled={busyId === application.id} onClick={() => onReject(application)} className="rounded-lg border border-rose-200 px-3 py-2 text-xs font-black text-rose-700">반려</button></div> : <span className="text-xs font-bold text-slate-400">{dateLabel}</span>}</td>
           </tr>
           {selected?.id === application.id ? <tr><td colSpan={7} className="p-4"><InlineApplicationDetails application={application} documents={documents} loading={loadingDocuments} onClose={onClose} /></td></tr> : null}
         </Fragment>)}
@@ -141,6 +143,8 @@ function ApplicationTable({ applications, busyId, pending, emptyText, dateLabel,
 }
 
 export function SellerApplicationManagementPanel() {
+  const { user } = useAuth()
+  const canForceApprove = user?.adminLevel === 'HIGHEST'
   const applications = useAsync<AdminSellerApplication[]>(() => adminSellerApplicationApi.list(), [])
   const [busyId, setBusyId] = useState<number | null>(null)
 
@@ -174,10 +178,18 @@ export function SellerApplicationManagementPanel() {
   }
 
   const approve = async (application: AdminSellerApplication) => {
-    if (!application.certificateSubmitted || !application.bankAccountCopySubmitted) {
+    if (application.internalAdminApplication && !canForceApprove) {
+      notify('관리자 판매자 신청의 강제 승인은 최고관리자만 할 수 있습니다.', 'error')
+      return
+    }
+    if (!application.internalAdminApplication && (!application.certificateSubmitted || !application.bankAccountCopySubmitted)) {
       notify('사업자등록증과 통장사본이 모두 제출된 신청만 승인할 수 있습니다.', 'error')
       return
     }
+    const message = application.internalAdminApplication
+      ? '증빙 없이 내부 테스트 판매점을 만들고 이 관리자 계정의 판매자 기능을 활성화하시겠습니까?'
+      : '판매자 신청을 승인하고 판매점을 생성하시겠습니까?'
+    if (!window.confirm(message)) return
     setBusyId(application.id)
 
     try {
@@ -228,7 +240,7 @@ export function SellerApplicationManagementPanel() {
         <p className="mt-2 text-sm text-slate-500">접수 시각 기준으로 먼저 신청한 판매자부터 나열됩니다. 전체 정보·문서는 선택한 신청 항목 바로 아래에 열립니다.</p>
       </div>
 
-      <ApplicationTable applications={pendingApplications} busyId={busyId} pending emptyText="현재 심사 대기 중인 판매자 신청이 없습니다." dateLabel="심사 대기" selected={selected} documents={documents} loadingDocuments={loadingDocuments} onToggle={(application) => void toggleDetails(application)} onClose={closeDetails} onApprove={(application) => void approve(application)} onReject={(application) => void reject(application)} />
+      <ApplicationTable applications={pendingApplications} busyId={busyId} pending emptyText="현재 심사 대기 중인 판매자 신청이 없습니다." dateLabel="심사 대기" selected={selected} documents={documents} loadingDocuments={loadingDocuments} onToggle={(application) => void toggleDetails(application)} onClose={closeDetails} onApprove={(application) => void approve(application)} onReject={(application) => void reject(application)} canForceApprove={canForceApprove} />
     </section>
 
     <section className="rounded-2xl border border-slate-200 bg-white shadow-sm">
@@ -242,7 +254,7 @@ export function SellerApplicationManagementPanel() {
           <button type="button" disabled={!historyStart && !historyEnd} onClick={() => { setHistoryStart(''); setHistoryEnd('') }} className="h-10 rounded-lg border border-slate-300 bg-white px-3 text-sm font-bold text-slate-700 disabled:opacity-40">기간 초기화</button>
         </div>
       </div>
-      <ApplicationTable applications={filteredHistory} busyId={null} pending={false} emptyText="선택한 완료일 구간에 해당하는 심사 히스토리가 없습니다." dateLabel="심사 완료" selected={selected} documents={documents} loadingDocuments={loadingDocuments} onToggle={(application) => void toggleDetails(application)} onClose={closeDetails} onApprove={() => undefined} onReject={() => undefined} />
+      <ApplicationTable applications={filteredHistory} busyId={null} pending={false} emptyText="선택한 완료일 구간에 해당하는 심사 히스토리가 없습니다." dateLabel="심사 완료" selected={selected} documents={documents} loadingDocuments={loadingDocuments} onToggle={(application) => void toggleDetails(application)} onClose={closeDetails} onApprove={() => undefined} onReject={() => undefined} canForceApprove={canForceApprove} />
     </section>
   </div>
 }

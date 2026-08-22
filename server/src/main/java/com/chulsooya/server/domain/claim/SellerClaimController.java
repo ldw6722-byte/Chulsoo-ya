@@ -17,6 +17,8 @@ import com.chulsooya.server.domain.claim.ClaimDtos.ClaimResponse;
 import com.chulsooya.server.domain.claim.ClaimDtos.SellerActionRequest;
 import com.chulsooya.server.domain.store.SellerService;
 import com.chulsooya.server.domain.store.Store;
+import com.chulsooya.server.domain.user.FeaturePermission;
+import com.chulsooya.server.domain.user.FeaturePermissionService;
 import com.chulsooya.server.support.CurrentUser;
 
 import jakarta.validation.Valid;
@@ -27,10 +29,13 @@ public class SellerClaimController {
 
     private final ClaimService claimService;
     private final SellerService sellerService;
+    private final FeaturePermissionService featurePermissions;
 
-    public SellerClaimController(ClaimService claimService, SellerService sellerService) {
+    public SellerClaimController(ClaimService claimService, SellerService sellerService,
+            FeaturePermissionService featurePermissions) {
         this.claimService = claimService;
         this.sellerService = sellerService;
+        this.featurePermissions = featurePermissions;
     }
 
     @GetMapping
@@ -54,7 +59,10 @@ public class SellerClaimController {
     }
 
     private Store requireStore(CurrentUser user) {
-        if (!user.isSeller() && !user.isAdmin()) throw new DomainException(ErrorCode.FORBIDDEN, "판매자 권한이 필요합니다.");
+        if (!user.isSeller() && !user.isAdmin()) {
+            throw new DomainException(ErrorCode.FORBIDDEN, "판매자 권한이 필요합니다.");
+        }
+        if (user.isAdmin()) featurePermissions.require(user, FeaturePermission.SELLER_CLAIM_RESPONSE);
         return sellerService.requireStoreByOwner(user.userId());
     }
 }

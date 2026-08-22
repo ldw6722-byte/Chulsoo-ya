@@ -9,7 +9,6 @@ import { getAccessToken } from '@/lib/auth-session'
 export const http = axios.create({
   baseURL: '/api',
   timeout: 10_000,
-  headers: { 'Content-Type': 'application/json' },
 })
 
 const IDENTITY_STORAGE_KEY = 'chulsooya.identity'
@@ -78,12 +77,12 @@ function toApiError(error: unknown): ApiError {
     return new ApiError(body.error.code, body.error.message, axiosError.response?.status ?? 500)
   }
   if (axiosError.code === 'ECONNABORTED') {
-    return new ApiError('TIMEOUT', '?쒕쾭 ?묐떟??吏?곕릺怨??덉뒿?덈떎. ?ㅼ떆 ?쒕룄??二쇱꽭??', 408)
+    return new ApiError('TIMEOUT', '서버 응답이 지연되고 있습니다. 잠시 후 다시 시도해 주세요.', 408)
   }
   if (!axiosError.response) {
-    return new ApiError('NETWORK_ERROR', '?ㅽ듃?뚰겕???곌껐?????놁뒿?덈떎.', 0)
+    return new ApiError('NETWORK_ERROR', '서버에 연결하지 못했습니다.', 0)
   }
-  return new ApiError('UNKNOWN', '?????녿뒗 ?ㅻ쪟媛 諛쒖깮?덉뒿?덈떎.', axiosError.response.status)
+  return new ApiError('UNKNOWN', '요청을 처리하지 못했습니다.', axiosError.response.status)
 }
 
 http.interceptors.response.use(

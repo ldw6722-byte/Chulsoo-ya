@@ -55,6 +55,7 @@ client/src/
 - API 호출은 반드시 `src/api/*.ts`를 경유한다. 컴포넌트에서 `axios`를 직접 import 하지 않는다.
 - 모든 라우트/핵심 컴포넌트는 로딩·빈 결과·오류·권한 없음·만료 상태를 정의한다.
 - 상태를 색상만으로 전달하지 않는다(텍스트 레이블 병기). 터치 영역 최소 44×44px.
+- **CTA 회귀 방지**: 새 안내·가이드·신청·확인 CTA는 `global.css`의 `guide-cta-primary`(주요 액션) 또는 `guide-cta-secondary`(보조 액션)를 우선 재사용한다. 새 화면에서 단순 `bg-brand-*` 평면 버튼을 임의로 만들지 않으며, 팝업 확인 전용의 고강도 `popup-attention-button`은 팝업 외부로 확장하지 않는다.
 
 ### 4.2 백엔드 (`server/`)
 

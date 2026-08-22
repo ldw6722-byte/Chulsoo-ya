@@ -9,8 +9,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import com.chulsooya.server.common.DomainException;
 import com.chulsooya.server.common.ErrorCode;
+import com.chulsooya.server.domain.user.FeaturePermission;
 import com.chulsooya.server.domain.user.User;
 import com.chulsooya.server.domain.user.UserRepository;
+
 import com.chulsooya.server.support.CurrentUser;
 
 @Service
@@ -52,8 +54,9 @@ public class CustomerSupportService {
     public InquiryResponse createInquiry(CurrentUser user, CreateInquiryRequest request) {
         SupportInquiry inquiry = inquiries.save(new SupportInquiry(user.userId(), request.category().trim(), request.title().trim(), request.content().trim()));
         notifications.save(new CustomerNotification(user.userId(), "INQUIRY_RECEIVED", "문의가 접수되었습니다", "고객센터에서 답변을 준비하고 있습니다.", "/support"));
-        businessNotifications.notifyAdmins("INQUIRY_SUBMITTED", "새 고객 문의가 접수되었습니다",
-                inquiry.getTitle() + " 문의에 답변해 주세요.", "/admin");
+        businessNotifications.notifyAdminsForFeature(FeaturePermission.ADMIN_MANAGE_SUPPORT,
+                "INQUIRY_SUBMITTED", "새 고객 문의가 접수되었습니다",
+                inquiry.getTitle() + " 문의에 답변해 주세요.", "/admin?view=support");
         return InquiryResponse.from(inquiry);
     }
 
@@ -84,8 +87,12 @@ public class CustomerSupportService {
     public AdminInquiryResponse reply(CurrentUser admin, Long inquiryId, ReplyInquiryRequest request) {
         requireAdmin(admin);
         SupportInquiry inquiry = getInquiry(inquiryId);
-        inquiry.answer(admin.userId(), request.reply().trim());
-        notifications.save(new CustomerNotification(inquiry.getConsumerId(), "INQUIRY_ANSWERED", "고객센터 답변이 등록되었습니다", inquiry.getTitle(), "/support"));
+        try {
+            inquiry.answer(admin.userId(), request.reply().trim());
+        } catch (IllegalStateException error) {
+            throw new DomainException(ErrorCode.VALIDATION_FAILED, error.getMessage());
+        }
+        notifications.save(new CustomerNotification(inquiry.getConsumerId(), "INQUIRY_ANSWERED", "고객센터 답변이 등록되었습니다", inquiry.getTitle(), "/support#inquiry"));
         return toAdminResponse(inquiry);
     }
 
@@ -93,9 +100,15 @@ public class CustomerSupportService {
     public AdminInquiryResponse changeStatus(CurrentUser admin, Long inquiryId, ChangeInquiryStatusRequest request) {
         requireAdmin(admin);
         SupportInquiry inquiry = getInquiry(inquiryId);
-        inquiry.changeStatus(request.status());
+        try {
+            if (request.status() == SupportInquiryStatus.IN_PROGRESS) inquiry.startProcessing();
+            else if (request.status() == SupportInquiryStatus.CLOSED) inquiry.complete();
+            else throw new IllegalStateException("지원하지 않는 문의 상태 변경입니다.");
+        } catch (IllegalStateException error) {
+            throw new DomainException(ErrorCode.VALIDATION_FAILED, error.getMessage());
+        }
         if (request.status() == SupportInquiryStatus.CLOSED) {
-            notifications.save(new CustomerNotification(inquiry.getConsumerId(), "INQUIRY_CLOSED", "문의 처리가 완료되었습니다", inquiry.getTitle(), "/support"));
+            notifications.save(new CustomerNotification(inquiry.getConsumerId(), "INQUIRY_CLOSED", "문의 처리가 완료되었습니다", inquiry.getTitle(), "/support#inquiry"));
         }
         return toAdminResponse(inquiry);
     }

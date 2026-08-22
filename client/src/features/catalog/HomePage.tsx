@@ -7,6 +7,7 @@ import { useAsync } from '@/hooks/useAsync'
 import { ErrorView, LoadingView } from '@/components/StateViews'
 import { ToolProductCard } from '@/components/shop/ToolProductCard'
 import { EventHeroCarousel } from '@/components/shop/EventHeroCarousel'
+import { PopupAdvertisingPopup } from '@/components/popup/PopupAdvertisingLayer'
 import { StoreFinder } from '@/features/stores/StoreFinder'
 import { useAuth } from '@/app/useAuth'
 import { isSupabaseConfigured, supabaseAuth } from '@/lib/supabase'
@@ -67,8 +68,10 @@ export function HomePage() {
     setAddingId(product.id)
     setNotice(null)
     try {
-      await cartApi.addItem(product.id, 1)
+            await cartApi.addItem(product.id, 1)
+      window.dispatchEvent(new Event('chulsooya:cart-updated'))
       notify(`${product.name}\uC744 \uC7A5\uBC14\uAD6C\uB2C8\uC5D0 \uB2F4\uC558\uC2B5\uB2C8\uB2E4.`)
+
       setNotice(`${product.name}을 장바구니에 담았습니다.`)
     } catch (error) {
       const message = error instanceof ApiError ? error.message : "\\uC7A5\\uBC14\\uAD6C\\uB2C8\\uC5D0 \\uB2F4\\uC9C0 \\uBABB\\uD588\\uC2B5\\uB2C8\\uB2E4."
@@ -121,7 +124,9 @@ export function HomePage() {
   }
 
   return (
-    <div className="mx-auto max-w-7xl px-4 py-6 md:py-8">
+    <>
+      <PopupAdvertisingPopup />
+      <div className="mx-auto max-w-7xl px-4 py-6 md:py-8">
       <section id="quick-hero" className="scroll-mt-28">
         <EventHeroCarousel />
       </section>
@@ -185,5 +190,6 @@ export function HomePage() {
         featured.reload,
         '/catalog?sort=popular',
       )}    </div>
+    </>
   )
 }

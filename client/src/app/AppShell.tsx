@@ -10,7 +10,7 @@ export function AppShell() {
   if (isAuthRoute || isAdminRoute) return <Outlet />
 
   return (
-    <div className="flex min-h-screen flex-col bg-slate-50 text-slate-800 dark:bg-slate-950 dark:text-slate-100">
+    <div className="shop-theme flex min-h-screen flex-col bg-slate-50 text-slate-800 dark:bg-slate-950 dark:text-slate-100">
       <ShopHeader />
       <main className="min-h-0 flex-1"><Outlet /></main>
       <ShopFooter />

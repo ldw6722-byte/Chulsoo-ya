@@ -1,38 +1,13 @@
 /* oxlint-disable react/only-export-components */
 import type { ReactNode } from 'react'
 
-const GENERATED_THEME_OPTIONS = [
-  ['workshopCobalt', '워크샵 코발트', 'from-blue-950 via-blue-700 to-cyan-500', 'workshop-cobalt.jpg'],
-  ['emberForge', '엠버 포지', 'from-stone-950 via-orange-700 to-amber-300', 'ember-forge.jpg'],
-  ['forestCraft', '포레스트 크래프트', 'from-emerald-950 via-emerald-700 to-amber-400', 'forest-craft.jpg'],
-  ['midnightSteel', '미드나이트 스틸', 'from-slate-950 via-indigo-900 to-cyan-500', 'midnight-steel.jpg'],
-  ['sandstoneBuild', '샌드스톤 빌드', 'from-stone-900 via-orange-600 to-amber-200', 'sandstone-build.jpg'],
-  ['copperPipe', '코퍼 파이프', 'from-teal-950 via-cyan-700 to-orange-400', 'copper-pipe.jpg'],
-  ['cleanElectric', '클린 일렉트릭', 'from-sky-900 via-blue-500 to-cyan-200', 'clean-electric.jpg'],
-  ['safetyYellow', '세이프티 옐로', 'from-slate-950 via-amber-500 to-yellow-300', 'safety-yellow.jpg'],
-  ['rainyRepair', '레인 리페어', 'from-slate-950 via-slate-600 to-sky-400', 'rainy-repair.jpg'],
-  ['springRenovation', '스프링 리노베이션', 'from-emerald-900 via-teal-500 to-lime-200', 'spring-renovation.jpg'],
-  ['summerCooling', '서머 쿨링', 'from-cyan-950 via-sky-500 to-cyan-200', 'summer-cooling.jpg'],
-  ['autumnWood', '어텀 우드', 'from-stone-950 via-orange-800 to-amber-500', 'autumn-wood.jpg'],
-  ['winterInsulation', '윈터 인슐레이션', 'from-indigo-950 via-blue-700 to-slate-100', 'winter-insulation.jpg'],
-  ['purpleTools', '퍼플 툴즈', 'from-violet-950 via-purple-700 to-fuchsia-400', 'purple-tools.jpg'],
-  ['roseRenewal', '로즈 리뉴얼', 'from-rose-950 via-rose-600 to-orange-300', 'rose-renewal.jpg'],
-  ['graphiteFastener', '그래파이트 패스너', 'from-zinc-950 via-slate-600 to-slate-300', 'graphite-fastener.jpg'],
-  ['tealPlumbing', '틸 플러밍', 'from-teal-950 via-cyan-700 to-amber-300', 'teal-plumbing.jpg'],
-  ['crimsonPower', '크림슨 파워', 'from-red-950 via-rose-700 to-orange-400', 'crimson-power.jpg'],
-  ['ivoryMinimal', '아이보리 미니멀', 'from-stone-800 via-stone-500 to-amber-100', 'ivory-minimal.jpg'],
-  ['neonNightwork', '네온 나이트워크', 'from-slate-950 via-indigo-800 to-fuchsia-500', 'neon-nightwork.jpg'],
-] as const
-
 export const THEME_OPTIONS = [
   ['blue', '블루 웨이브', 'from-indigo-700 via-blue-600 to-cyan-500'], ['orange', '오렌지 스파크', 'from-rose-700 via-orange-600 to-amber-500'], ['charcoal', '차콜 스틸', 'from-slate-800 via-slate-600 to-stone-500'], ['green', '그린 워크', 'from-teal-700 via-emerald-600 to-lime-500'], ['violet', '바이올렛 나이트', 'from-violet-800 via-purple-700 to-fuchsia-600'],
   ['ocean', '오션 딥', 'from-cyan-800 via-sky-600 to-blue-400'], ['sunset', '선셋 코랄', 'from-orange-800 via-rose-600 to-pink-400'], ['copper', '코퍼 브론즈', 'from-amber-900 via-orange-700 to-yellow-500'], ['lime', '라임 필드', 'from-lime-800 via-green-600 to-emerald-400'], ['graphite', '그래파이트', 'from-zinc-900 via-slate-700 to-slate-500'],
   ['ruby', '루비 레드', 'from-red-900 via-rose-700 to-red-400'], ['sky', '스카이 클리어', 'from-sky-800 via-sky-500 to-cyan-300'], ['navy', '네이비 블루', 'from-blue-950 via-blue-800 to-indigo-500'], ['coral', '코랄 핑크', 'from-rose-800 via-pink-600 to-orange-400'], ['mint', '민트 글로우', 'from-emerald-800 via-teal-500 to-cyan-300'],
   ['amber', '앰버 골드', 'from-yellow-900 via-amber-600 to-orange-400'], ['midnight', '미드나이트', 'from-slate-950 via-indigo-900 to-blue-700'], ['sand', '샌드 베이지', 'from-stone-800 via-amber-600 to-yellow-300'], ['aurora', '오로라', 'from-violet-900 via-cyan-700 to-emerald-400'], ['berry', '베리 그라데이션', 'from-fuchsia-900 via-purple-700 to-rose-500'],
-  ...GENERATED_THEME_OPTIONS,
 ] as const
 export const THEME_CLASS = Object.fromEntries(THEME_OPTIONS.map(([key, , value]) => [key, value])) as Record<string, string>
-export const THEME_IMAGE_URL: Record<string, string> = Object.fromEntries(GENERATED_THEME_OPTIONS.map(([key, , , file]) => [key, 'https://gvsnsnjfvtogvlyvmlkt.supabase.co/storage/v1/object/public/event-assets/themes/' + file]))
 
 type IconOption = { key: string; label: string; paths: string[]; extras?: ReactNode }
 export const ICON_OPTIONS: IconOption[] = [

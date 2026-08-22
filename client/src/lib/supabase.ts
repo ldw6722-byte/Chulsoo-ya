@@ -42,6 +42,11 @@ function callbackUrl(nextPath?: string): string {
   return url.toString()
 }
 
+function passwordResetUrl(nextPath?: string): string {
+  const next = nextPath?.startsWith('/') && !nextPath.startsWith('//') ? nextPath : '/'
+  return callbackUrl(`/auth/reset-password?next=${encodeURIComponent(next)}`)
+}
+
 export const supabaseAuth = {
   getSession: async (): Promise<Session | null> => {
     if (!isSupabaseConfigured) return null
@@ -87,6 +92,16 @@ export const supabaseAuth = {
       email,
       options: { emailRedirectTo: callbackUrl() },
     })
+  },
+
+  requestPasswordReset: async (email: string, nextPath?: string) => {
+    ensureSupabase()
+    return supabase.auth.resetPasswordForEmail(email, { redirectTo: passwordResetUrl(nextPath) })
+  },
+
+  updatePassword: async (password: string) => {
+    ensureSupabase()
+    return supabase.auth.updateUser({ password })
   },
 
   signInWithProvider: async (provider: Extract<Provider, 'google' | 'kakao'>, nextPath?: string) => {

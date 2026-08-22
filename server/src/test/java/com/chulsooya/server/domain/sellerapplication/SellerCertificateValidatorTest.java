@@ -1,6 +1,8 @@
 package com.chulsooya.server.domain.sellerapplication;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
+
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import java.util.Arrays;
@@ -37,6 +39,18 @@ class SellerCertificateValidatorTest {
 
         assertThatThrownBy(() -> new SellerCertificateValidator().validate(file))
                 .isInstanceOf(IllegalArgumentException.class);
+    }
+
+    @Test
+    void permits_documents_up_to_ten_megabytes_and_rejects_larger_files() {
+        long max = 10L * 1024 * 1024;
+        assertThat(SellerCertificateValidator.MAX_SIZE_BYTES).isEqualTo(max);
+        MockMultipartFile oversized = new MockMultipartFile("file", "license.jpg", "image/jpeg",
+                bytes((int) max + 1, (byte) 0xFF, (byte) 0xD8, (byte) 0xFF, (byte) 0xE0));
+
+        assertThatThrownBy(() -> new SellerCertificateValidator().validate(oversized))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("10MB");
     }
 
     private byte[] imageBytes(int width, int height) throws Exception {

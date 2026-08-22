@@ -4,6 +4,8 @@ import type { Session } from "@supabase/supabase-js"
 import { authApi } from "@/api/endpoints"
 import { ApiError } from "@/api/client"
 import { clearAuthSessionPolicy, getAuthSessionRemainingMs, isAuthSessionExpired, recordAuthActivity, setAccessToken } from "@/lib/auth-session"
+import { clearAdminViewState } from "@/lib/admin-view"
+
 import { isSupabaseConfigured, supabaseAuth } from "@/lib/supabase"
 import type { AuthenticatedUser } from "@/types/api"
 import { useIdentity } from "./useIdentity"
@@ -21,9 +23,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // 늦게 끝난 초기 세션 조회·토큰 갱신 요청은 최신 로그인 상태를 덮어쓰지 못한다.
     if (sequence !== synchronizationSequence.current) return null
 
-    if (!session) {
+        if (!session) {
       setAccessToken(null)
       clearAuthSessionPolicy()
+      clearAdminViewState()
+
       setUser(null)
       setIdentity(null)
       setError(null)

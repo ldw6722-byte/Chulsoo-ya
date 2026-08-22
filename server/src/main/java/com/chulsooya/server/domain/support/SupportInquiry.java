@@ -62,7 +62,16 @@ public class SupportInquiry {
         this.content = content;
     }
 
+    public void startProcessing() {
+        if (status == SupportInquiryStatus.CLOSED) throw new IllegalStateException("처리 완료된 문의는 다시 처리할 수 없습니다.");
+        if (status != SupportInquiryStatus.OPEN) throw new IllegalStateException("접수된 문의만 처리 시작할 수 있습니다.");
+        this.status = SupportInquiryStatus.IN_PROGRESS;
+        this.updatedAt = Instant.now();
+    }
+
     public void answer(Long adminId, String reply) {
+        if (status == SupportInquiryStatus.CLOSED) throw new IllegalStateException("처리 완료된 문의는 다시 답변할 수 없습니다.");
+        if (status != SupportInquiryStatus.IN_PROGRESS) throw new IllegalStateException("처리 중인 문의에만 답변을 등록할 수 있습니다.");
         this.replyAdminId = adminId;
         this.adminReply = reply;
         this.answeredAt = Instant.now();
@@ -70,8 +79,11 @@ public class SupportInquiry {
         this.updatedAt = this.answeredAt;
     }
 
-    public void changeStatus(SupportInquiryStatus next) {
-        this.status = next;
+    public void complete() {
+        if (status != SupportInquiryStatus.ANSWERED || adminReply == null || adminReply.isBlank()) {
+            throw new IllegalStateException("고객 답변을 등록한 문의만 처리 완료할 수 있습니다.");
+        }
+        this.status = SupportInquiryStatus.CLOSED;
         this.updatedAt = Instant.now();
     }
 }

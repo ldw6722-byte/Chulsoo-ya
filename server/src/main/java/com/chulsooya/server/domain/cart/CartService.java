@@ -56,6 +56,9 @@ public class CartService {
 				.filter(i -> i.getId().equals(cartItemId))
 				.findFirst()
 				.orElseThrow(() -> new DomainException(ErrorCode.NOT_FOUND, "?縕ヨ?琉??????嫄??嶺뚢돦堉??????怨룸????덈펲."));
+		Product product = productRepository.findById(item.getProductId())
+				.orElseThrow(() -> new DomainException(ErrorCode.NOT_FOUND));
+		if (!product.isActive()) throw new DomainException(ErrorCode.PRODUCT_INACTIVE, "재고 없는 상품은 수량을 변경할 수 없습니다.");
 		item.changeQuantity(quantity);
 		return toResponse(cartRepository.save(cart));
 	}
@@ -101,8 +104,9 @@ public class CartService {
 							p.getName(),
 							p.getSpecSummary(),
 							p.getUnit(),
-							p.getImageUrl(),
-							i.getOptionHash(),
+								p.getImageUrl(),
+								p.isActive(),
+								i.getOptionHash(),
                                                         i.getPriceTierId(),
                                                         i.getPriceTierLabel(),
                                                         i.getPriceTierBrands(),
