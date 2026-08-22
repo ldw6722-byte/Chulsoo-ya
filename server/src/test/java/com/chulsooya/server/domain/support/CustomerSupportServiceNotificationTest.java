@@ -43,4 +43,24 @@ class CustomerSupportServiceNotificationTest {
         assertThat(captured.getValue().getReadAt()).isNull();
         assertThat(captured.getValue().getTargetPath()).isEqualTo("/support#inquiry");
     }
+
+    @Test
+    void reopeningClosedInquiryNotifiesTheConsumerThatProcessingResumed() {
+        SupportInquiry inquiry = new SupportInquiry(41L, "일반", "배송 문의", "후속 확인이 필요합니다.");
+        CustomerSupportService service = new CustomerSupportService(inquiries, notifications, users, businessNotifications);
+        when(inquiries.findById(7L)).thenReturn(Optional.of(inquiry));
+        when(users.findById(41L)).thenReturn(Optional.of(new User("consumer@test.dev", "고객", "010", UserRole.CONSUMER)));
+        inquiry.startProcessing();
+        inquiry.answer(1L, "처리 결과를 안내했습니다.");
+        inquiry.complete();
+
+        service.changeStatus(new CurrentUser(1L, UserRole.ADMIN), 7L, new SupportDtos.ChangeInquiryStatusRequest(SupportInquiryStatus.IN_PROGRESS));
+
+        ArgumentCaptor<CustomerNotification> captured = ArgumentCaptor.forClass(CustomerNotification.class);
+        verify(notifications).save(captured.capture());
+        assertThat(inquiry.getStatus()).isEqualTo(SupportInquiryStatus.IN_PROGRESS);
+        assertThat(captured.getValue().getType()).isEqualTo("INQUIRY_REOPENED");
+        assertThat(captured.getValue().getTitle()).isEqualTo("문의가 다시 처리 중입니다");
+        assertThat(captured.getValue().getTargetPath()).isEqualTo("/support#inquiry");
+    }
 }

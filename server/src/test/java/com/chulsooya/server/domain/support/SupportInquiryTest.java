@@ -44,4 +44,18 @@ class SupportInquiryTest {
                 .isInstanceOf(IllegalStateException.class)
                 .hasMessageContaining("완료");
     }
+
+    @Test
+    void closedInquiryCanBeReopenedForFollowUpAndKeepsThePreviousReply() {
+        SupportInquiry inquiry = new SupportInquiry(1L, "ONE_TO_ONE", "배송 문의", "언제 받을 수 있나요?");
+        inquiry.startProcessing();
+        inquiry.answer(2L, "판매점 확인 후 안내드리겠습니다.");
+        inquiry.complete();
+
+        inquiry.reopen();
+
+        assertThat(inquiry.getStatus()).isEqualTo(SupportInquiryStatus.IN_PROGRESS);
+        assertThat(inquiry.getAdminReply()).isEqualTo("판매점 확인 후 안내드리겠습니다.");
+        assertThat(inquiry.getAnsweredAt()).isNotNull();
+    }
 }

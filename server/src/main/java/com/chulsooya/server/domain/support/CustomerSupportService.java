@@ -100,14 +100,19 @@ public class CustomerSupportService {
     public AdminInquiryResponse changeStatus(CurrentUser admin, Long inquiryId, ChangeInquiryStatusRequest request) {
         requireAdmin(admin);
         SupportInquiry inquiry = getInquiry(inquiryId);
+        boolean reopened = request.status() == SupportInquiryStatus.IN_PROGRESS && inquiry.getStatus() == SupportInquiryStatus.CLOSED;
         try {
-            if (request.status() == SupportInquiryStatus.IN_PROGRESS) inquiry.startProcessing();
-            else if (request.status() == SupportInquiryStatus.CLOSED) inquiry.complete();
+            if (request.status() == SupportInquiryStatus.IN_PROGRESS) {
+                if (reopened) inquiry.reopen();
+                else inquiry.startProcessing();
+            } else if (request.status() == SupportInquiryStatus.CLOSED) inquiry.complete();
             else throw new IllegalStateException("지원하지 않는 문의 상태 변경입니다.");
         } catch (IllegalStateException error) {
             throw new DomainException(ErrorCode.VALIDATION_FAILED, error.getMessage());
         }
-        if (request.status() == SupportInquiryStatus.CLOSED) {
+        if (reopened) {
+            notifications.save(new CustomerNotification(inquiry.getConsumerId(), "INQUIRY_REOPENED", "문의가 다시 처리 중입니다", "후속 확인을 위해 문의 처리를 다시 시작했습니다.", "/support#inquiry"));
+        } else if (request.status() == SupportInquiryStatus.CLOSED) {
             notifications.save(new CustomerNotification(inquiry.getConsumerId(), "INQUIRY_CLOSED", "문의 처리가 완료되었습니다", inquiry.getTitle(), "/support#inquiry"));
         }
         return toAdminResponse(inquiry);

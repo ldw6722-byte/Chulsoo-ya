@@ -630,14 +630,26 @@ textarea {
 .dark .admin-theme .bg-white\/95 { background-color: var(--c-surface); }
 .dark .admin-theme .bg-slate-50,
 .dark .admin-theme .bg-slate-50\/80 { background-color: var(--c-bg); }
-.dark .admin-theme .bg-slate-100 { background-color: var(--c-surface-muted); }
+.dark .admin-theme .bg-slate-50\/30,
+.dark .admin-theme .bg-slate-50\/40,
+.dark .admin-theme .bg-slate-50\/50,
+.dark .admin-theme .bg-slate-50\/60,
+.dark .admin-theme .bg-slate-50\/70,
+.dark .admin-theme .bg-slate-100,
+.dark .admin-theme .bg-slate-200,
+.dark .admin-theme .bg-slate-300 { background-color: var(--c-surface-muted); }
 .dark .admin-theme .bg-brand-50,
 .dark .admin-theme .bg-brand-50\/30,
 .dark .admin-theme .bg-brand-50\/40,
 .dark .admin-theme .bg-brand-50\/50,
 .dark .admin-theme .bg-brand-50\/60,
 .dark .admin-theme .bg-brand-50\/70,
-.dark .admin-theme .bg-violet-50 { background-color: var(--c-status-info-surface); }
+.dark .admin-theme .bg-violet-50,
+.dark .admin-theme .bg-violet-50\/30,
+.dark .admin-theme .bg-violet-50\/40,
+.dark .admin-theme .bg-violet-50\/50,
+.dark .admin-theme .bg-violet-50\/60,
+.dark .admin-theme .bg-violet-50\/70 { background-color: var(--c-status-info-surface); }
 .dark .admin-theme .bg-emerald-50 { background-color: var(--c-status-success-surface); }
 .dark .admin-theme .bg-amber-50 { background-color: var(--c-status-warning-surface); }
 .dark .admin-theme .bg-rose-50,

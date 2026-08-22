@@ -31,6 +31,12 @@ const FALLBACK_FAQS: SupportFaqItem[] = [
 
 const STATUS_LABEL = { OPEN: '접수', IN_PROGRESS: '처리 중', ANSWERED: '답변 완료', CLOSED: '처리 완료' } as const
 
+const registrationTime = (value: string) => {
+  const parts = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Seoul', year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).formatToParts(new Date(value))
+  const get = (type: Intl.DateTimeFormatPartTypes) => parts.find((part) => part.type === type)?.value ?? ''
+  return `${get('year')}.${get('month')}.${get('day')} ${get('hour')}:${get('minute')}`
+}
+
 function tabFromHash(hash: string): SupportTab {
   if (hash === '#faq') return 'faq'
   if (hash === '#voice') return 'voice'
@@ -69,7 +75,7 @@ function InquiryForm({ category, onSubmitted }: { category: string; onSubmitted:
 
 function InquiryHistory({ center }: { center: CustomerCenterData | null }) {
   if (!center) return null
-  return <section className="mt-8"><h3 className="text-lg font-black text-slate-900">최근 문의내역</h3><div className="mt-3 overflow-hidden rounded-xl border border-slate-200 bg-white">{center.inquiries.slice(0, 5).map((inquiry) => <article key={inquiry.id} className="border-b border-slate-100 p-4 last:border-b-0"><div className="flex flex-wrap items-start justify-between gap-2"><div><p className="text-xs font-bold text-brand-600">{inquiry.category}</p><p className="mt-1 font-bold text-slate-900">{inquiry.title}</p></div><span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-bold text-slate-700">{STATUS_LABEL[inquiry.status]}</span></div>{inquiry.adminReply ? <div className="mt-3 rounded-lg bg-brand-50 p-3 text-sm leading-6 text-slate-700"><b className="text-brand-700">철수야 답변</b><p className="mt-1">{inquiry.adminReply}</p></div> : null}</article>)}{!center.inquiries.length ? <p className="p-8 text-center text-sm text-slate-500">최근 문의내역이 없습니다.</p> : null}</div></section>
+  return <section className="mt-8"><h3 className="text-lg font-black text-slate-900">최근 문의내역</h3><div className="mt-3 overflow-hidden rounded-xl border border-slate-200 bg-white">{center.inquiries.slice(0, 5).map((inquiry) => <article key={inquiry.id} className="border-b border-slate-100 p-4 last:border-b-0"><div className="flex flex-wrap items-start justify-between gap-2"><div><p className="text-xs font-bold text-brand-600">{inquiry.category}</p><p className="mt-1 font-bold text-slate-900">{inquiry.title}</p></div><div className="flex flex-wrap items-center justify-end gap-2"><span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-bold text-slate-700">{STATUS_LABEL[inquiry.status]}</span><span className="rounded-md border border-slate-300/70 bg-slate-500/10 px-2 py-1 text-[11px] font-bold text-slate-600">등록 {registrationTime(inquiry.createdAt)}</span></div></div><div className="mt-3 rounded-lg border border-slate-100 bg-slate-50 p-3 text-sm leading-6 text-slate-700"><p className="whitespace-pre-wrap break-words">{inquiry.content}</p></div>{inquiry.adminReply ? <div className="mt-3 rounded-lg bg-brand-50 p-3 text-sm leading-6 text-slate-700"><div className="flex flex-wrap items-center justify-between gap-2"><b className="text-brand-700">철수야 답변</b>{inquiry.answeredAt ? <span className="rounded-md border border-slate-300/70 bg-slate-500/10 px-2 py-1 text-[11px] font-bold text-slate-600">등록 {registrationTime(inquiry.answeredAt)}</span> : null}</div><p className="mt-1 whitespace-pre-wrap break-words">{inquiry.adminReply}</p></div> : null}</article>)}{!center.inquiries.length ? <p className="p-8 text-center text-sm text-slate-500">최근 문의내역이 없습니다.</p> : null}</div></section>
 }
 
 function orderStatusText(status: OrderSummary['status']) {

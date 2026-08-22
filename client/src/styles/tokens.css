@@ -82,21 +82,21 @@
 
 /* 사용자 토글에 따라 전역 기본 표면과 글자 대비를 함께 전환한다. */
 .dark {
-  --c-bg: #020617;
-  --c-surface: #0f172a;
-  --c-surface-muted: #1e293b;
-  --c-border: #334155;
-  --c-border-strong: #475569;
-  --c-text: #e2e8f0;
-  --c-text-muted: #94a3b8;
-  --c-text-subtle: #64748b;
-  --c-interactive-hover: #1e1b4b;
-  --c-interactive-selected: #312e81;
+  --c-bg: #0e1626;
+  --c-surface: #162238;
+  --c-surface-muted: #223049;
+  --c-border: #3d4b63;
+  --c-border-strong: #566680;
+  --c-text: #e7edf7;
+  --c-text-muted: #a9b7ca;
+  --c-text-subtle: #7d8ca4;
+  --c-interactive-hover: #293650;
+  --c-interactive-selected: #353762;
   --c-interactive-ring: #818cf8;
-  --c-status-info-surface: #2e1065;
-  --c-status-success-surface: #022c22;
-  --c-status-warning-surface: #451a03;
-  --c-status-danger-surface: #4c0519;
+  --c-status-info-surface: #2b2b55;
+  --c-status-success-surface: #173c36;
+  --c-status-warning-surface: #493317;
+  --c-status-danger-surface: #4c1e2d;
   --c-status-info-text: #c7d2fe;
   --c-status-success-text: #6ee7b7;
   --c-status-warning-text: #fcd34d;

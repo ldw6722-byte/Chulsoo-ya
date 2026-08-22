@@ -1365,3 +1365,23 @@ V47에서 `platform_maintenance_mode`에 `NORMAL`·`PREPARING`·`MAINTENANCE` �
 `RequireIdentity`는 보호 경로의 path·query·hash를 `next`에 보존하며, 판매자 전용 경로에 일반 회원이 접근하면 권한 거부 화면 대신 `/seller/application`으로 회복한다. OAuth·이메일 인증 콜백·비밀번호 재설정 분기에서도 `next`가 유지되도록 보정했다. 구매자 사용방법의 장바구니·주문 조회는 기존 보호 라우트로 로그인 복귀를 유지하고, 고객센터는 공개 `/support`으로 유지한다. 푸터 고객센터도 `/my`가 아닌 공개 `/support`으로 통일했다.
 
 검증: 프론트 `npm run lint`(기존 Hook dependency 경고 3건, 신규 오류 0건), `npx tsc -b`, `npm run build` 통과. 실제 브라우저 자동 검증은 My Browser 확장 응답 시간 초과(HTTP 504)로 실행하지 못했다.
+
+## 히어로 배너 자산 세트 준비 (2026-08-23)
+
+밝은 고키 톤의 1,920×640px(3:1) PNG 히어로 배너 22개를 준비했다. 구성은 뚱냥이 용품 특별전 1개, 통통 강아지 용품 특별전 1개, BOSCH·DEWALT·Makita·Milwaukee·HILTI·Festool·RYOBI·HiKOKI·Metabo HPT·BLACK+DECKER 브랜드 테마 각 2개다. 최종 자산·미리보기·브랜드별 특징 목록은 `/home/ubuntu/chulsooya_hero_banners/`에 있으며, ZIP은 `chulsooya_hero_banner_assets.zip`이다. 관리자 `배너 테마·아이콘 자산 관리`에서 배너 테마로 Storage 업로드 후 행사 배경 테마로 선택한다. 실제 브랜드 행사 또는 제품 판매 게시 전에는 상표·판매 권한·실제 제품 정보의 최종 확인이 필요하다.
+
+## 관리자 다크모드 표면 통일 보정 (2026-08-23)
+
+관리자 다크모드의 과도하게 짙은 배경과 판매자 운영 폼의 밝은 회색 잔존 표면은 전역 토큰과 관리자 Tailwind 브리지의 범위 불일치가 원인이었다. `tokens.css`의 다크 `--c-bg`·`--c-surface`·`--c-surface-muted`·테두리·텍스트 명도를 차분한 네이비 계열로 조정하고, `global.css`의 `.admin-theme` 브리지에 `bg-slate-50` 반투명 변형·`bg-slate-200/300`·`bg-violet-50` 반투명 변형을 추가했다. 개별 관리자 패널의 임시 덧칠 없이 전역 표면 규칙을 보정했다. 프론트 `npm run lint && npx tsc -b && npm run build` 통과; 기존 Hook dependency 경고 3건과 Vite 청크 크기 경고만 남는다.
+
+## 고객문의 완료 해지·재처리 흐름 (2026-08-23)
+
+고객 문의는 `접수(OPEN) → 처리 중(IN_PROGRESS) → 답변 완료(ANSWERED, 고객 알림) → 처리 완료(CLOSED, 고객 알림)`로 운영한다. 후속 문제가 제기되면 관리자만 처리 완료 문의를 두 단계 확인 후 해지하여 다시 `처리 중`으로 전환할 수 있다. 이때 고객에게 `INQUIRY_REOPENED` 재처리 알림을 보내며, 기존 답변 값은 유지하고 새 답변 입력란은 비운다. `SupportInquiry.reopen()`과 `CustomerSupportService.changeStatus()`를 확장했고, 관리자 패널에는 `후속 문제로 처리 완료 해지` 확인 UI를 추가했다. `SupportInquiryTest`와 `CustomerSupportServiceNotificationTest` 재실행 결과 BUILD SUCCESSFUL, 프론트 린트·타입 검사·빌드 통과(기존 Hook dependency 경고 3개·Vite 청크 경고만)했다. 서버는 8080에서 재기동 완료했다. My Browser 자동 화면 검증은 확장 응답 시간 초과로 수행하지 못했다.
+
+## 고객문의 답변 등록 시각 표시 (2026-08-23)
+
+고객문의 답변 시각은 기존 `SupportInquiry.answer()`가 서버에서 기록하는 `answeredAt`(Instant)을 `InquiryResponse`로 이미 전달하고 있었다. 고객센터 최근 문의내역의 철수야 답변 카드에 공지사항과 같은 `등록 YYYY.MM.DD HH:mm` 배지를 추가했고, 화면 시간대는 서버 운영 기준 KST(`Asia/Seoul`)로 고정했다. 프론트 `npm run lint && npx tsc -b && npm run build` 통과; 기존 Hook dependency 경고 3개와 Vite 청크 경고만 남는다.
+
+## 고객문의 원문·접수/답변 등록 시각 표시 보정 (2026-08-23)
+
+고객센터 최근 문의내역은 제목·상태만이 아니라 고객이 입력한 문의 원문을 제목 아래에 그대로 표시하도록 보정했다. 답변이 있을 때만 별도 `철수야 답변` 영역을 표시한다. 기존 `InquiryResponse`의 서버 생성 `createdAt`과 서버 답변 등록 `answeredAt`을 추가 API·스키마 변경 없이 재사용했으며, 고객 접수·관리자 답변 모두 공지사항과 같은 `등록 YYYY.MM.DD HH:mm` 배지로 KST(`Asia/Seoul`) 기준 표시한다. 프론트 `npm run lint && npx tsc -b && npm run build` 통과; 기존 Hook dependency 경고 3개와 Vite 청크 경고만 남는다.

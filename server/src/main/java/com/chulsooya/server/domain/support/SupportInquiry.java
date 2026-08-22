@@ -86,4 +86,12 @@ public class SupportInquiry {
         this.status = SupportInquiryStatus.CLOSED;
         this.updatedAt = Instant.now();
     }
+
+    public void reopen() {
+        if (status != SupportInquiryStatus.CLOSED) {
+            throw new IllegalStateException("처리 완료된 문의만 다시 처리할 수 있습니다.");
+        }
+        this.status = SupportInquiryStatus.IN_PROGRESS;
+        this.updatedAt = Instant.now();
+    }
 }

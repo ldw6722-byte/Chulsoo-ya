@@ -682,3 +682,16 @@ V26 마이그레이션은 seller_applications에 통장사본 object key·conten
 | `client/src/features/auth/LoginPage.tsx`, `SignupPage.tsx`, `AuthCallbackPage.tsx` | 이메일·소셜 로그인과 콜백에서 내부 `next` 목적지만 검증해 복귀한다. |
 | `client/src/features/auth/PasswordResetRequestPage.tsx`, `PasswordResetPage.tsx`, `client/src/lib/supabase.ts` | 비밀번호 재설정 이메일·콜백·재로그인 과정에도 `next` 목적지를 유지한다. |
 | `client/src/components/shop/ShopFooter.tsx` | 공용 고객센터를 공개 `/support`에 연결하고 주문 조회는 보호 경로로 유지한다. |
+
+## 고객문의 재처리·원문·서버 등록 시각 표시 (2026-08-23)
+
+| 경로 | 역할 |
+| :--- | :--- |
+| `server/src/main/java/com/chulsooya/server/domain/support/SupportInquiry.java` | `OPEN → IN_PROGRESS → ANSWERED → CLOSED` 상태와 완료 문의의 안전한 `reopen()` 전이를 보관한다. 답변·접수 시각은 서버 `Instant`로 기록한다. |
+| `server/src/main/java/com/chulsooya/server/domain/support/CustomerSupportService.java` | 관리자 상태 변경, 답변 등록, 완료 해지 시 고객 `INQUIRY_REOPENED` 재처리 알림을 처리한다. |
+| `server/src/main/java/com/chulsooya/server/domain/support/SupportDtos.java` | 고객·관리자 문의 응답에 원문 `content`, 서버 `createdAt`, 서버 `answeredAt`을 제공한다. |
+| `server/src/test/java/com/chulsooya/server/domain/support/SupportInquiryTest.java` | 상태 전이·완료 해지 정책을 검증한다. |
+| `server/src/test/java/com/chulsooya/server/domain/support/CustomerSupportServiceNotificationTest.java` | 답변·완료 해지 시 고객 알림을 검증한다. |
+| `client/src/features/admin/SupportManagementPanel.tsx` | 처리 시작·답변 완료·처리 완료와 두 단계 `후속 문제로 처리 완료 해지` 관리자 UI를 제공한다. |
+| `client/src/features/support/CustomerSupportPage.tsx` | 고객 문의 원문, 접수 상태·서버 생성 시각, 철수야 답변·서버 답변 등록 시각을 카드로 표시한다. |
+| `client/src/types/api.ts` | `SupportInquiry`의 `content`, `createdAt`, `answeredAt`, 상태 계약을 단일 관리한다. |
