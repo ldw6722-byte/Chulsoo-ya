@@ -21,6 +21,8 @@ import com.chulsooya.server.domain.order.OrderRepository;
 import com.chulsooya.server.domain.order.OrderStatus;
 import com.chulsooya.server.domain.penalty.PenaltyRepository;
 import com.chulsooya.server.domain.store.SellerDtos.AssignedOrderResponse;
+import com.chulsooya.server.domain.store.SellerDtos.CompletedTradeDocumentResponse;
+
 import com.chulsooya.server.domain.store.SellerDtos.MetricsResponse;
 import com.chulsooya.server.domain.store.SellerDtos.OfferItemLine;
 import com.chulsooya.server.domain.store.SellerDtos.OfferResponse;
@@ -165,8 +167,21 @@ public class SellerService {
 				.toList();
 	}
 
+		/** 거래 완료된 낙찰 주문만 판매자 문서함에 노출한다. */
+	@Transactional(readOnly = true)
+	public List<CompletedTradeDocumentResponse> completedTradeDocuments(Long ownerId) {
+		Store store = requireStoreByOwner(ownerId);
+		return orderRepository.findByWinningStoreIdOrderByIdDesc(store.getId()).stream()
+				.filter(order -> order.getStatus() == OrderStatus.COMPLETED)
+				.limit(30)
+				.map(order -> new CompletedTradeDocumentResponse(order.getId(), order.getFulfillmentMethod(),
+						order.getTotalAmount(), countItems(order), order.getCompletedAt()))
+				.toList();
+	}
+
 	@Transactional(readOnly = true)
 	public MetricsResponse metrics(Long ownerId) {
+
 		Store store = requireStoreByOwner(ownerId);
 		long received = bidRepository.countByStoreId(store.getId());
 		long won = bidRepository.countByStoreIdAndWinnerTrue(store.getId());

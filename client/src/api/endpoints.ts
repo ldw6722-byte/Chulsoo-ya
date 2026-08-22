@@ -1,5 +1,6 @@
 import type { SubscriptionProduct, SellerSubscriptionStatus, AdminSellerMembership, StoreSubscriptionHistory, SellerSubscriptionTier, SubscriptionPaymentRequest } from '../types/api'
-import { http, unwrap } from './client'
+import { downloadBinary, http, unwrap } from './client'
+
 import type {
   AdminProduct,
   AdminAccount,
@@ -29,8 +30,11 @@ import type {
   SupportFaqItem,
   SupportInquiry,
   SupportInquiryStatus,
+  TradeDocumentType,
 
-  AssignedOrder,
+    AssignedOrder,
+  CompletedTradeDocument,
+
     AuthenticatedUser,
 
   Cart,
@@ -144,7 +148,12 @@ export const orderApi = {
 
     cancel: (orderId: number, idempotencyKey: string) => unwrap<Order>(http.post(`/orders/${orderId}/cancel`, undefined, { headers: { 'Idempotency-Key': idempotencyKey } })),
 
-  payment: (orderId: number) => unwrap<PaymentRefundView>(http.get(`/orders/${orderId}/payment`)),
+    payment: (orderId: number) => unwrap<PaymentRefundView>(http.get(`/orders/${orderId}/payment`)),
+
+  document: (orderId: number, type: TradeDocumentType) =>
+    downloadBinary(`/orders/${orderId}/documents/${type}`, `${type.toLowerCase()}-order-${orderId}.pdf`),
+
+
 
   confirmPayment: (orderId: number, idempotencyKey: string, method = 'CARD') =>
     unwrap<Order>(http.post('/payments/confirm', { orderId, idempotencyKey, method })),
@@ -191,13 +200,22 @@ export const sellerApi = {
 
   decline: (orderId: number) => unwrap<string>(http.post(`/seller/offers/${orderId}/decline`)),
 
-  assignedOrders: () => unwrap<AssignedOrder[]>(http.get('/seller/orders')),
+    assignedOrders: () => unwrap<AssignedOrder[]>(http.get('/seller/orders')),
+
+  completedTradeDocuments: () => unwrap<CompletedTradeDocument[]>(http.get('/seller/completed-trade-documents')),
+
+
 
   confirmStock: (orderId: number) =>
     unwrap<Order>(http.post(`/seller/orders/${orderId}/confirm-stock`)),
 
-  advanceStatus: (orderId: number, next: OrderStatus) =>
+    advanceStatus: (orderId: number, next: OrderStatus) =>
     unwrap<Order>(http.post(`/seller/orders/${orderId}/status/${next}`)),
+
+  document: (orderId: number, type: TradeDocumentType) =>
+    downloadBinary(`/seller/orders/${orderId}/documents/${type}`, `${type.toLowerCase()}-order-${orderId}.pdf`),
+
+
 
   metrics: () => unwrap<SellerMetrics>(http.get('/seller/metrics')),
 

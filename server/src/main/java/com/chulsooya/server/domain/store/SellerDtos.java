@@ -85,7 +85,17 @@ public final class SellerDtos {
 			Instant serverTime) {
 	}
 
+		/** 판매자 문서함용 완료 거래 목록. 개인정보를 포함하지 않는다. */
+	public record CompletedTradeDocumentResponse(
+			Long orderId,
+			FulfillmentMethod fulfillmentMethod,
+			int totalAmount,
+			int itemCount,
+			Instant completedAt) {
+	}
+
 	public record MetricsResponse(
+
 			long receivedOffers,
 			long wonBids,
 			long missedOrders,

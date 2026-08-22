@@ -25,6 +25,8 @@ dependencies {
 	runtimeOnly 'org.flywaydb:flyway-database-postgresql'
 	implementation 'org.springframework.boot:spring-boot-starter-validation'
 	implementation 'org.springframework.boot:spring-boot-starter-webmvc'
+	// 거래 서류의 결정적 PDF 생성. Apache-2.0, API 사용료·건당 비용 없음.
+	implementation 'org.apache.pdfbox:pdfbox:3.0.8'
 
 	compileOnly 'org.projectlombok:lombok'
 	annotationProcessor 'org.projectlombok:lombok'

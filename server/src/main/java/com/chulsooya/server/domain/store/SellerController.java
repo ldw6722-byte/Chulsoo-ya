@@ -2,6 +2,8 @@ package com.chulsooya.server.domain.store;
 
 import java.util.List;
 
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -17,7 +19,11 @@ import com.chulsooya.server.domain.matching.BidService;
 import com.chulsooya.server.domain.order.OrderDtos.OrderResponse;
 import com.chulsooya.server.domain.order.OrderService;
 import com.chulsooya.server.domain.order.OrderStatus;
+import com.chulsooya.server.domain.order.OrderController;
+import com.chulsooya.server.domain.order.TradeDocumentService;
+import com.chulsooya.server.domain.order.TradeDocumentType;
 import com.chulsooya.server.domain.store.SellerDtos.AssignedOrderResponse;
+import com.chulsooya.server.domain.store.SellerDtos.CompletedTradeDocumentResponse;
 import com.chulsooya.server.domain.store.SellerDtos.MetricsResponse;
 import com.chulsooya.server.domain.store.SellerDtos.OfferResponse;
 import com.chulsooya.server.domain.store.SellerDtos.PenaltyHistoryResponse;
@@ -39,13 +45,15 @@ public class SellerController {
     private final BidService bidService;
     private final OrderService orderService;
     private final FeaturePermissionService featurePermissions;
+    private final TradeDocumentService tradeDocuments;
 
     public SellerController(SellerService sellerService, BidService bidService, OrderService orderService,
-            FeaturePermissionService featurePermissions) {
+            FeaturePermissionService featurePermissions, TradeDocumentService tradeDocuments) {
         this.sellerService = sellerService;
         this.bidService = bidService;
         this.orderService = orderService;
         this.featurePermissions = featurePermissions;
+        this.tradeDocuments = tradeDocuments;
     }
 
     @GetMapping("/store")
@@ -119,6 +127,19 @@ public class SellerController {
         requireSellerFeature(user, FeaturePermission.SELLER_BID_AND_FULFILLMENT);
         Store store = sellerService.requireStoreByOwner(user.userId());
         return ApiResponse.of(orderService.advanceFulfillment(orderId, store.getId(), next));
+    }
+
+    @GetMapping("/completed-trade-documents")
+    public ApiResponse<List<CompletedTradeDocumentResponse>> completedTradeDocuments(CurrentUser user) {
+        requireSellerFeature(user, FeaturePermission.SELLER_BID_AND_FULFILLMENT);
+        return ApiResponse.of(sellerService.completedTradeDocuments(user.userId()));
+    }
+
+    /** 완료된 낙찰 주문의 거래명세서는 DB 스냅샷으로 즉시 생성한다. */
+    @GetMapping(value = "/orders/{orderId}/documents/{type}", produces = MediaType.APPLICATION_PDF_VALUE)
+    public ResponseEntity<byte[]> document(CurrentUser user, @PathVariable Long orderId, @PathVariable TradeDocumentType type) {
+        requireSellerFeature(user, FeaturePermission.SELLER_BID_AND_FULFILLMENT);
+        return OrderController.pdf(tradeDocuments.renderForSeller(orderId, user.userId(), type));
     }
 
     @GetMapping("/metrics")

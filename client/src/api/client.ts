@@ -98,3 +98,32 @@ export async function unwrap<T>(promise: Promise<{ data: ApiEnvelope<T> }>): Pro
   const response = await promise
   return response.data.data
 }
+
+export interface BinaryDownload {
+  blob: Blob
+  fileName: string
+}
+
+/** JSON envelope가 아닌 서버 생성 파일도 동일한 Axios 인증 채널로 받는다. */
+export async function downloadBinary(path: string, fallbackFileName: string): Promise<BinaryDownload> {
+  const response = await http.get<Blob>(path, { responseType: 'blob' })
+  const disposition = String(response.headers['content-disposition'] ?? '')
+  const rfc5987 = disposition.match(/filename\*=UTF-8''([^;]+)/i)?.[1]
+  const plain = disposition.match(/filename="?([^";]+)"?/i)?.[1]
+  let fileName = fallbackFileName
+  try {
+    fileName = rfc5987 ? decodeURIComponent(rfc5987) : plain ?? fallbackFileName
+  } catch {
+    fileName = plain ?? fallbackFileName
+  }
+  return { blob: response.data, fileName }
+}
+
+export function saveBinaryDownload(file: BinaryDownload): void {
+  const url = URL.createObjectURL(file.blob)
+  const anchor = document.createElement('a')
+  anchor.href = url
+  anchor.download = file.fileName
+  anchor.click()
+  URL.revokeObjectURL(url)
+}

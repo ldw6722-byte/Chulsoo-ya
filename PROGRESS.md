@@ -1385,3 +1385,20 @@ V47에서 `platform_maintenance_mode`에 `NORMAL`·`PREPARING`·`MAINTENANCE` �
 ## 고객문의 원문·접수/답변 등록 시각 표시 보정 (2026-08-23)
 
 고객센터 최근 문의내역은 제목·상태만이 아니라 고객이 입력한 문의 원문을 제목 아래에 그대로 표시하도록 보정했다. 답변이 있을 때만 별도 `철수야 답변` 영역을 표시한다. 기존 `InquiryResponse`의 서버 생성 `createdAt`과 서버 답변 등록 `answeredAt`을 추가 API·스키마 변경 없이 재사용했으며, 고객 접수·관리자 답변 모두 공지사항과 같은 `등록 YYYY.MM.DD HH:mm` 배지로 KST(`Asia/Seoul`) 기준 표시한다. 프론트 `npm run lint && npx tsc -b && npm run build` 통과; 기존 Hook dependency 경고 3개와 Vite 청크 경고만 남는다.
+
+## DB 즉시 생성 거래 서류 (2026-08-23)
+
+- 거래 완료(`COMPLETED`) 주문은 파일 Storage에 보관하지 않고, 구매자·판매자가 문서함에서 열기·다운로드할 때 주문·품목·결제·판매점 DB 스냅샷을 읽어 결정적 PDF를 즉시 생성하도록 구현했다.
+- 문서 종류는 영수증, 주문 내역서, 거래명세서다. 전자세금계산서는 발행 대행 연동·사업자 정보·세무 검토 전까지 실제 발행 또는 문서 생성 대상에 포함하지 않는다.
+- 백엔드에 Apache PDFBox 3.0.8과 Noto Sans KR OFL 글꼴을 추가했다. PDFBox 자체에 API·건당 사용료는 없으며 Storage 보관 비용도 이 설계에는 없다. 라이선스·비용·문서 경계는 `docs/TRADE_DOCUMENT_PDF_POLICY.md`에 기록했다.
+- `TradeDocumentService`는 구매자 본인/관리자 또는 낙찰 판매자만 허용하고, 완료 전 주문은 거부한다. 구매자 경로는 `GET /api/orders/{orderId}/documents/{type}`, 판매자 경로는 `GET /api/seller/orders/{orderId}/documents/{type}`이며 `private, no-store` 다운로드 응답을 사용한다.
+- 구매자 주문 상세에는 3종 문서 다운로드 버튼을, 판매자 주문 작업 화면에는 최근 완료 거래 30건의 거래명세서 문서함을 추가했다. 거래 완료 시 구매자와 낙찰 판매자에게 앱 내부 `TRADE_DOCUMENT_READY` 알림을 발송한다.
+- 검증: 거래 문서 권한·완료 상태·실제 `%PDF` 한글 렌더링·완료 알림 단위 테스트 통과, 백엔드 `test bootJar` 통과, 프론트 `lint && tsc -b && build` 통과. 기존 Hook dependency 경고 3건과 Vite 청크 경고만 남는다. 백엔드는 거래 문서 코드가 포함된 JAR로 8080 재기동했다. My Browser 확장 응답 시간 초과로 실제 클릭 E2E는 미완료다.
+
+
+## 전역 테마 토글 통합 후속 (2026-08-23)
+
+- 밝음 모드에서 보라·브랜드 배경 링크형 CTA의 검정 글씨가 상속되던 전역 `a { color: inherit; }` 우선순위 문제를 확인하고, 링크 초기화 규칙을 Tailwind 기본 레이어로 이동해 `text-white` 유틸리티가 정상 적용되도록 보정했다.
+- 마이철수 `응찰 내역`, 판매자 대시보드 `주문 제안 확인` 등 링크형 브랜드 CTA는 공통 대비 규칙을 사용하도록 정리했다. 프론트 `npm run lint && npx tsc -b && npm run build` 통과 기준이며, My Browser 실제 화면 재촬영은 세션 응답 시간 초과로 미완료다.
+- 밝음·다크 모드 토글 UI는 `ThemeContext`/`useTheme`를 단일 상태 공급원으로 유지하고, `ThemeToggle` 재사용 컴포넌트의 표시·상태·접근성·색상 클래스를 전역 공통 기준으로 통합했다.
+- 로컬 화면별 별도 테마 상태는 없으며, 공개 `ShopHeader`와 관리자 `AdminOverviewPage` 모두 동일한 `<ThemeToggle />` API를 사용한다. 토글 크기·손잡이 이동·라벨·아이콘·포커스 대비를 공통 컴포넌트에서 관리하고 `compact` 화면별 변형은 제거했다. `ThemeProvider`의 `localStorage` 유지와 HTML `dark` 클래스 적용은 기존 단일 전역 흐름을 유지한다.

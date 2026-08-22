@@ -982,3 +982,14 @@ export interface PopupNoticeRequest {
   displayStartAt: string | null
   displayEndAt: string | null
 }
+
+/** DB 주문 스냅샷으로 즉시 생성하는 거래 확인 PDF 종류. 전자세금계산서는 별도 발행 연동 전까지 제외한다. */
+export type TradeDocumentType = 'RECEIPT' | 'ORDER_STATEMENT' | 'TRANSACTION_STATEMENT'
+
+export interface CompletedTradeDocument {
+  orderId: number
+  fulfillmentMethod: FulfillmentMethod
+  totalAmount: number
+  itemCount: number
+  completedAt: string
+}

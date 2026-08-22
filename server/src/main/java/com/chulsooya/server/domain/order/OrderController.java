@@ -1,8 +1,15 @@
 package com.chulsooya.server.domain.order;
 
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 
+import org.springframework.http.CacheControl;
+import org.springframework.http.ContentDisposition;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
+
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -24,10 +31,12 @@ public class OrderController {
 
 	private final OrderService orderService;
 	private final PaymentRefundService paymentRefundService;
+	private final TradeDocumentService tradeDocuments;
 
-	public OrderController(OrderService orderService, PaymentRefundService paymentRefundService) {
+	public OrderController(OrderService orderService, PaymentRefundService paymentRefundService, TradeDocumentService tradeDocuments) {
 		this.orderService = orderService;
 		this.paymentRefundService = paymentRefundService;
+		this.tradeDocuments = tradeDocuments;
 	}
 
 	/** 장바구니 -> 매칭 요청 (WAITING_MATCH 생성 + 제안 발송) */
@@ -47,10 +56,28 @@ public class OrderController {
 		return ApiResponse.of(orderService.get(orderId, user.userId(), user.isAdmin()));
 	}
 
-	@GetMapping("/{orderId}/payment")
+		@GetMapping("/{orderId}/payment")
 	public ApiResponse<PaymentRefundView> payment(CurrentUser user, @PathVariable Long orderId) {
 		return ApiResponse.of(paymentRefundService.paymentView(orderId, user.userId(), user.isAdmin()));
 	}
+
+	/** 파일을 저장하지 않고 주문 DB 스냅샷으로 즉시 생성하는 구매자 거래 서류. */
+	@GetMapping(value = "/{orderId}/documents/{type}", produces = MediaType.APPLICATION_PDF_VALUE)
+	public ResponseEntity<byte[]> document(CurrentUser user, @PathVariable Long orderId, @PathVariable TradeDocumentType type) {
+		TradeDocumentService.TradeDocumentFile file = tradeDocuments.renderForConsumer(orderId, user.userId(), user.isAdmin(), type);
+		return pdf(file);
+	}
+
+	public static ResponseEntity<byte[]> pdf(TradeDocumentService.TradeDocumentFile file) {
+		return ResponseEntity.ok()
+				.cacheControl(CacheControl.noStore().cachePrivate())
+				.header(HttpHeaders.CONTENT_DISPOSITION, ContentDisposition.attachment().filename(file.fileName(), StandardCharsets.UTF_8).build().toString())
+				.contentType(MediaType.APPLICATION_PDF)
+				.contentLength(file.bytes().length)
+				.body(file.bytes());
+	}
+
+
 
 	@PostMapping("/{orderId}/cancel")
 	public ApiResponse<OrderResponse> cancel(CurrentUser user, @PathVariable Long orderId,

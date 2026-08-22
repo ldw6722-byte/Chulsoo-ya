@@ -43,10 +43,6 @@ import { EmptyView } from '@/components/StateViews'
 import { MaintenanceGate } from '@/components/maintenance/MaintenanceGate'
 import { RouteErrorPage } from './RouteErrorPage'
 
-const consumerOnly = (element: React.ReactNode) => (
-  <RequireIdentity roles={['CONSUMER', 'ADMIN']}>{element}</RequireIdentity>
-)
-
 const shoppingOnly = (element: React.ReactNode) => (
   <RequireIdentity roles={['CONSUMER', 'SELLER', 'ADMIN']}>{element}</RequireIdentity>
 )
@@ -93,7 +89,7 @@ export const router = createBrowserRouter([
       { path: 'orders/:orderId/claim', element: shoppingOnly(<ClaimRequestPage />) },
 
             { path: 'seller-guide', element: <SellerServiceGuidePage /> },
-      { path: 'seller/application', element: consumerOnly(<SellerApplicationPage />) },
+      { path: 'seller/application', element: authenticatedOnly(<SellerApplicationPage />) },
       { path: 'seller/deactivation', element: sellerOnly(<SellerDeactivationPage />) },
       { path: 'seller', element: sellerOnly(<SellerDashboardPage />) },
 

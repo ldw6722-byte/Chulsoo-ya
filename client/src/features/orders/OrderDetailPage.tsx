@@ -1,12 +1,21 @@
 import { useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { orderApi } from '@/api/endpoints'
+import { saveBinaryDownload } from '@/api/client'
+
 import { useAsync } from '@/hooks/useAsync'
 import { ErrorView, LoadingView } from '@/components/StateViews'
 import { ORDER_STATUS_META, formatDateTime, formatWon } from '@/components/format'
-import type { Order, OrderStatus, PaymentRefundView } from '@/types/api'
+import type { Order, OrderStatus, PaymentRefundView, TradeDocumentType } from '@/types/api'
+
+const TRADE_DOCUMENTS: { type: TradeDocumentType; label: string }[] = [
+  { type: 'RECEIPT', label: '영수증' },
+  { type: 'ORDER_STATEMENT', label: '주문 내역서' },
+  { type: 'TRANSACTION_STATEMENT', label: '거래명세서' },
+]
 
 const TIMELINE: { status: OrderStatus; label: string; at: (order: Order) => string | null }[] = [
+
   { status: 'WAITING_MATCH', label: '주문 요청', at: (o) => o.createdAt },
   { status: 'SELLER_CONFIRMING', label: '판매자 배정', at: (o) => o.matchedAt },
   { status: 'PAYMENT_PENDING', label: '물품 확인 완료', at: (o) => o.sellerConfirmedAt },
@@ -22,6 +31,8 @@ export function OrderDetailPage() {
   const payment = useAsync<PaymentRefundView>(() => orderApi.payment(id), [id, paymentVisible], { enabled: paymentVisible })
   const [canceling, setCanceling] = useState(false)
   const [notice, setNotice] = useState('')
+  const [downloading, setDownloading] = useState<TradeDocumentType | null>(null)
+  const [documentError, setDocumentError] = useState('')
 
   if (order.loading && !order.data) {
     return (
@@ -43,7 +54,15 @@ export function OrderDetailPage() {
   const meta = ORDER_STATUS_META[data.status]
   const canCancel = ['WAITING_MATCH', 'MATCHED', 'SELLER_CONFIRMING', 'RE_MATCHING', 'PAYMENT_PENDING', 'PAID'].includes(data.status)
   const canRequestClaim = ['PREPARING', 'DELIVERY_IN_PROGRESS', 'PICKUP_READY', 'COMPLETED'].includes(data.status)
+    const downloadDocument = async (type: TradeDocumentType) => {
+    setDownloading(type); setDocumentError('')
+    try { saveBinaryDownload(await orderApi.document(id, type)) }
+    catch (error) { setDocumentError(error instanceof Error ? error.message : '거래 서류 다운로드에 실패했습니다.') }
+    finally { setDownloading(null) }
+  }
+
   const cancel = async () => {
+
     setCanceling(true); setNotice('')
     try {
       const key = typeof crypto !== 'undefined' && 'randomUUID' in crypto ? crypto.randomUUID() : `cancel-${data.id}-${Date.now()}`
@@ -86,9 +105,32 @@ export function OrderDetailPage() {
 
       {paymentVisible ? <section className="card stack" style={{ padding: 'var(--sp-4)' }}><h2 className="section-title" style={{ fontSize: 'var(--fs-base)' }}>결제 · 환불</h2>{payment.loading && !payment.data ? <p className="muted">결제 정보를 불러오는 중입니다…</p> : payment.error ? <ErrorView error={payment.error} onRetry={payment.reload} /> : payment.data ? <><div className="spread flex-wrap gap-2"><span className="muted">결제 상태</span><span>{payment.data.paymentStatus === 'CANCELLED' ? '결제 취소' : payment.data.paymentStatus === 'REFUNDED' ? '전액 환불' : payment.data.paymentStatus === 'PARTIAL_REFUNDED' ? '부분 환불' : '결제 완료'}</span></div><div className="spread flex-wrap gap-2"><span className="muted">환불 가능 잔액</span><strong className="tabular">{formatWon(payment.data.remainingAmount)}</strong></div>{payment.data.refunds.length ? <div className="overflow-x-auto"><table className="table min-w-[34rem]"><thead><tr><th scope="col">처리</th><th scope="col">금액</th><th scope="col">사유</th><th scope="col">시각</th></tr></thead><tbody>{payment.data.refunds.map(refund => <tr key={refund.id}><td>{refund.refundType === 'CANCEL' ? '결제 취소' : '환불'}</td><td className="tabular">{formatWon(refund.amount)}</td><td>{refund.reason}</td><td className="tabular">{refund.completedAt ? formatDateTime(refund.completedAt) : '처리 중'}</td></tr>)}</tbody></table></div> : <p className="muted">처리된 취소·환불 이력이 없습니다.</p>}</> : null}</section> : null}
 
+      
+      {data.status === 'COMPLETED' ? (
+        <section className="card stack" style={{ padding: 'var(--sp-4)' }}>
+          <div className="spread flex-wrap gap-2">
+            <div>
+              <h2 className="section-title" style={{ fontSize: 'var(--fs-base)', marginBottom: 0 }}>거래 서류</h2>
+              <p className="muted" style={{ marginTop: 4 }}>거래 당시 주문 DB 정보를 기준으로 지금 생성합니다.</p>
+            </div>
+            <span className="badge badge-success">거래 완료</span>
+          </div>
+          <div className="row flex-wrap" style={{ gap: 'var(--sp-2)' }}>
+            {TRADE_DOCUMENTS.map((document) => (
+              <button key={document.type} type="button" className="btn btn-secondary" disabled={downloading !== null} onClick={() => void downloadDocument(document.type)}>
+                {downloading === document.type ? '생성 중…' : document.label}
+              </button>
+            ))}
+          </div>
+          {documentError ? <p role="alert" className="subtle" style={{ color: 'var(--c-danger)' }}>{documentError}</p> : null}
+          <p className="subtle">전자세금계산서는 발행 연동 전까지 이 문서함에서 제공하지 않습니다.</p>
+        </section>
+      ) : null}
+
       <section className="card stack" style={{ padding: 'var(--sp-4)' }}>
         <h2 className="section-title" style={{ fontSize: 'var(--fs-base)' }}>
           진행 이력
+
         </h2>
         <ol className="stack" style={{ gap: 'var(--sp-2)' }}>
           {TIMELINE.map((step) => {

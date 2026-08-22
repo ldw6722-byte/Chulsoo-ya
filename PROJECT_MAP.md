@@ -185,9 +185,11 @@
 | :--- | :--- |
 | `client/src/app/ThemeContext.tsx` | localStorage 기반 테마 상태와 HTML dark 클래스 적용 |
 | `client/src/app/useTheme.ts` | 전역 테마 상태 접근 훅 |
-| `client/src/components/ThemeToggle.tsx` | 사용자·관리자 공통 아이콘 토글 |
+| `client/src/components/ThemeToggle.tsx` | 사용자·관리자 공통 단일 크기 아이콘 토글·접근성 상태 표시 |
 | `client/src/styles/tokens.css` | 다크모드 전역 디자인 토큰 |
-| `client/src/styles/global.css` | 관리자 레거시 패널 다크 대비 보정 |
+| `client/src/styles/global.css` | 관리자 레거시 패널 다크 대비 보정 및 링크·브랜드 CTA 대비 규칙 |
+
+테마 토글은 `ThemeContext.tsx`가 단일 상태 공급원이고 `useTheme.ts`가 접근 훅이며 `ThemeToggle.tsx`가 사용자·관리자 공통 재사용 UI다. 공개 `ShopHeader`와 관리자 `AdminOverviewPage`는 동일한 `<ThemeToggle />` API를 사용하며, 화면별 `compact` 변형·별도 테마 상태·임의 토글 스타일을 추가하지 않는다. 밝음·다크 상태, 저장, 라벨, 아이콘, 포커스 대비는 이 공통 경계를 기준으로 검증한다.
 
 ## 개발 결제 승인 구조 (2026-08-17)
 | 경로 | 역할 |
@@ -695,3 +697,23 @@ V26 마이그레이션은 seller_applications에 통장사본 object key·conten
 | `client/src/features/admin/SupportManagementPanel.tsx` | 처리 시작·답변 완료·처리 완료와 두 단계 `후속 문제로 처리 완료 해지` 관리자 UI를 제공한다. |
 | `client/src/features/support/CustomerSupportPage.tsx` | 고객 문의 원문, 접수 상태·서버 생성 시각, 철수야 답변·서버 답변 등록 시각을 카드로 표시한다. |
 | `client/src/types/api.ts` | `SupportInquiry`의 `content`, `createdAt`, `answeredAt`, 상태 계약을 단일 관리한다. |
+
+
+## DB 즉시 생성 거래 서류 (2026-08-23)
+
+| 파일 | 역할 |
+| :--- | :--- |
+| `server/build.gradle` | Apache PDFBox 3.0.8 의존성. API·건당 사용료 없이 서버 내부에서 거래 서류를 생성한다. |
+| `server/src/main/resources/fonts/NotoSansKR-Regular.ttf` / `OFL.txt` | 한글 거래 서류 렌더링 글꼴과 OFL 라이선스 전문. |
+| `server/src/main/java/com/chulsooya/server/domain/order/TradeDocumentType.java` | 영수증·주문 내역서·거래명세서 허용 종류. 전자세금계산서는 제외한다. |
+| `server/src/main/java/com/chulsooya/server/domain/order/TradeDocumentPdfRenderer.java` | 주문·품목·결제·구매자·판매점 DB 값을 AI 없이 고정 PDF 템플릿에 주입하며, 파일 보관 없이 요청 때마다 생성한다. |
+| `server/src/main/java/com/chulsooya/server/domain/order/TradeDocumentService.java` | 완료 주문과 구매자/관리자 또는 낙찰 판매자 소유권을 검증하고 PDF 응답 데이터를 조립한다. |
+| `server/src/main/java/com/chulsooya/server/domain/order/OrderController.java` | 구매자·관리자 `GET /api/orders/{orderId}/documents/{type}` PDF 다운로드와 `private, no-store` 응답 헤더. |
+| `server/src/main/java/com/chulsooya/server/domain/store/SellerController.java` | 낙찰 판매자 전용 문서 다운로드와 최근 완료 거래 목록 API. |
+| `server/src/main/java/com/chulsooya/server/domain/store/SellerService.java` / `SellerDtos.java` | 판매점 본인의 최근 완료 거래 30건을 개인정보 없이 문서함에 제공한다. |
+| `server/src/main/java/com/chulsooya/server/domain/order/OrderDeliveryNotificationService.java` | 거래 완료 시 구매자·낙찰 판매자에게 `TRADE_DOCUMENT_READY` 앱 알림을 저장한다. |
+| `client/src/api/client.ts` / `client/src/api/endpoints.ts` | Axios 중앙 채널 binary PDF 다운로드·파일 저장 처리와 구매자/판매자 문서 API. |
+| `client/src/features/orders/OrderDetailPage.tsx` | 구매자 완료 주문의 영수증·주문 내역서·거래명세서 즉시 다운로드 문서함. |
+| `client/src/features/seller/SellerOrderWorkspacePage.tsx` | 판매자 완료 거래 문서함과 거래명세서 다운로드. |
+| `server/src/test/java/com/chulsooya/server/domain/order/TradeDocumentServiceTest.java` / `TradeDocumentPdfRendererTest.java` | 완료 상태·구매자/판매자 권한 및 실제 `%PDF` 렌더링을 검증한다. |
+| `docs/TRADE_DOCUMENT_PDF_POLICY.md` | Storage 미사용 DB 기반 생성 정책, Apache-2.0/OFL 라이선스, 비용·전자세금계산서 경계를 기록한다. |
